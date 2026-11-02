@@ -1885,7 +1885,8 @@ const appLocalizationsFrExtra = <String, String>{
   'network_option_language_it': '🇮🇹 Italiano',
   'network_option_language_ja': '🇯🇵 日本語',
   'network_option_language_ko': '🇰🇷 한국어',
-  'network_option_language_ku': 'Kurdî',
+  // TODO(i18n): Kurdî (Kurmancî) – Schreibweise von Muttersprachler:in prüfen.
+  'network_option_language_ku': 'Kurdî (Kurmancî)',
   'network_option_language_nl': '🇳🇱 Nederlands',
   'network_option_language_pl': '🇵🇱 Polski',
   'network_option_language_pt': '🇵🇹 Português',

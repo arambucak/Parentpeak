@@ -48,7 +48,7 @@ class PhotoBackendService {
 
       final normalized = _parseSingleAlbum(payload);
       if (normalized == null) {
-        throw StateError('Ungueltige Album-Antwort vom Server.');
+        throw StateError('Ungültige Album-Antwort vom Server.');
       }
       return normalized;
     } catch (e) {
@@ -70,7 +70,7 @@ class PhotoBackendService {
         raw.contains('tls') ||
         raw.contains('ssl') ||
         raw.contains('certificate')) {
-      return 'Server-Verbindung aktuell nicht sicher verfuegbar.';
+      return 'Server-Verbindung aktuell nicht sicher verfügbar.';
     }
 
     if (raw.contains('socketexception') ||

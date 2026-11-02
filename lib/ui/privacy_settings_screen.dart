@@ -42,7 +42,7 @@ class PrivacySettingsScreen extends StatelessWidget {
                     Icon(Icons.lock_person_rounded, color: Colors.white, size: 28),
                     SizedBox(width: 10),
                     Text(
-                      'Privatsphaere für euren Familienalltag',
+                      'Privatsphäre für euren Familienalltag',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 20,
@@ -64,12 +64,12 @@ class PrivacySettingsScreen extends StatelessWidget {
                     _InfoPill(
                       icon: Icons.visibility_off_rounded,
                       label: isPrivacyModeEnabled
-                          ? 'Privatsphaere aktiv'
+                          ? 'Privatsphäre aktiv'
                           : 'Freigabe erweitert',
                     ),
                     const _InfoPill(
                       icon: Icons.devices_rounded,
-                      label: 'Vertrauensgeraete beachten',
+                      label: 'Vertrauensgeräte beachten',
                     ),
                     const _InfoPill(
                       icon: Icons.family_restroom,
@@ -91,7 +91,7 @@ class PrivacySettingsScreen extends StatelessWidget {
               padding: const EdgeInsets.all(8),
               child: SwitchListTile.adaptive(
                 title: const Text(
-                  'Privatsphaere-Modus',
+                  'Privatsphäre-Modus',
                   style: TextStyle(fontWeight: FontWeight.w700),
                 ),
                 subtitle: Text(
@@ -126,12 +126,12 @@ class PrivacySettingsScreen extends StatelessWidget {
             icon: Icons.badge_outlined,
             title: 'Weniger sensible Profildetails',
             body:
-                'Kinderrollen, persoenliche Hinweise und interne Familienzuordnungen werden nicht unnötig prominent gezeigt.',
+                'Kinderrollen, persönliche Hinweise und interne Familienzuordnungen werden nicht unnötig prominent gezeigt.',
           ),
           const SizedBox(height: 10),
           const _PrivacyFeatureCard(
             icon: Icons.screen_lock_portrait_rounded,
-            title: 'Mehr Sicherheit auf geteilten Geraeten',
+            title: 'Mehr Sicherheit auf geteilten Geräten',
             body:
                 'Gerade auf Familien-iPads oder gemeinsam genutzten Smartphones reduziert der Modus das Risiko ungewollter Einblicke.',
           ),
@@ -140,7 +140,7 @@ class PrivacySettingsScreen extends StatelessWidget {
             icon: Icons.emergency_share_outlined,
             title: 'Wichtige Schutzfunktionen bleiben erreichbar',
             body:
-                'Notfallkontakte, Vertrauensgeraete und Sicherheitsinfos bleiben schnell verfügbar, auch wenn das Profil diskreter dargestellt wird.',
+                'Notfallkontakte, Vertrauensgeräte und Sicherheitsinfos bleiben schnell verfügbar, auch wenn das Profil diskreter dargestellt wird.',
           ),
           const SizedBox(height: 12),
           Card(
@@ -160,7 +160,7 @@ class PrivacySettingsScreen extends StatelessWidget {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Lasst den Privatsphaere-Modus aktiv, wenn mehrere Personen das Geraet nutzen, Kinder mit auf den Bildschirm schauen oder ihr euer Profil bewusst reduziert halten wollt.',
+                    'Lasst den Privatsphäre-Modus aktiv, wenn mehrere Personen das Gerät nutzen, Kinder mit auf den Bildschirm schauen oder ihr euer Profil bewusst reduziert halten wollt.',
                   ),
                 ],
               ),

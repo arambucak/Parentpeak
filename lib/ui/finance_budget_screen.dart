@@ -327,7 +327,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                           if (_provider.filteredCareActivities.isEmpty)
                             const _EmptyHint(
                               text:
-                                  'Keine Care-Aktivitaeten für den gewählten Monat.',
+                                  'Keine Care-Aktivitäten für den gewählten Monat.',
                             )
                           else
                             ...groupedCareActivities.entries.expand(
@@ -503,7 +503,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
       if (lowerLine.contains('pfand')) {
         drafts.add(
           _ReceiptDraftItem(
-            title: 'Pfand / Rueckgabe',
+            title: 'Pfand / Rückgabe',
             amount: amount,
             category: ExpenseCategory.deposit,
             paidById: _mamaId,
@@ -636,7 +636,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
           content:
-              Text('${expenses.length} manuelle Positionen hinzugefuegt.')),
+              Text('${expenses.length} manuelle Positionen hinzugefügt.')),
     );
   }
 
@@ -694,7 +694,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
 
     if (total > 0 && babyTotal > 0 && babyTotal / total >= 0.25) {
       insights.add(
-          'Babykosten praegen diesen Monat den groessten Teil eurer Alltagsausgaben.');
+          'Babykosten praegen diesen Monat den größten Teil eurer Alltagsausgaben.');
     }
 
     if (_provider.monthlyCareCredits >= 40) {
@@ -709,7 +709,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
 
     if (depositTotal > 0) {
       insights.add(
-          'Pfand wurde separat erkannt und verfaelscht eure Familienkosten dadurch nicht mehr so stark.');
+          'Pfand wurde separat erkannt und verfälscht eure Familienkosten dadurch nicht mehr so stark.');
     }
 
     if (personalTotal > groceriesTotal && personalTotal > 0) {
@@ -751,7 +751,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            'Split-Korrektur vor Uebernahme',
+                            'Split-Korrektur vor Übernahme',
                             style: Theme.of(context)
                                 .textTheme
                                 .titleMedium
@@ -1740,7 +1740,7 @@ class _FinanceBudgetScreenState extends State<FinanceBudgetScreen> {
       case ExpenseCategory.deposit:
         return 'Pfand';
       case ExpenseCategory.personal:
-        return 'Persoenlich';
+        return 'Persönlich';
       case ExpenseCategory.transport:
         return 'Mobilität';
       case ExpenseCategory.health:
@@ -2056,7 +2056,7 @@ class _MonthlyCategoryOverview extends StatelessWidget {
             SizedBox(
               width: 160,
               child: _MetricCard(
-                label: 'Persoenlich',
+                label: 'Persönlich',
                 value: formatter(personalCost),
                 color: const Color(0xFFB45309),
               ),

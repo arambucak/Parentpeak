@@ -120,7 +120,7 @@ void main() {
   for (final fallback in [false, true]) {
     final path = fallback ? 'fallback' : 'typed client';
     for (final (status, reason, key) in statusCases) {
-      test('$path preserves HTTP $status, body, reason and message key',
+      test('$path preserves HTTP $status, server code, reason and message key',
           () async {
         final body = jsonEncode({
           'error': 'synthetic private server detail',
@@ -143,7 +143,6 @@ void main() {
         final apiError =
             profiles.matchingService.lastProfileCreationApiException;
         expect(apiError?.statusCode, status);
-        expect(apiError?.responseBody, body);
         expect(apiError?.serverCode, 'diagnostic_server_code');
         expect(profiles.matchingService.lastSyncError, contains('HTTP $status'));
         expect(

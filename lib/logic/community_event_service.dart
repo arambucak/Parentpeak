@@ -142,7 +142,7 @@ class CommunityEventService extends ChangeNotifier {
     _updateDayCounter();
     if (!canCreateMore) {
       _error =
-          'Du hast heute schon $maxEventsPerDay Events erstellt. Morgen kannst du weitere hinzufuegen.';
+          'Du hast heute schon $maxEventsPerDay Events erstellt. Morgen kannst du weitere hinzufügen.';
       notifyListeners();
       return false;
     }

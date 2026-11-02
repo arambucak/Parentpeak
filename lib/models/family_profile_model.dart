@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -245,6 +246,10 @@ class ChildEntry {
 }
 
 /// Alle Optionen für das Profil-Formular.
+///
+/// Die `*Labels`-Maps sind deutsche Fallbacks. Angezeigt wird über
+/// [MatchOptions.localizedLabel] bzw. `networkWizardOptionLabel`, damit alle
+/// Launch-Sprachen über `AppStringsManager` lokalisiert sind.
 class MatchOptions {
   // ─── FAMILIENFORMEN ───────────────────────────────────────────────────────
   static const List<String> familyForms = [
@@ -263,10 +268,10 @@ class MatchOptions {
     'alleinerziehend': '\u{1F4AA} Alleinerziehend',
     'patchwork': '\u{1F9E9} Patchwork',
     'regenbogen': '\u{1F308} Regenbogenfamilie',
-    'grossfamilie': '\u{1F3E0} Grossfamilie',
+    'grossfamilie': '\u{1F3E0} Großfamilie',
     'co_parenting': '\u{1F91D} Co-Parenting',
     'pflegefamilie': '\u{2764}\u{FE0F} Pflegefamilie',
-    'grosseltern': '\u{1F9D3} Grosseltern-Haushalt',
+    'grosseltern': '\u{1F9D3} Großeltern-Haushalt',
     'wg_familie': '\u{1F3E1} Familien-WG',
   };
 
@@ -301,14 +306,14 @@ class MatchOptions {
     'respektvoll': '\u{1F64F} Respektvoll',
     'strukturiert': '\u{1F4CB} Strukturiert',
     'demokratisch': '\u{1F5F3}\u{FE0F} Demokratisch',
-    'religioes': '\u{1F54C} Religioes/Spirituell',
+    'religioes': '\u{1F54C} Religiös/Spirituell',
     'interkulturell': '\u{1F30D} Interkulturell',
     'feministisch': '\u{2640}\u{FE0F} Feministisch',
     'naturverbunden': '\u{1F333} Naturverbunden',
     'offen': '\u{2728} Offen für alles',
   };
 
-  // ─── WAS SUCHEN WIR? (AKTIVITAETEN) ──────────────────────────────────────
+  // ─── WAS SUCHEN WIR? (AKTIVITÄTEN) ──────────────────────────────────────
   static const List<String> lookingForOptions = [
     'spielplatz',
     'natur',
@@ -346,7 +351,7 @@ class MatchOptions {
     'online_austausch': '\u{1F4AC} Online-Austausch',
   };
 
-  // ─── VERFUEGBARKEIT: TAGE ────────────────────────────────────────────────
+  // ─── VERFÜGBARKEIT: TAGE ────────────────────────────────────────────────
   static const List<String> dayOptions = [
     'montag',
     'dienstag',
@@ -366,7 +371,7 @@ class MatchOptions {
     'sonntag': 'So',
   };
 
-  // ─── VERFUEGBARKEIT: ZEITEN ──────────────────────────────────────────────
+  // ─── VERFÜGBARKEIT: ZEITEN ──────────────────────────────────────────────
   static const List<String> timeOptions = [
     'morgens',
     'vormittags',
@@ -376,7 +381,7 @@ class MatchOptions {
     'flexibel',
   ];
   static const Map<String, String> timeLabels = {
-    'morgens': '\u{1F305} Frueh (6\u201309)',
+    'morgens': '\u{1F305} Früh (6\u201309)',
     'vormittags': '\u{2600}\u{FE0F} Vormittags (9\u201312)',
     'nachmittags': '\u{1F31E} Nachmittags (12\u201317)',
     'abends': '\u{1F319} Abends (17\u201321)',
@@ -400,11 +405,11 @@ class MatchOptions {
     'behinderung': '\u{267F} Kind mit Behinderung',
     'neurodivergent': '\u{1F9E0} Neurodivergent (ADHS/Autismus)',
     'hochsensibel': '\u{1F33C} Hochsensibel',
-    'fruehchen': '\u{1F4AA} Fruehchen-Eltern',
+    'fruehchen': '\u{1F4AA} Frühchen-Eltern',
     'mehrlinge': '\u{1F46F} Mehrlinge',
     'chronisch_krank': '\u{1F3E5} Chronische Erkrankung',
-    'allergien': '\u{26A0}\u{FE0F} Allergien/Unvertraeglichkeiten',
-    'schreibaby': '\u{1F476} Schreibaby/Regulationsstoerung',
+    'allergien': '\u{26A0}\u{FE0F} Allergien/Unverträglichkeiten',
+    'schreibaby': '\u{1F476} Schreibaby/Regulationsstörung',
     'pflegekind': '\u{2764}\u{FE0F} Pflegekind',
   };
 
@@ -449,39 +454,67 @@ class MatchOptions {
   // ─── KINDER-GESCHLECHT ───────────────────────────────────────────────────
   static const Map<String, String> genderLabels = {
     'maennlich': '\u{1F466} Junge',
-    'weiblich': '\u{1F467} Maedchen',
+    'weiblich': '\u{1F467} Mädchen',
     'divers': '\u{1F31F} Divers',
   };
 
   // ─── SPRACHEN (ALLE 27) ──────────────────────────────────────────────────
+  // Eigenbezeichnungen (Autonyme), unabhängig von der UI-Sprache identisch.
+  // Kurdisch hat kein Flaggen-Emoji; die UI zeichnet dafür `AlaRenginFlag`.
+  // TODO(i18n): Schreibweise "Kurdî (Kurmancî)" von Muttersprachler:in prüfen.
+  // Serbisch bewusst lateinisch ("Srpski"): digraphisch, in der Diaspora
+  // überwiegend lateinisch geschrieben und einheitlich mit Hrvatski/Bosanski.
   static const Map<String, String> languageLabels = {
     'de': '\u{1F1E9}\u{1F1EA} Deutsch',
     'en': '\u{1F1EC}\u{1F1E7} English',
-    'tr': '\u{1F1F9}\u{1F1F7} Tuerkce',
-    'ar':
-        '\u{1F1F8}\u{1F1E6} \u{0627}\u{0644}\u{0639}\u{0631}\u{0628}\u{064A}\u{0629}',
-    'ku': 'Kurdi',
-    'fr': '\u{1F1EB}\u{1F1F7} Francais',
-    'es': '\u{1F1EA}\u{1F1F8} Espanol',
-    'ru': '\u{1F1F7}\u{1F1FA} Russkij',
+    'tr': '\u{1F1F9}\u{1F1F7} Türkçe',
+    'ar': '\u{1F1F8}\u{1F1E6} العربية',
+    'ku': 'Kurdî (Kurmancî)',
+    'fr': '\u{1F1EB}\u{1F1F7} Français',
+    'es': '\u{1F1EA}\u{1F1F8} Español',
+    'ru': '\u{1F1F7}\u{1F1FA} Русский',
     'pl': '\u{1F1F5}\u{1F1F1} Polski',
     'it': '\u{1F1EE}\u{1F1F9} Italiano',
-    'pt': '\u{1F1F5}\u{1F1F9} Portugues',
+    'pt': '\u{1F1F5}\u{1F1F9} Português',
     'nl': '\u{1F1F3}\u{1F1F1} Nederlands',
-    'uk': '\u{1F1FA}\u{1F1E6} Ukrainska',
-    'ro': '\u{1F1F7}\u{1F1F4} Romana',
-    'bg': '\u{1F1E7}\u{1F1EC} Bulgarski',
+    'uk': '\u{1F1FA}\u{1F1E6} Українська',
+    'ro': '\u{1F1F7}\u{1F1F4} Română',
+    'bg': '\u{1F1E7}\u{1F1EC} Български',
     'sr': '\u{1F1F7}\u{1F1F8} Srpski',
     'hr': '\u{1F1ED}\u{1F1F7} Hrvatski',
     'bs': '\u{1F1E7}\u{1F1E6} Bosanski',
     'sq': '\u{1F1E6}\u{1F1F1} Shqip',
-    'el': '\u{1F1EC}\u{1F1F7} Ellinika',
-    'fa': '\u{1F1EE}\u{1F1F7} Farsi',
-    'hi': '\u{1F1EE}\u{1F1F3} Hindi',
-    'zh': '\u{1F1E8}\u{1F1F3} Zhongwen',
-    'ja': '\u{1F1EF}\u{1F1F5} Nihongo',
-    'ko': '\u{1F1F0}\u{1F1F7} Hangugeo',
-    'vi': '\u{1F1FB}\u{1F1F3} Tieng Viet',
+    'el': '\u{1F1EC}\u{1F1F7} Ελληνικά',
+    'fa': '\u{1F1EE}\u{1F1F7} فارسی',
+    'hi': '\u{1F1EE}\u{1F1F3} हिन्दी',
+    'zh': '\u{1F1E8}\u{1F1F3} 中文',
+    'ja': '\u{1F1EF}\u{1F1F5} 日本語',
+    'ko': '\u{1F1F0}\u{1F1F7} 한국어',
+    'vi': '\u{1F1FB}\u{1F1F3} Tiếng Việt',
     'sw': '\u{1F1F0}\u{1F1EA} Kiswahili',
   };
+
+  /// Deutsche Fallback-Labels je i18n-Gruppe (`network_option_<group>_<code>`).
+  static const Map<String, Map<String, String>> fallbackLabels = {
+    'family': familyFormLabels,
+    'values': valueLabels,
+    'looking': lookingForLabels,
+    'days': dayLabels,
+    'times': timeLabels,
+    'specials': specialLabels,
+    'child': childInterestLabels,
+    'gender': genderLabels,
+    'language': languageLabels,
+  };
+
+  /// Lokalisiertes Label für einen gespeicherten Options-Code.
+  ///
+  /// Die Codes (z. B. `maennlich`, `morgens`) sind persistierte Werte und
+  /// bleiben unverändert; nur die Anzeige kommt aus `AppStringsManager`.
+  static String localizedLabel(String language, String group, String code) {
+    final key = 'network_option_${group}_$code';
+    final label = AppStringsManager.getString(language, key);
+    if (label != key) return label;
+    return fallbackLabels[group]?[code] ?? code;
+  }
 }

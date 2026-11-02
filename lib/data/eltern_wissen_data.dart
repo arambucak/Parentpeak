@@ -36,7 +36,7 @@ const List<ElternWissenEntry> elternWissenData = [
   ),
   ElternWissenEntry(
     id: 'baby_02',
-    question: 'Mein Baby schlaeft nicht ein',
+    question: 'Mein Baby schläft nicht ein',
     akut:
         'Bleib ruhig. Dein Baby spürt deine Anspannung. Atme langsam und halte es.',
     beduerfnis:
@@ -356,7 +356,7 @@ const List<ElternWissenEntry> elternWissenData = [
     id: 'kita_02',
     question: 'Mein Kind hat Angst im Dunkeln',
     akut:
-        'Die Angst ist real. Nicht kleinreden. Sage: Ich glaube dir. Lass uns schauen wie du dich sicher fuehlst.',
+        'Die Angst ist real. Nicht kleinreden. Sage: Ich glaube dir. Lass uns schauen wie du dich sicher fühlst.',
     beduerfnis:
         'Angst im Dunkeln ist entwicklungsgerecht (3-8 Jahre). Das Gehirn kann jetzt Gefahren VORSTELLEN — das ist ein kognitiver Fortschritt.',
     gfkSatz:
@@ -367,7 +367,7 @@ const List<ElternWissenEntry> elternWissenData = [
       'Kuscheltier als Beschuetzer einsetzen ("Der Baer passt auf dich auf")'
     ],
     ermutigung:
-        'Dein Kind hat keine Stoerung. Es hat Fantasie. Das ist eine Stärke.',
+        'Dein Kind hat keine Störung. Es hat Fantasie. Das ist eine Stärke.',
     minAge: 3,
     maxAge: 8,
     tags: [
@@ -389,11 +389,11 @@ const List<ElternWissenEntry> elternWissenData = [
     beduerfnis:
         'Dein Kind braucht Selbstwirksamkeit. Es will erleben: Meine Ideen zählen.',
     gfkSatz:
-        'Du hast tolle Ideen. Dein Freund hat auch welche. Wie waere es wenn ihr abwechselt?',
+        'Du hast tolle Ideen. Dein Freund hat auch welche. Wie wäre es wenn ihr abwechselt?',
     aktion: [
-      'Nicht sofort eingreifen — Kinder loesen mehr als wir denken',
+      'Nicht sofort eingreifen — Kinder lösen mehr als wir denken',
       'Wenn nötig: Rollenwechsel vorschlagen, nicht befehlen',
-      'Zuhause: Situationen schaffen wo das Kind fuehren DARF (Spielleiter)'
+      'Zuhause: Situationen schaffen wo das Kind führen DARF (Spielleiter)'
     ],
     ermutigung:
         'Bestimmen-wollen ist Führungspotential. Das wird später eine Stärke.',
@@ -446,7 +446,7 @@ const List<ElternWissenEntry> elternWissenData = [
     id: 'grund_01',
     question: 'Mein Kind will keine Hausaufgaben machen',
     akut:
-        'Nicht kaempfen. Sage: Ich sehe du hast keine Lust. Was brauchst du um anzufangen?',
+        'Nicht kämpfen. Sage: Ich sehe du hast keine Lust. Was brauchst du um anzufangen?',
     beduerfnis:
         'Hausaufgaben-Verweigerung ist selten Faulheit. Oft steckt dahinter: Überforderung, Langeweile, Erschöpfung nach dem Schultag.',
     gfkSatz:
@@ -475,13 +475,13 @@ const List<ElternWissenEntry> elternWissenData = [
     id: 'grund_02',
     question: 'Mein Kind wird in der Schule ausgegrenzt',
     akut:
-        'Hoere zu. Glaube deinem Kind. Sage: Das tut mir leid. Du verdienst Freunde die nett zu dir sind.',
+        'Höre zu. Glaube deinem Kind. Sage: Das tut mir leid. Du verdienst Freunde die nett zu dir sind.',
     beduerfnis:
-        'Zugehörigkeit ist ein Grundbedürfnis. Ausgrenzung schmerzt Kinder koerperlich — das Gehirn verarbeitet es wie physischen Schmerz.',
+        'Zugehörigkeit ist ein Grundbedürfnis. Ausgrenzung schmerzt Kinder körperlich — das Gehirn verarbeitet es wie physischen Schmerz.',
     gfkSatz:
         'Ich höre dass dich das sehr traurig macht. Du bist liebenswert — egal was andere sagen.',
     aktion: [
-      'Nicht sofort "loesen wollen" — erstmal Gefühle anerkennen',
+      'Nicht sofort "lösen wollen" — erstmal Gefühle anerkennen',
       'Fragen: Was wünscht du dir? (Manche wollen Hilfe, manche nur Zuhören)',
       'Bei Mobbing: Schule informieren (Klassenleitung)'
     ],
@@ -504,7 +504,7 @@ const List<ElternWissenEntry> elternWissenData = [
     id: 'grund_03',
     question: 'Mein Kind verbringt zu viel Zeit am Bildschirm',
     akut:
-        'Nicht im Konflikt-Moment das Geraet wegnehmen. Kuendige Übergänge an: "Noch 5 Minuten, dann ist Schluss."',
+        'Nicht im Konflikt-Moment das Gerät wegnehmen. Kündige Übergänge an: "Noch 5 Minuten, dann ist Schluss."',
     beduerfnis:
         'Bildschirme befriedigen Bedürfnisse: Langeweile, soziale Zugehörigkeit, Stimulation. Frage: Was braucht mein Kind STATTDESSEN?',
     gfkSatz:
@@ -575,7 +575,7 @@ const List<ElternWissenEntry> elternWissenData = [
       'Später ansprechen: "Das hat mich verletzt. Was hat dich so wütend gemacht?"'
     ],
     ermutigung:
-        'Ein Kind das dir sagt was es fühlt (auch haesslich) vertraut dir. Das ist Beziehung.',
+        'Ein Kind das dir sagt was es fühlt (auch hässlich) vertraut dir. Das ist Beziehung.',
     minAge: 4,
     maxAge: 14,
     tags: [
@@ -603,11 +603,11 @@ const List<ElternWissenEntry> elternWissenData = [
         'Ich bin da wenn du reden möchtest. Kein Druck. Ich frage nicht — aber ich höre zu wenn du kommst.',
     aktion: [
       'Gemeinsame Aktivitäten anbieten OHNE Gesprächsdruck (zusammen kochen, Auto fahren)',
-      'Nicht jedes Schweigen fuellen',
+      'Nicht jedes Schweigen füllen',
       'Eigene Gefühle teilen: "Ich vermisse unsere Gespräche manchmal"'
     ],
     ermutigung:
-        'Dein Teenager liebt dich. Er braucht gerade Raum. Halte die Tuer offen — er kommt zurück.',
+        'Dein Teenager liebt dich. Er braucht gerade Raum. Halte die Tür offen — er kommt zurück.',
     minAge: 10,
     maxAge: 18,
     tags: [
@@ -623,7 +623,7 @@ const List<ElternWissenEntry> elternWissenData = [
   ),
   ElternWissenEntry(
     id: 'teen_02',
-    question: 'Mein Teenager haelt sich an keine Regeln',
+    question: 'Mein Teenager hält sich an keine Regeln',
     akut:
         'Weniger Regeln, dafür klarere. Frage dich: Welche 3 Regeln sind WIRKLICH wichtig?',
     beduerfnis:
@@ -660,7 +660,7 @@ const List<ElternWissenEntry> elternWissenData = [
     gfkSatz:
         'Du bist wertvoll — nicht wegen deines Aussehens sondern wegen dem wer du bist.',
     aktion: [
-      'Koerper nie kommentieren (auch nicht positiv!)',
+      'Körper nie kommentieren (auch nicht positiv!)',
       'Stärken benennen die nichts mit Aussehen zu tun haben',
       'Eigenes Vorbild: Wie sprichst DU über deinen Körper?'
     ],
@@ -862,7 +862,7 @@ const List<ElternWissenEntry> elternWissenData = [
     beduerfnis:
         'Zähneputzen ist ein Autonomie-Kampf (Mund = intimster Bereich). Dein Kind will selbst entscheiden.',
     gfkSatz:
-        'Deine Zaehne brauchen Hilfe. Möchtest du zuerst selbst oder soll ich anfangen?',
+        'Deine Zähne brauchen Hilfe. Möchtest du zuerst selbst oder soll ich anfangen?',
     aktion: [
       'Wahlmöglichkeiten: Welche Zahnbürste? Welches Lied dabei?',
       'Timer/Lied (2 Minuten Zähneputz-Song)',
@@ -884,7 +884,7 @@ const List<ElternWissenEntry> elternWissenData = [
   ),
   ElternWissenEntry(
     id: 'allg_08',
-    question: 'Mein Kind schlaeft schlecht ein (Schulkind)',
+    question: 'Mein Kind schläft schlecht ein (Schulkind)',
     akut:
         'Abendroutine ist alles: Gleiche Zeit, gleiches Ritual, keine Bildschirme 45 Min vorher.',
     beduerfnis:

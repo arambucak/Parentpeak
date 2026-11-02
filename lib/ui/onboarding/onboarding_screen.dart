@@ -13,6 +13,7 @@ import 'package:parentpeak/services/location_service.dart';
 import 'package:parentpeak/logic/onboarding_sync_service.dart';
 import 'package:parentpeak/logic/user_profile_service.dart';
 import 'package:parentpeak/logic/profile_account_store.dart';
+import 'package:parentpeak/ui/widgets/keyboard_aware_form.dart';
 import 'package:parentpeak/ui/widgets/profile_legacy_claim.dart';
 
 /// Onboarding-Ergebnis das nach Abschluss zurückgegeben wird.
@@ -730,16 +731,22 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       opacity: _fadeAnimation,
       child: SlideTransition(
         position: _slideAnimation,
-        child: Padding(
+        // Scrollbar + Deko einklappen, sobald die (per autofocus sofort
+        // geöffnete) Tastatur Platz braucht.
+        child: KeyboardAwareBuilder(
+          builder: (context, compact) => SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 48),
-              const Center(
-                child: Text('\u{1F46A}', style: TextStyle(fontSize: 48)),
-              ),
-              const SizedBox(height: 28),
+              SizedBox(height: compact ? 16 : 48),
+              if (!compact) ...[
+                const Center(
+                  child: Text('\u{1F46A}', style: TextStyle(fontSize: 48)),
+                ),
+                const SizedBox(height: 28),
+              ],
               Text(
                 AppStringsManager.getString(
                     languageService.currentLanguage, 'onboarding_family_name'),
@@ -754,10 +761,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: compact ? 16 : 32),
               TextField(
                 controller: _familyNameController,
                 autofocus: true,
+                scrollPadding: kFormFieldScrollPadding,
                 textCapitalization: TextCapitalization.words,
                 style:
                     const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
@@ -788,6 +796,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 style: TextStyle(fontSize: 12, color: Colors.grey[500]),
               ),
             ],
+          ),
           ),
         ),
       ),

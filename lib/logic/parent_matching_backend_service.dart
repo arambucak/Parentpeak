@@ -286,7 +286,7 @@ class ParentMatchingBackendService {
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
         lastSyncError =
-            'OTP-Bestaetigung fehlgeschlagen: ${response.statusCode}';
+            'OTP-Bestätigung fehlgeschlagen: ${response.statusCode}';
         return false;
       }
 
@@ -294,7 +294,7 @@ class ParentMatchingBackendService {
       return decoded is Map<String, dynamic> &&
           (decoded['verified'] == true || decoded['ok'] == true);
     } catch (e) {
-      lastSyncError = 'OTP-Bestaetigung fehlgeschlagen: $e';
+      lastSyncError = 'OTP-Bestätigung fehlgeschlagen: $e';
       return false;
     }
   }

@@ -38,7 +38,6 @@ class BackendApiException implements Exception {
     required this.statusCode,
     this.serverMessage,
     this.serverCode,
-    this.responseBody,
   });
 
   factory BackendApiException.fromResponse({
@@ -51,7 +50,6 @@ class BackendApiException implements Exception {
     statusCode: response.statusCode,
     serverMessage: _extractServerError(response.body),
     serverCode: _extractServerCode(response.body),
-    responseBody: response.body,
   );
 
   final String method;
@@ -59,7 +57,6 @@ class BackendApiException implements Exception {
   final int statusCode;
   final String? serverMessage;
   final String? serverCode;
-  final String? responseBody;
 
   bool get isUnauthorized => statusCode == 401;
   bool get isForbidden => statusCode == 403;

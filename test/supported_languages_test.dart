@@ -261,6 +261,11 @@ void main() {
             .where(
               (translation) => translation.value == english[translation.key],
             )
+            // Sprachnamen sind bewusst überall dasselbe Autonym.
+            .where(
+              (translation) =>
+                  !translation.key.startsWith('network_option_language_'),
+            )
             .map((translation) => translation.key)
             .toSet();
         expect(
@@ -277,6 +282,8 @@ void main() {
     final arabicScript = RegExp(r'[\u0600-\u06FF\u0750-\u077F]');
 
     for (final entry in AppStringsManager.allStrings['ku']!.entries) {
+      // Sprachnamen sind Autonyme in Originalschrift (z. B. العربية, فارسی).
+      if (entry.key.startsWith('network_option_language_')) continue;
       expect(
         arabicScript.hasMatch(entry.value),
         isFalse,

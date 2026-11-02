@@ -23,6 +23,7 @@ import 'package:parentpeak/ui/widgets/account_suspended_notice.dart';
 import 'package:parentpeak/services/block_report_service.dart';
 import 'package:parentpeak/logic/location_autocomplete_service.dart';
 import 'package:parentpeak/widgets/ala_rengin_flag_painter.dart';
+import 'package:parentpeak/ui/widgets/keyboard_aware_form.dart';
 import 'package:parentpeak/ui/widgets/location_picker_widget.dart';
 import 'package:parentpeak/ui/widgets/playmate_publication_dialog.dart';
 import 'package:parentpeak/ui/widgets/playmate_publication_error.dart';
@@ -1267,133 +1268,97 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   );
 
   Widget _profileSetup(ThemeData theme) {
-    return Column(
-      children: [
-        _profileStatusPanel(),
-        if (_profile == null && _profileStatus == PlaymateProfileStatus.active)
-          TextButton(
-            onPressed: _deletingProfile
-                ? null
-                : () => _confirmDeleteProfile(theme),
-            child: Text(_t('delete')),
-          ),
-        const SizedBox(height: 16),
-        Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF8B5CF6), Color(0xFFA78BFA)],
+    return PlaymateSetupLayout(
+      status: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _profileStatusPanel(),
+          if (_profile == null && _profileStatus == PlaymateProfileStatus.active)
+            TextButton(
+              onPressed: _deletingProfile
+                  ? null
+                  : () => _confirmDeleteProfile(theme),
+              child: Text(_t('delete')),
             ),
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: const Center(
-            child: Text('\u{1F46A}', style: TextStyle(fontSize: 28)),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          AppStringsManager.getString(
-            languageService.currentLanguage,
-            'find_playmates',
-          ),
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w800,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 4),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Text(
-            _t('network_copy_setup_hint'),
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              height: 1.3,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ),
-        const SizedBox(height: 16),
-        Expanded(
-          child: PlaymateProfileForm(
-            key: ValueKey(_profileAccount),
-            initialProfile: _profile,
-            onCancel: _editingProfile
-                ? () => setState(() => _editingProfile = false)
-                : null,
-            onSave: (p) async {
-              final uid = AuthService.instance.currentUser?.uid;
-              if (uid == null || uid.trim().isEmpty) {
-                const failure = PlaymatePublicationFailure(
-                  PlaymatePublicationFailureReason.missingUser,
-                );
-                logPlaymatePublicationFailure(failure);
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    playmatePublicationErrorSnackBar(
-                      context,
-                      language: languageService.currentLanguage,
-                      failure: failure,
-                    ),
-                  );
-                }
-                return;
-              }
-              final publication = PlaymateProfileService(
-                matchingService: _matching,
+        ],
+      ),
+      form: PlaymateProfileForm(
+        key: ValueKey(_profileAccount),
+        initialProfile: _profile,
+        onCancel: _editingProfile
+            ? () => setState(() => _editingProfile = false)
+            : null,
+        onSave: (p) async {
+          final uid = AuthService.instance.currentUser?.uid;
+          if (uid == null || uid.trim().isEmpty) {
+            const failure = PlaymatePublicationFailure(
+              PlaymatePublicationFailureReason.missingUser,
+            );
+            logPlaymatePublicationFailure(failure);
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                playmatePublicationErrorSnackBar(
+                  context,
+                  language: languageService.currentLanguage,
+                  failure: failure,
+                ),
               );
-              try {
-                final result = await publication.publishProfile(
-                  p,
-                  uid,
-                  confirmPublication: () async {
-                    final confirmed = await confirmPlaymatePublication(
-                      context,
-                    );
-                    return mounted &&
-                        AuthService.instance.currentUser?.uid == uid &&
-                        confirmed;
-                  },
+            }
+            return;
+          }
+          final publication = PlaymateProfileService(
+            matchingService: _matching,
+          );
+          try {
+            final result = await publication.publishProfile(
+              p,
+              uid,
+              confirmPublication: () async {
+                final confirmed = await confirmPlaymatePublication(
+                  context,
                 );
-                if (!mounted || result == PlaymatePublicationResult.cancelled) {
-                  return;
-                }
-                if (AuthService.instance.currentUser?.uid != uid) return;
-                if (result == PlaymatePublicationResult.failed) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    playmatePublicationErrorSnackBar(
-                      context,
-                      language: languageService.currentLanguage,
-                      failure: publication.lastPublicationFailure ??
-                          const PlaymatePublicationFailure(
-                            PlaymatePublicationFailureReason.unknown,
-                          ),
-                    ),
-                  );
-                  return;
-                }
-              } on SuspendedAccountException {
-                if (mounted && AuthService.instance.currentUser?.uid == uid) {
-                  await showAccountSuspendedNotice(
-                    context,
-                    diagnosticText: playmatePublicationDiagnosticText(
-                      language: languageService.currentLanguage,
-                      failure: publication.lastPublicationFailure ??
-                          PlaymatePublicationFailure.fromStatus(403),
-                    ),
-                  );
-                }
-                return;
-              }
-              setState(() => _editingProfile = false);
-              await _init();
-            },
-          ),
-        ),
-      ],
+                return mounted &&
+                    AuthService.instance.currentUser?.uid == uid &&
+                    confirmed;
+              },
+            );
+            if (!mounted || result == PlaymatePublicationResult.cancelled) {
+              return;
+            }
+            if (AuthService.instance.currentUser?.uid != uid) return;
+            if (result == PlaymatePublicationResult.failed) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                playmatePublicationErrorSnackBar(
+                  context,
+                  language: languageService.currentLanguage,
+                  failure: publication.lastPublicationFailure ??
+                      const PlaymatePublicationFailure(
+                        PlaymatePublicationFailureReason.unknown,
+                      ),
+                ),
+              );
+              return;
+            }
+          } on SuspendedAccountException {
+            if (mounted && AuthService.instance.currentUser?.uid == uid) {
+              await showAccountSuspendedNotice(
+                context,
+                diagnosticText: playmatePublicationDiagnosticText(
+                  language: languageService.currentLanguage,
+                  failure: publication.lastPublicationFailure ??
+                      PlaymatePublicationFailure.fromStatus(403),
+                ),
+              );
+            }
+            return;
+          }
+          setState(() => _editingProfile = false);
+          await _init();
+        },
+      ),
     );
   }
+
 
   /// Laedt echte Familien in der Naehe ueber das bestehende Matching-Backend.
   Future<void> _loadMatches() async {
@@ -2888,6 +2853,79 @@ class _ScreenState extends State<ElternNetzwerkScreen>
 // PROFIL-WIZARD (5 Schritte)
 // ═══════════════════════════════════════════════════════════════════════════════
 
+/// Einrichtungs-Ansicht des Spielfreunde-Wizards. Status, Icon, Titel und
+/// Hinweis klappen bei offener Tastatur (oder wenig Höhe) ein, damit das
+/// fokussierte Feld des Formulars vollständig sichtbar bleibt.
+class PlaymateSetupLayout extends StatelessWidget {
+  const PlaymateSetupLayout({
+    super.key,
+    required this.status,
+    required this.form,
+  });
+
+  final Widget status;
+  final Widget form;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return LayoutBuilder(
+      builder: (context, constraints) => KeyboardAwareBuilder(
+      builder: (_, compact) => Column(
+        children: [
+          CollapsibleFormHeader(
+            visible: !compact,
+            maxHeight: constraints.maxHeight * 0.4,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                status,
+                const SizedBox(height: 16),
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF8B5CF6), Color(0xFFA78BFA)],
+                    ),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: const Center(
+                    child: Text('\u{1F46A}', style: TextStyle(fontSize: 28)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _t('find_playmates'),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 4),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Text(
+                    _t('network_copy_setup_hint'),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      height: 1.3,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+          Expanded(child: form),
+        ],
+      ),
+      ),
+    );
+  }
+}
+
 class PlaymateProfileForm extends StatefulWidget {
   final Future<void> Function(FamilyMatchProfile) onSave;
   final FamilyMatchProfile? initialProfile;
@@ -3109,19 +3147,27 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    return DismissKeyboardOnTap(
+      child: KeyboardAwareBuilder(
+        builder: (context, compact) => _buildLayout(theme, compact),
+      ),
+    );
+  }
+
+  Widget _buildLayout(ThemeData theme, bool compact) {
     return Column(
       children: [
         // Progress dots
         Padding(
-          padding: const EdgeInsets.only(bottom: 20),
+          padding: EdgeInsets.only(bottom: compact ? 6 : 20),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(_totalSteps, (i) {
               final active = i == _step;
               final done = i < _step;
               return Container(
-                width: active ? 28 : 10,
-                height: 10,
+                width: active ? 28 : (compact ? 6 : 10),
+                height: compact ? 6 : 10,
                 margin: const EdgeInsets.symmetric(horizontal: 3),
                 decoration: BoxDecoration(
                   color: done
@@ -3136,14 +3182,26 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
           ),
         ),
         // Step label
-        Text(
-          _stepLabel(_step),
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w800,
-            color: const Color(0xFF8B5CF6),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            compact
+                ? '${_step + 1}/$_totalSteps · ${_stepLabel(_step)}'
+                : _stepLabel(_step),
+            maxLines: compact ? 1 : 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style:
+                (compact
+                        ? theme.textTheme.labelLarge
+                        : theme.textTheme.titleSmall)
+                    ?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF8B5CF6),
+                    ),
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: compact ? 6 : 16),
         // Pages
         Expanded(
           child: PageView(
@@ -3158,43 +3216,62 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
             ],
           ),
         ),
-        // Navigation
+        // Navigation – sitzt dank Scaffold-Resize direkt über der Tastatur.
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            compact ? 4 : 8,
+            16,
+            compact ? 8 : 16,
+          ),
+          // Flexible statt Spacer: Bei schmalen Displays/großer Schrift
+          // umbrechen die Beschriftungen, statt die Zeile zu sprengen.
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              if (widget.onCancel != null)
-                TextButton(
-                  onPressed: _saving ? null : widget.onCancel,
-                  child: Text(_t('cancel')),
+              Flexible(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (widget.onCancel != null)
+                      Flexible(
+                        child: TextButton(
+                          onPressed: _saving ? null : widget.onCancel,
+                          child: _navLabel(_t('cancel'), compact),
+                        ),
+                      ),
+                    if (_step > 0)
+                      Flexible(
+                        child: TextButton.icon(
+                          onPressed: _saving ? null : _prev,
+                          icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                          label: _navLabel(_t('network_back'), compact),
+                        ),
+                      ),
+                  ],
                 ),
-              if (_step > 0)
-                TextButton.icon(
-                  onPressed: _saving ? null : _prev,
-                  icon: const Icon(Icons.arrow_back_rounded, size: 18),
-                  label: Text(_t('network_back')),
-                )
-              else
-                const Spacer(),
-              const Spacer(),
-              if (_step < _totalSteps - 1)
-                FilledButton.icon(
+              ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: _step < _totalSteps - 1
+                    ? FilledButton.icon(
                   onPressed: _saving ? null : _next,
                   icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                  label: Text(
+                  label: _navLabel(
                     AppStringsManager.getString(
                       languageService.currentLanguage,
                       'next_btn_wizard',
                     ),
+                    compact,
                   ),
                   style: FilledButton.styleFrom(
+                    visualDensity: compact ? VisualDensity.compact : null,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
                 )
-              else
-                FilledButton.icon(
+                    : FilledButton.icon(
                   onPressed: _saving ? null : _submit,
                   icon: _saving
                       ? const SizedBox(
@@ -3206,20 +3283,23 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
                           ),
                         )
                       : const Icon(Icons.check_rounded, size: 18),
-                  label: Text(
+                  label: _navLabel(
                     _saving
                         ? _t('network_copy_save')
                         : widget.initialProfile != null
                         ? _t('save')
                         : _t('network_copy_create_profile'),
+                    compact,
                   ),
                   style: FilledButton.styleFrom(
+                    visualDensity: compact ? VisualDensity.compact : null,
                     backgroundColor: const Color(0xFF16A34A),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
                 ),
+              ),
             ],
           ),
         ),
@@ -3227,11 +3307,19 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
     );
   }
 
+  Widget _navLabel(String text, bool compact) => Text(
+    text,
+    maxLines: compact ? 1 : 2,
+    overflow: TextOverflow.ellipsis,
+    textAlign: TextAlign.center,
+  );
+
   String _stepLabel(int step) => _t('network_copy_step_${step + 1}');
 
   // ─── SCHRITT 1: Grundinfos ─────────────────────────────────────────────────
   Widget _step1(ThemeData theme) {
     return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3317,6 +3405,7 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
   // ─── SCHRITT 2: Kinder ─────────────────────────────────────────────────────
   Widget _step2(ThemeData theme) {
     return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3390,6 +3479,7 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
           const SizedBox(height: 10),
           TextField(
             controller: child.nameCtrl,
+            scrollPadding: kFormFieldScrollPadding,
             decoration: InputDecoration(
               labelText: _t('network_child_name_local'),
               hintText: _t('network_child_example'),
@@ -3400,29 +3490,22 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
             ),
           ),
           const SizedBox(height: 12),
-          // Alter Slider
+          // Alter: Beschriftung + Wert oben, Slider in voller Breite darunter,
+          // damit er auch bei großer Schrift bedienbar bleibt.
           Row(
             children: [
-              Text(
-                AppStringsManager.getString(
-                  languageService.currentLanguage,
-                  'age_label',
-                ),
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w600,
+              Expanded(
+                child: Text(
+                  AppStringsManager.getString(
+                    languageService.currentLanguage,
+                    'age_label',
+                  ),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
-              Expanded(
-                child: Slider(
-                  value: child.ageMonths.toDouble(),
-                  min: 0,
-                  max: child.maxAgeMonths.toDouble(),
-                  divisions: child.maxAgeMonths,
-                  label: _ageLabel(child.ageMonths),
-                  onChanged: (v) => setState(() => child.ageMonths = v.round()),
-                ),
-              ),
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 10,
@@ -3442,6 +3525,14 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
                 ),
               ),
             ],
+          ),
+          Slider(
+            value: child.ageMonths.toDouble(),
+            min: 0,
+            max: child.maxAgeMonths.toDouble(),
+            divisions: child.maxAgeMonths,
+            label: _ageLabel(child.ageMonths),
+            onChanged: (v) => setState(() => child.ageMonths = v.round()),
           ),
           const SizedBox(height: 10),
           // Geschlecht
@@ -3568,6 +3659,7 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
   // ─── SCHRITT 3: Werte & Erziehungsstil ─────────────────────────────────────
   Widget _step3(ThemeData theme) {
     return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3677,6 +3769,7 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
   // ─── SCHRITT 4: Aktivitaeten + Verfügbarkeit ──────────────────────────────
   Widget _step4(ThemeData theme) {
     return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3883,6 +3976,7 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
   // ─── SCHRITT 5: Sprachen + Bio + Besonderheiten ────────────────────────────
   Widget _step5(ThemeData theme) {
     return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3931,7 +4025,9 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
           const SizedBox(height: 6),
           TextField(
             controller: _bioCtrl,
+            scrollPadding: kFormFieldScrollPadding,
             maxLength: 200,
+            minLines: 1,
             maxLines: 3,
             decoration: InputDecoration(
               hintText: _t('network_copy_bio_hint'),
@@ -4047,6 +4143,7 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
   ) {
     return TextField(
       controller: ctrl,
+      scrollPadding: kFormFieldScrollPadding,
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,

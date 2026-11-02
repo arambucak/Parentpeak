@@ -369,13 +369,13 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
         {
           'tip':
               'Karton-Burg: Große Kartons werden zu Häusern, Autos oder Raketen.',
-          'materials': 'Grosse Kartons, Klebeband, Stifte',
+          'materials': 'Große Kartons, Klebeband, Stifte',
           'duration': '45 Min'
         },
         {
           'tip':
               'Knetmasse selber machen: Mehl + Salz + Wasser + Lebensmittelfarbe — selbst geknetet!',
-          'materials': 'Mehl, Salz, Wasser, Oel, Lebensmittelfarbe',
+          'materials': 'Mehl, Salz, Wasser, Öl, Lebensmittelfarbe',
           'duration': '20 Min'
         },
         {

@@ -53,7 +53,7 @@ class TodoBackendService {
       );
       final normalized = TodoContract.parseSingleItem(payload);
       if (normalized == null) {
-        throw StateError('Ungueltige Todo-Antwort vom Server.');
+        throw StateError('Ungültige Todo-Antwort vom Server.');
       }
       return normalized;
     } catch (e) {
@@ -112,7 +112,7 @@ class TodoBackendService {
         raw.contains('tls') ||
         raw.contains('ssl') ||
         raw.contains('certificate')) {
-      return 'Server-Verbindung aktuell nicht sicher verfuegbar.';
+      return 'Server-Verbindung aktuell nicht sicher verfügbar.';
     }
 
     if (raw.contains('socketexception') ||
