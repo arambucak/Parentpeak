@@ -10,8 +10,10 @@ const launchLanguages = ['de', 'en', 'tr', 'ku', 'fr', 'es', 'it', 'ar'];
 final _transliterations = RegExp(
   r'\b(Frueh\w*|frueh(?!stueck\b)\w*|Maedchen|Fuer|fuer|Ueber\w*|ueber\w*|'
   r'Grossfamilie|Grosseltern|Religioes|Unvertraeglich\w*|\w*stoerung|'
-  r'gueltig\w*|Ungueltig\w*|\w*bestaetig\w*|\w*Bestaetig\w*|hinzuf[u]egen|'
+  r'gueltig\w*|[Uu]ngueltig\w*|\w*bestaetig\w*|\w*Bestaetig\w*|hinzuf[u]egen|'
   r'Geraete?n?|Privatsphaere|persoenlich\w*|Persoenlich|moeglich\w*|'
+  r'\w*(?:[Rr]ueck|[Zz]urueck|[Pp]ruef|[Ll]oesch|[Aa]ender|[Oo]effn|'
+  r'[Gg]roess|[Vv]erfueg|[Ww]aehl|[Mm]oeglich|[Gg]efuehl|[Kk]uend)\w*|'
   r'Tuerkce|Turkce|Francais|Espanol|Russkij|Portugues|Ukrainska|Romana|'
   r'Bulgarski|Ellinika|Zhongwen|Nihongo|Hangugeo|Tieng Viet|Kurdi)\b',
 );
@@ -63,28 +65,74 @@ void main() {
       '🇹🇷 Tuerkce',
       'Kurdi',
       'Ungueltiger QR-Teil',
+      'ungueltige Backend-Antwort',
+      'Rueckerstattung',
+      'Jahresrueckblick',
+      'Zurueck',
+      'Pruefen...',
+      'Loeschung',
+      'Aenderung',
+      'Oeffnen',
+      'Groesse',
+      'Verfuegbar',
+      'Waehlen',
+      'Moeglich',
+      'Gefuehl',
+      'Kuendigen',
     ]) {
       expect(_transliterations.hasMatch(sample), isTrue, reason: sample);
     }
-    for (final sample in ['Früh', 'Mädchen', 'Türkçe', 'Kurdî (Kurmancî)']) {
+    for (final sample in [
+      'Früh',
+      'Mädchen',
+      'Türkçe',
+      'Kurdî (Kurmancî)',
+      'Rückerstattung',
+      'Jahresrückblick',
+      'Prüfen',
+    ]) {
       expect(_transliterations.hasMatch(sample), isFalse, reason: sample);
     }
   });
 
-  test('UI source literals contain no ASCII transliterations of labels', () {
-    final pattern = RegExp(
-      r"""['"][^'"\n]*\b(Frueh|Maedchen|Fuer|Grossfamilie|Religioes|"""
-      r"""Tuerkce|Francais|Espanol|Russkij|Zhongwen|Ungueltig\w*|"""
-      r"""Privatsphaere|Geraete)\b[^'"\n]*['"]""",
-    );
+  test('source literals contain no ASCII transliterations of visible text', () {
+    final literals = RegExp(r"""'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*" """.trim());
+    // Search/OCR terms and persisted option codes are not displayed labels.
+    const intentional = <String, Set<String>>{
+      'lib/data/eltern_wissen_data.dart': {'pruefung', 'ueberfordert'},
+      'lib/logic/marketplace_service.dart': {'pruefung'},
+      'lib/logic/pedagogical_chat_backend.dart': {
+        'anleitung fuer',
+        'ich bin ueberfordert',
+      },
+      'lib/models/family_profile_model.dart': {'fruehchen'},
+      'lib/ui/chat_screen.dart': {'moeglicher grund:'},
+      'lib/ui/finance_budget_screen.dart': {'rueckgeld'},
+    };
     final offenders = <String>[];
     for (final file in Directory('lib').listSync(recursive: true)) {
       if (file is! File || !file.path.endsWith('.dart')) continue;
       final lines = file.readAsLinesSync();
       for (var i = 0; i < lines.length; i++) {
         final line = lines[i].trimLeft();
-        if (line.startsWith('//')) continue;
-        if (pattern.hasMatch(line)) offenders.add('${file.path}:${i + 1}');
+        if (line.startsWith('//') ||
+            line.startsWith('import ') ||
+            line.startsWith('export ') ||
+            line.startsWith('part ')) {
+          continue;
+        }
+        for (final literal in literals.allMatches(line)) {
+          final value = literal[0]!.substring(1, literal[0]!.length - 1);
+          if (value.startsWith('https://') ||
+              value.startsWith('http://') ||
+              (intentional[file.path]?.contains(value) ?? false)) {
+            continue;
+          }
+          final match = _transliterations.firstMatch(value);
+          if (match != null) {
+            offenders.add('${file.path}:${i + 1}: ${match[0]}');
+          }
+        }
       }
     }
     expect(offenders, isEmpty);

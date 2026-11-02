@@ -303,9 +303,9 @@ class PaymentService {
             (payload['item'] as Map)['status'] == 'refunded') {
           return true;
         }
-        lastSyncError = 'Provider hat die Rueckerstattung nicht bestätigt.';
+        lastSyncError = 'Provider hat die Rückerstattung nicht bestätigt.';
       } catch (e) {
-        lastSyncError = 'Rueckerstattung fehlgeschlagen: $e';
+        lastSyncError = 'Rückerstattung fehlgeschlagen: $e';
       }
     }
 

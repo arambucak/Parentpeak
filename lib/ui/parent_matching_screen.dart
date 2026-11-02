@@ -1143,7 +1143,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                   child: FilledButton.tonal(
                     onPressed: _isVerifyingPhone ? null : _confirmPhoneOtp,
                     child: Text(
-                      _isVerifyingPhone ? 'Pruefen...' : 'OTP bestätigen',
+                      _isVerifyingPhone ? 'Prüfen...' : 'OTP bestätigen',
                     ),
                   ),
                 ),

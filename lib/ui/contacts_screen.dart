@@ -161,7 +161,7 @@ class _ContactsScreenState extends State<ContactsScreen>
               Center(child: Container(width: 40, height: 4,
                 decoration: BoxDecoration(color: Colors.black12, borderRadius: BorderRadius.circular(99)))),
               const SizedBox(height: 20),
-              Text(existing == null ? 'Kontakt hinzufuegen' : 'Kontakt bearbeiten',
+              Text(existing == null ? 'Kontakt hinzufügen' : 'Kontakt bearbeiten',
                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
               const SizedBox(height: 18),
               Wrap(

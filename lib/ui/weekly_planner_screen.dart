@@ -495,7 +495,7 @@ class _YearRecapCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Jahresrueckblick ${DateTime.now().year}: Eure Top 5 Gerichte',
+            'Jahresrückblick ${DateTime.now().year}: Eure Top 5 Gerichte',
             style: theme.textTheme.titleSmall
                 ?.copyWith(fontWeight: FontWeight.w700),
           ),
