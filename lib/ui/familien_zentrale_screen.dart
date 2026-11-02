@@ -6,6 +6,7 @@ import 'package:parentpeak/logic/family_hub_store.dart';
 import 'package:parentpeak/logic/family_hub_migration.dart';
 import 'package:parentpeak/logic/family_hub_todos.dart';
 import 'package:parentpeak/ui/widgets/family_hub_account_boundary.dart';
+import 'package:parentpeak/ui/widgets/keyboard_aware_form.dart';
 import 'package:parentpeak/models/shopping_item.dart';
 import 'package:parentpeak/models/kind_dossier.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
@@ -1379,7 +1380,11 @@ class _DossierEditorState extends State<_DossierEditor> {
   Widget build(BuildContext context) {
     final dossier = widget.dossier;
     final ctx = context;
-    return DraggableScrollableSheet(
+    // Sheet über der Tastatur halten: showModalBottomSheet weicht ihr nicht
+    // selbst aus, sonst liegt das fokussierte Feld unter der Tastatur.
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: DraggableScrollableSheet(
           initialChildSize: 0.85,
           minChildSize: 0.5,
           maxChildSize: 0.95,
@@ -1392,6 +1397,7 @@ class _DossierEditorState extends State<_DossierEditor> {
             ),
             child: ListView(
               controller: scroll,
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               padding: const EdgeInsets.all(24),
               children: [
                 Center(
@@ -1544,6 +1550,7 @@ class _DossierEditorState extends State<_DossierEditor> {
               ],
             ),
           ),
+      ),
     );
   }
 
@@ -1558,6 +1565,7 @@ class _DossierEditorState extends State<_DossierEditor> {
       child: TextField(
         controller: ctrl,
         maxLines: maxLines,
+        scrollPadding: kFormFieldScrollPadding,
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
