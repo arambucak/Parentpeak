@@ -148,9 +148,19 @@ class FriendshipService extends ChangeNotifier {
     return null;
   }
 
+  /// Request-Body fuer `/api/friendships/request`. `source` wird nur
+  /// mitgeschickt, wenn gesetzt.
+  @visibleForTesting
+  static Map<String, dynamic> buildRequestBody(
+    String toUid, {
+    String? source,
+  }) =>
+      {'toUid': toUid, if (source != null) 'source': source};
+
   /// Freundschaftsanfrage an eine UID senden. Ist das Ziel nicht privat, wird
-  /// die Freundschaft sofort bestaetigt (Server entscheidet).
-  Future<bool> sendRequest(String toUid) async {
+  /// die Freundschaft sofort bestaetigt (Server entscheidet) — ausser bei
+  /// gesetztem [source] (z.B. 'discovery'): dann bleibt sie immer offen.
+  Future<bool> sendRequest(String toUid, {String? source}) async {
     final store = ProfileAccountStore.instance;
     final ticket = store.ticket;
     final api = _api;
@@ -171,9 +181,10 @@ class FriendshipService extends ChangeNotifier {
       }
     }
     try {
-      await api.withRequestGuard(() => store.require(ticket)).postJsonAny('/api/friendships/request', {
-        'toUid': toUid,
-      });
+      await api.withRequestGuard(() => store.require(ticket)).postJsonAny(
+        '/api/friendships/request',
+        buildRequestBody(toUid, source: source),
+      );
       await load();
       store.require(ticket);
       return true;
