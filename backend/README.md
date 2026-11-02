@@ -1258,6 +1258,28 @@ Lokale Regressionstests ohne Datenbank oder Produktionszugriff:
 node --test backend/tests/unit/parent-matching-age.test.js
 ```
 
+### Verifikationsfelder im Eltern-Netzwerk
+
+`ParentMatchingProfile` fuehrt `phoneVerified`, `identityVerified` und
+`moderationChecked` (`Boolean`, Default `false`) jetzt auch im Prisma-Schema.
+Vorher legte nur `ensureParentMatchingSchemaReady` die Spalten per Roh-SQL an;
+der Prisma-Client kannte sie nicht, und jedes neue Spielfreunde-Profil scheiterte
+mit `Unknown argument phoneVerified` (HTTP 503). Die Migration
+`20261102230000_parent_matching_verification_flags` ergaenzt die Spalten
+idempotent (`ADD COLUMN IF NOT EXISTS`, gleiche Typen und Defaults wie das
+Roh-SQL), ohne Daten zu aendern.
+
+`tests/unit/helpers/prisma-schema-guard.js` prueft Prisma-Attrappen gegen das
+echte Schema: unbekannte Felder und `null` in Pflichtfeldern werfen bei
+`create`, `createMany`, `upsert`, `update` und `updateMany`. Mit generiertem
+Client gilt `Prisma.dmmf` (ein veralteter Client bricht ab); ohne Generierung,
+wie im CI-Testinstall mit `--ignore-scripts`, liest der Helfer
+`prisma/schema.prisma` direkt.
+
+```bash
+node --test backend/tests/unit/parent-matching-schema.test.js
+```
+
 Der CI-Job `analyze` fuehrt auch die isolierten Backend-Unit-Tests aus.
 Eine Rueckkehr zu NOT NULL braucht eine explizite Entscheidung zum Umgang mit
 Profilen ohne Altersangabe; diese duerfen nicht mit erfundenen Werten aufgefuellt werden.

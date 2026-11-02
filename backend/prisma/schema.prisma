@@ -530,6 +530,9 @@ model ParentMatchingProfile {
   childAges             String[]
   familyForm            String
   verificationLevel     String   @default("basic")
+  phoneVerified         Boolean  @default(false)
+  identityVerified      Boolean  @default(false)
+  moderationChecked     Boolean  @default(false)
   isActive              Boolean  @default(true)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
