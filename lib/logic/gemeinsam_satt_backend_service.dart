@@ -608,13 +608,13 @@ class GemeinsamSattBackendService {
 
       if (response.statusCode != 200) {
         lastSyncError =
-            'Abholung konnte nicht bestaetigt werden: ${response.statusCode}';
+            'Abholung konnte nicht bestätigt werden: ${response.statusCode}';
         return false;
       }
 
       return true;
     } catch (e) {
-      lastSyncError = 'Fehler beim Bestaetigen der Abholung: $e';
+      lastSyncError = 'Fehler beim Bestätigen der Abholung: $e';
       return false;
     }
   }

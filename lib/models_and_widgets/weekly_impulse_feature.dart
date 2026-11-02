@@ -265,7 +265,7 @@ class WeeklyImpulseCard extends StatefulWidget {
 
 class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
   static const String _roleParent = 'Elternteil';
-  static const String _roleEducator = 'Paedagog:in';
+  static const String _roleEducator = 'Pädagog:in';
 
   Set<String> _likedPostIds = <String>{};
   Set<String> _savedCompanionIds = <String>{};
@@ -302,7 +302,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
       case PedagogicalCategory.inclusion:
         return 'Inklusion & Vielfalt';
       case PedagogicalCategory.parentLeadership:
-        return 'Elterliche Fuehrung';
+        return 'Elterliche Führung';
       case PedagogicalCategory.milestones:
         return 'Entwicklungsschritt';
     }
@@ -783,7 +783,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                         Navigator.of(this.context).pop();
                         ScaffoldMessenger.of(this.context).showSnackBar(
                           const SnackBar(
-                            content: Text('Dein Impuls wurde hinzugefuegt.'),
+                            content: Text('Dein Impuls wurde hinzugefügt.'),
                           ),
                         );
                       },
@@ -1187,7 +1187,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Wir blenden den Beitrag für dich aus und markieren ihn für eine spätere Pruefung.',
+                    'Wir blenden den Beitrag für dich aus und markieren ihn für eine spätere Prüfung.',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 16),
@@ -1580,7 +1580,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                 IconButton.filledTonal(
                   onPressed: widget.onAudioPressed,
                   icon: const Icon(Icons.volume_up_rounded),
-                  tooltip: 'Audio-Impuls anhoeren',
+                  tooltip: 'Audio-Impuls anhören',
                 ),
             ],
           ),
@@ -1882,7 +1882,7 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Praxis aus Elternhaus und Paedagogik',
+                    'Praxis aus Elternhaus und Pädagogik',
                     style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),

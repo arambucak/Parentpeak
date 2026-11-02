@@ -322,7 +322,7 @@ class DevelopmentQuestionBank {
         ],
         tips: [
           'Lass dein Kind viel barfuß laufen',
-          'Biete Treppen zum Uebensteigen an (mit Aufsicht)',
+          'Biete Treppen zum Üben an (mit Aufsicht)',
           'Sandspiel und Wasser-Giessen fördern Feinmotorik'
         ]),
     DevDomain(
@@ -367,7 +367,7 @@ class DevelopmentQuestionBank {
         title: 'Gefühle & Kontakt',
         emoji: '\u{1F49C}',
         color: Color(0xFFEC4899),
-        description: 'Emotionen zeigen, Trosten & erste Empathie',
+        description: 'Emotionen zeigen, Trösten & erste Empathie',
         questions: [
           'Zeigt dein Kind deutlich Freude (klatscht, hüpft)?',
           'Kommt dein Kind zu dir wenn es Trost braucht?',
@@ -378,7 +378,7 @@ class DevelopmentQuestionBank {
         ],
         tips: [
           'Benenne Gefühle: "Du bist froh!" / "Das hat dich erschreckt"',
-          'Trosten statt ablenken — Gefühle duerfen da sein'
+          'Trösten statt ablenken — Gefühle dürfen da sein'
         ]),
     DevDomain(
         id: 'selbst',
@@ -456,7 +456,7 @@ class DevelopmentQuestionBank {
         ],
         tips: [
           'Rollenspiel ist DIE Lernform in diesem Alter — mitspielen!',
-          'Im Alltag zählen: Treppenstufen, Aepfel, Schuhe'
+          'Im Alltag zählen: Treppenstufen, Äpfel, Schuhe'
         ]),
     DevDomain(
         id: 'sozial',
@@ -587,7 +587,7 @@ class DevelopmentQuestionBank {
           'Kann dein Kind eigene Bedürfnisse klar kommunizieren?'
         ],
         tips: [
-          'Echte Verantwortung geben: Haustier fuettern, Zimmer aufruaemen',
+          'Echte Verantwortung geben: Haustier füttern, Zimmer aufräumen',
           'Schulweg üben — Schritt für Schritt mehr Autonomie'
         ]),
   ];
@@ -603,7 +603,7 @@ class DevelopmentQuestionBank {
         color: Color(0xFF0EA5E9),
         description: 'Koordination, Ausdauer & Feinmotorik',
         questions: [
-          'Kann dein Kind fluessig schreiben?',
+          'Kann dein Kind flüssig schreiben?',
           'Treibt dein Kind gerne Sport oder bewegt sich ausdauernd?',
           'Kann dein Kind Schleife binden?',
           'Hat dein Kind eine gute Körperkoordination (Schwimmen, Klettern)?',
@@ -611,7 +611,7 @@ class DevelopmentQuestionBank {
         ],
         tips: [
           'Sport soll Spaß machen — nicht Leistung',
-          'Bildschirmzeit begrenzen = mehr natuerliche Bewegung'
+          'Bildschirmzeit begrenzen = mehr natürliche Bewegung'
         ]),
     DevDomain(
         id: 'sprache',
@@ -620,10 +620,10 @@ class DevelopmentQuestionBank {
         color: Color(0xFF16A34A),
         description: 'Lesen, Schreiben & Ausdruck',
         questions: [
-          'Liest dein Kind altersgerechte Texte fluessig?',
+          'Liest dein Kind altersgerechte Texte flüssig?',
           'Kann dein Kind Geschichten schriftlich erzählen?',
-          'Drueckt sich dein Kind differenziert aus?',
-          'Versteht dein Kind Ironie oder uebertragene Bedeutungen?',
+          'Drückt sich dein Kind differenziert aus?',
+          'Versteht dein Kind Ironie oder übertragene Bedeutungen?',
           'Erzählt dein Kind von der Schule und Erlebnissen?'
         ],
         tips: [
@@ -645,7 +645,7 @@ class DevelopmentQuestionBank {
         ],
         tips: [
           'Fehler sind Lernchancen — nicht bestrafen, sondern besprechen',
-          'Eigene Loesungswege zulassen, auch wenn sie umstaendlich sind'
+          'Eigene Lösungswege zulassen, auch wenn sie umständlich sind'
         ]),
     DevDomain(
         id: 'sozial',
@@ -696,8 +696,8 @@ class DevelopmentQuestionBank {
         questions: [
           'Bewegt sich dein Kind regelmäßig (Sport, Fahrrad, draußen)?',
           'Hat dein Kind ein gesundes Verhältnis zu seinem Körper?',
-          'Schlaeft dein Kind ausreichend (8-10 Stunden)?',
-          'Ernaehrt sich dein Kind weitgehend gesund?',
+          'Schläft dein Kind ausreichend (8-10 Stunden)?',
+          'Ernährt sich dein Kind weitgehend gesund?',
           'Achtet dein Kind auf Körperhygiene selbstständig?'
         ],
         tips: [
@@ -728,28 +728,28 @@ class DevelopmentQuestionBank {
         color: Color(0xFFF59E0B),
         description: 'Abstraktes Denken, Planung & Lernstrategien',
         questions: [
-          'Kann dein Kind abstrakt denken (Was waere wenn...)?',
+          'Kann dein Kind abstrakt denken (Was wäre wenn...)?',
           'Organisiert dein Kind Schularbeit selbstständig?',
           'Hat dein Kind eigene Interessen die es vertieft?',
           'Kann dein Kind Konsequenzen vorausdenken?',
           'Zeigt dein Kind intrinsische Motivation für mindestens ein Thema?'
         ],
         tips: [
-          'Interesse unterstuetzen — auch wenn es nicht schulrelevant ist',
+          'Interesse unterstützen — auch wenn es nicht schulrelevant ist',
           'Planungstools anbieten: Kalender, To-Do-Listen'
         ]),
     DevDomain(
         id: 'sozial',
-        title: 'Identitaet & Beziehungen',
+        title: 'Identität & Beziehungen',
         emoji: '\u{1F49C}',
         color: Color(0xFFEC4899),
-        description: 'Freundeskreis, Identitaet & Abgrenzung',
+        description: 'Freundeskreis, Identität & Abgrenzung',
         questions: [
           'Hat dein Kind stabile Freundschaften?',
           'Kann dein Kind Gruppendruck widerstehen?',
           'Zeigt dein Kind Empathie für andere (auch Fremde)?',
           'Kann dein Kind Grenzen setzen und kommunizieren?',
-          'Beginnt dein Kind eine eigene Identitaet zu entwickeln?'
+          'Beginnt dein Kind eine eigene Identität zu entwickeln?'
         ],
         tips: [
           'Pubertät = Abgrenzung. Das ist gesund, nicht respektlos.',
@@ -764,7 +764,7 @@ class DevelopmentQuestionBank {
         questions: [
           'Übernimmt dein Kind Verantwortung für eigene Aufgaben?',
           'Kann dein Kind mit Geld umgehen (Taschengeld)?',
-          'Trifft dein Kind eigene Entscheidungen und traegt Konsequenzen?',
+          'Trifft dein Kind eigene Entscheidungen und trägt Konsequenzen?',
           'Kann dein Kind alleine unterwegs sein (Stadt, OEPNV)?',
           'Zeigt dein Kind Zuverlaessigkeit bei Absprachen?'
         ],
@@ -783,11 +783,11 @@ class DevelopmentQuestionBank {
         title: 'Gesundheit & Wohlbefinden',
         emoji: '\u{1F3C3}',
         color: Color(0xFF0EA5E9),
-        description: 'Körper, Schlaf, Ernaehrung & Bewegung',
+        description: 'Körper, Schlaf, Ernährung & Bewegung',
         questions: [
           'Bewegt sich dein Teenager regelmäßig?',
           'Hat dein Teenager einen gesunden Schlafrhythmus?',
-          'Ernaehrt sich dein Teenager bewusst?',
+          'Ernährt sich dein Teenager bewusst?',
           'Konsumiert dein Teenager verantwortungsvoll (kein Missbrauch)?',
           'Achtet dein Teenager auf psychische Gesundheit?'
         ],
@@ -810,7 +810,7 @@ class DevelopmentQuestionBank {
         ],
         tips: [
           'Respektvolle Kommunikation vorleben — auch in Konflikten',
-          'Fragen statt Vorwuerfe: "Was brauchst du?" statt "Warum machst du...?"'
+          'Fragen statt Vorwürfe: "Was brauchst du?" statt "Warum machst du...?"'
         ]),
     DevDomain(
         id: 'denken',
@@ -831,10 +831,10 @@ class DevelopmentQuestionBank {
         ]),
     DevDomain(
         id: 'sozial',
-        title: 'Beziehungen & Identitaet',
+        title: 'Beziehungen & Identität',
         emoji: '\u{1F49C}',
         color: Color(0xFFEC4899),
-        description: 'Partnerschaft, Identitaet & gesellschaftliche Rolle',
+        description: 'Partnerschaft, Identität & gesellschaftliche Rolle',
         questions: [
           'Pflegt dein Teenager gesunde Freundschaften?',
           'Kann dein Teenager Nein sagen zu Gruppendruck?',
@@ -843,7 +843,7 @@ class DevelopmentQuestionBank {
           'Engagiert sich dein Teenager für etwas (sozial, politisch, kreativ)?'
         ],
         tips: [
-          'Identitaetsfindung braucht Raum — nicht jede Phase kommentieren',
+          'Identitätsfindung braucht Raum — nicht jede Phase kommentieren',
           'Beziehungen respektieren — auch wenn sie dir nicht gefallen'
         ]),
     DevDomain(

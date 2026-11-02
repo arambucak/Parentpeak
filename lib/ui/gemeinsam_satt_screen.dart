@@ -381,7 +381,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
         authorColor: const Color(0xFF1E5CD7),
         title: 'Globaler Food-Raum: Familienfreundliche Snacks',
         description:
-            'Digitale Vorschlaege und Austausch für schnelle kindgerechte Snacks.',
+            'Digitale Vorschläge und Austausch für schnelle kindgerechte Snacks.',
         totalPortions: 1,
         remainingPortions: 1,
         pickupWindow: 'Online jetzt',
@@ -1795,7 +1795,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
 
     if (!ok) {
       _showSnack(
-          _service.lastSyncError ?? 'Abholung konnte nicht bestaetigt werden');
+          _service.lastSyncError ?? 'Abholung konnte nicht bestätigt werden');
       return;
     }
 
@@ -1982,7 +1982,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
     if (!mounted) return;
     _showSnack(
       ok
-          ? 'Danke, wir pruefen diese Meldung.'
+          ? 'Danke, wir prüfen diese Meldung.'
           : (_service.lastSyncError ??
               'Meldung konnte nicht gespeichert werden.'),
     );

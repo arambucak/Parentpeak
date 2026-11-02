@@ -55,7 +55,7 @@ class PaymentService {
   Future<void> _presentStripeOrder(String? clientSecret) async {
     if (kIsWeb || !APIConfig.isStripePaymentSheetSupportedPlatform()) {
       throw StateError(
-        'Stripe PaymentSheet wird auf dieser Plattform nicht unterstuetzt.',
+        'Stripe PaymentSheet wird auf dieser Plattform nicht unterstützt.',
       );
     }
     if (clientSecret == null || clientSecret.isEmpty) {
@@ -82,7 +82,7 @@ class PaymentService {
 
     if (kIsWeb || !APIConfig.isStripePaymentSheetSupportedPlatform()) {
       throw StateError(
-        'Stripe PaymentSheet wird auf dieser Plattform nicht unterstuetzt.',
+        'Stripe PaymentSheet wird auf dieser Plattform nicht unterstützt.',
       );
     }
 
@@ -192,12 +192,12 @@ class PaymentService {
           return _storeLocalTransaction(_parseTransaction(raw));
         }
       } catch (e) {
-        lastSyncError = 'Zahlungsbestaetigung fehlgeschlagen: $e';
-        _throwBackendRequired('Zahlungsbestaetigung');
+        lastSyncError = 'Zahlungsbestätigung fehlgeschlagen: $e';
+        _throwBackendRequired('Zahlungsbestätigung');
       }
     }
 
-    _throwBackendRequired('Zahlungsbestaetigung');
+    _throwBackendRequired('Zahlungsbestätigung');
   }
 
   Future<PaymentTransaction?> reportProviderEvent({
@@ -303,9 +303,9 @@ class PaymentService {
             (payload['item'] as Map)['status'] == 'refunded') {
           return true;
         }
-        lastSyncError = 'Provider hat die Rueckerstattung nicht bestaetigt.';
+        lastSyncError = 'Provider hat die Rückerstattung nicht bestätigt.';
       } catch (e) {
-        lastSyncError = 'Rueckerstattung fehlgeschlagen: $e';
+        lastSyncError = 'Rückerstattung fehlgeschlagen: $e';
       }
     }
 

@@ -181,7 +181,11 @@ void main() {
     }
 
     expect(
-      strings['ku']!.values.where(arabicScriptPattern.hasMatch),
+      // Sprachnamen sind Autonyme in Originalschrift (z. B. العربية, فارسی).
+      strings['ku']!.entries
+          .where((e) => !e.key.startsWith('network_option_language_'))
+          .map((e) => e.value)
+          .where(arabicScriptPattern.hasMatch),
       isEmpty,
     );
     expect(

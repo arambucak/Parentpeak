@@ -666,7 +666,7 @@ class AuthService with ChangeNotifier {
     }
 
     if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(cleanEmail)) {
-      return 'Bitte gib eine gueltige E-Mail-Adresse ein.';
+      return 'Bitte gib eine gültige E-Mail-Adresse ein.';
     }
 
     await _ensureFirebaseInitChecked();
@@ -716,7 +716,7 @@ class AuthService with ChangeNotifier {
         case 'user-not-found':
           return 'Kein Konto mit dieser E-Mail gefunden.';
         case 'invalid-email':
-          return 'Bitte gib eine gueltige E-Mail-Adresse ein.';
+          return 'Bitte gib eine gültige E-Mail-Adresse ein.';
         case 'too-many-requests':
           return 'Zu viele Versuche. Bitte später erneut versuchen.';
         case 'network-request-failed':
@@ -853,7 +853,7 @@ class AuthService with ChangeNotifier {
           await apiClient.delete('/api/account/$currentUserId');
         }
       } catch (e) {
-        debugPrint('deleteAccount: Backend-Loeschung fehlgeschlagen: $e');
+        debugPrint('deleteAccount: Backend-Löschung fehlgeschlagen: $e');
         return 'Server-Daten konnten nicht gelöscht werden. Bitte versuche es erneut.';
       }
     }

@@ -91,7 +91,7 @@ class MarketplaceService {
 
   static Never _throwReleaseUnavailable(String context, [Object? error]) {
     final details = error == null ? '' : ' ($error)';
-    throw StateError('$context derzeit nicht verfuegbar$details');
+    throw StateError('$context derzeit nicht verfügbar$details');
   }
 
   static String _inferCategoryGroup(Map<String, dynamic> json) {
@@ -696,7 +696,7 @@ class MarketplaceService {
               .toList();
         }
         if (kReleaseMode) {
-          _throwReleaseUnavailable('Marktplatz', 'ungueltige Backend-Antwort');
+          _throwReleaseUnavailable('Marktplatz', 'ungültige Backend-Antwort');
         }
       } catch (e) {
         debugPrint('MarketplaceService.getAllProviders fallback: $e');

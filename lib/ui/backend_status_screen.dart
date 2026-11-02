@@ -453,7 +453,7 @@ class _BackendStatusScreenState extends State<BackendStatusScreen> {
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              subtitle: const Text('Pruefung gegen konfigurierte Endpunkte'),
+              subtitle: const Text('Prüfung gegen konfigurierte Endpunkte'),
             )
             ),
           ),

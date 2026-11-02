@@ -260,7 +260,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
   Map<String, dynamic> _normalizeImportedBackup(Map<String, dynamic> raw) {
     final version = (raw['version'] as num?)?.toInt() ?? 1;
     if (version > _backupVersion) {
-      throw const FormatException('Backup-Version wird nicht unterstuetzt');
+      throw const FormatException('Backup-Version wird nicht unterstützt');
     }
 
     if (version == 1) {
@@ -303,7 +303,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
     }
     final computed = _computeChecksum(backup);
     if (computed != checksum) {
-      throw const FormatException('Checksum ungueltig');
+      throw const FormatException('Checksum ungültig');
     }
   }
 
@@ -318,7 +318,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
     }
     final computed = _computeSignature(backup);
     if (computed != signature) {
-      throw const FormatException('Signatur ungueltig');
+      throw const FormatException('Signatur ungültig');
     }
   }
 
@@ -408,7 +408,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                 ),
                 const SizedBox(height: 6),
                 const Text(
-                  'Scanne alle Teile der Reihe nach auf dem zweiten Geraet.',
+                  'Scanne alle Teile der Reihe nach auf dem zweiten Gerät.',
                   textAlign: TextAlign.center,
                 ),
                 if (chunks.length > 1)
@@ -619,7 +619,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
               onPressed: () {
                 if (controller.text.trim().isEmpty) {
                   setDialogState(() {
-                    errorText = 'Bitte Backup-JSON einfuegen.';
+                    errorText = 'Bitte Backup-JSON einfügen.';
                   });
                   return;
                 }
@@ -662,7 +662,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
         }
       }
       if (parsedMembers.isEmpty) {
-        throw const FormatException('Keine gueltigen Mitglieder');
+        throw const FormatException('Keine gültigen Mitglieder');
       }
 
       final interestsRaw = normalized['selectedInterests'];
@@ -1143,7 +1143,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      'Rollen können nur durch Elternprofile geaendert werden.',
+                      'Rollen können nur durch Elternprofile geändert werden.',
                       style: TextStyle(fontSize: 12, color: Colors.black54),
                     ),
                   ),
@@ -1340,7 +1340,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Text(_t('engagement')),
         content: const Text(
-          'Deine Aktivitaet wird im Profil gesammelt, damit ihr als Familie Fortschritte und Beteiligung besser sehen koennt.',
+          'Deine Aktivität wird im Profil gesammelt, damit ihr als Familie Fortschritte und Beteiligung besser sehen könnt.',
         ),
         actions: [
           TextButton(
@@ -1598,7 +1598,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                       SnackBar(
                         content: Text(
                           cleanupService.lastError ??
-                              'Server-Daten konnten nicht geloescht werden.',
+                              'Server-Daten konnten nicht gelöscht werden.',
                         ),
                       ),
                     );
@@ -1832,7 +1832,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
               children: [
                 _buildSnapshotPill(
                   Icons.lock_rounded,
-                  'Privatsphaere',
+                  'Privatsphäre',
                   privacyLabel,
                   _privacyModeEnabled
                       ? const Color(0xFFDCFCE7)
@@ -1844,7 +1844,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                 const SizedBox(width: 8),
                 _buildSnapshotPill(
                   Icons.devices_rounded,
-                  'Geraete',
+                  'Geräte',
                   '$trustDevicesCount aktiv',
                   const Color(0xFFDBEAFE),
                   const Color(0xFF1D4ED8),
@@ -2168,7 +2168,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                             color: primary, size: 36),
                         const SizedBox(height: 10),
                         Text(
-                          'Mitglied hinzufuegen',
+                          'Mitglied hinzufügen',
                           textAlign: TextAlign.center,
                           style:
                               Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -2577,7 +2577,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
           _buildSectionHeader(
             theme,
             _t('account'),
-            'Sichert euer Profil, prueft rechtliche Leitplanken und haltet euren Parentpeak-Bereich langfristig stabil.',
+            'Sichert euer Profil, prüft rechtliche Leitplanken und haltet euren Parentpeak-Bereich langfristig stabil.',
           ),
           const SizedBox(height: 12),
           _buildSectionCard(
@@ -2647,7 +2647,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                 leading: const Icon(Icons.qr_code_2, color: Color(0xFFBDB2FF)),
                 title: 'Backup als QR anzeigen',
                 subtitle:
-                    'Direkter Transfer auf ein zweites Geraet ohne Teilen-Dialog',
+                    'Direkter Transfer auf ein zweites Gerät ohne Teilen-Dialog',
                 status: 'QR',
                 statusColor: const Color(0xFFE0F2FE),
                 statusTextColor: const Color(0xFF0369A1),

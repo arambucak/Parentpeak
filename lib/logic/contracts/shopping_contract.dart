@@ -43,7 +43,7 @@ class ShoppingContract {
     return {
       'name': name,
       'quantity': 1,
-      'unit': 'Stueck',
+      'unit': 'Stück',
       'category': category,
       'checked': false,
       'preferredStore': '',

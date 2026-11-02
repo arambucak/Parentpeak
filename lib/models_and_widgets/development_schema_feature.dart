@@ -1322,7 +1322,7 @@ class _DevelopmentSchemaCardState extends State<DevelopmentSchemaCard>
     );
     final topAction = focusDomain.parentActions.isNotEmpty
         ? focusDomain.parentActions.first
-        : 'Heute 5 ruhige Minuten für eine gemeinsame Uebung einplanen.';
+        : 'Heute 5 ruhige Minuten für eine gemeinsame Übung einplanen.';
     final strongDomains = _kParentSelfCheckDomains
         .where((domain) =>
             _domainPriorityScore(
