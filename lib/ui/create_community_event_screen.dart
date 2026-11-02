@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/logic/community_event_service.dart';
+import 'package:parentpeak/ui/widgets/keyboard_aware_form.dart';
 import 'package:parentpeak/ui/widgets/location_picker_widget.dart';
 import 'package:parentpeak/models/community_event.dart';
 import 'package:parentpeak/l10n/localization_extension.dart';
@@ -426,10 +427,22 @@ class _CreateCommunityEventScreenState
           ),
         ],
       ),
-      body: Column(children: [
+      // Bei offener Tastatur Schritt-Anzeige verkleinern, damit das
+      // fokussierte Feld vollständig sichtbar bleibt.
+      body: DismissKeyboardOnTap(
+        child: KeyboardAwareBuilder(
+          builder: (context, compact) => _buildBody(theme, compact),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBody(ThemeData theme, bool compact) {
+    final circle = compact ? 20.0 : 28.0;
+    return Column(children: [
         // Progress
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: EdgeInsets.symmetric(vertical: compact ? 4 : 12),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(3, (i) {
@@ -437,8 +450,8 @@ class _CreateCommunityEventScreenState
               final done = i < _step;
               return Row(children: [
                 Container(
-                  width: 28,
-                  height: 28,
+                  width: circle,
+                  height: circle,
                   decoration: BoxDecoration(
                     color: done
                         ? const Color(0xFF16A34A)
@@ -464,7 +477,7 @@ class _CreateCommunityEventScreenState
                 ),
                 if (i < 2)
                   Container(
-                    width: 40,
+                    width: compact ? 24 : 40,
                     height: 2,
                     color: i < _step
                         ? const Color(0xFF16A34A)
@@ -475,12 +488,14 @@ class _CreateCommunityEventScreenState
             }),
           ),
         ),
-        Text(
-          [_t('i_am'), _t('create_event_title'), _t('contact_optional')][_step],
-          style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w800, color: const Color(0xFF8B5CF6)),
-        ),
-        const SizedBox(height: 8),
+        if (!compact) ...[
+          Text(
+            [_t('i_am'), _t('create_event_title'), _t('contact_optional')][_step],
+            style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w800, color: const Color(0xFF8B5CF6)),
+          ),
+          const SizedBox(height: 8),
+        ],
         Expanded(
           child: PageView(
             controller: _pageCtrl,
@@ -490,7 +505,7 @@ class _CreateCommunityEventScreenState
         ),
         // Navigation
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          padding: EdgeInsets.fromLTRB(16, compact ? 4 : 8, 16, compact ? 8 : 16),
           child: Row(children: [
             if (_step > 0)
               TextButton.icon(
@@ -530,13 +545,13 @@ class _CreateCommunityEventScreenState
               ),
           ]),
         ),
-      ]),
-    );
+      ]);
   }
 
   // ─── SCHRITT 1: Wer bist du? ──────────────────────────────────────────────
   Widget _step1(ThemeData theme) {
     return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const SizedBox(height: 12),
@@ -592,6 +607,7 @@ class _CreateCommunityEventScreenState
           ),
         const SizedBox(height: 16),
         TextField(
+          scrollPadding: kFormFieldScrollPadding,
           controller: _organizerCtrl,
           decoration: InputDecoration(
             labelText: _t('event_create_organizer'),
@@ -636,6 +652,7 @@ class _CreateCommunityEventScreenState
   // ─── SCHRITT 2: Dein Event ────────────────────────────────────────────────
   Widget _step2(ThemeData theme) {
     return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const SizedBox(height: 12),
@@ -669,6 +686,7 @@ class _CreateCommunityEventScreenState
         ),
         const SizedBox(height: 16),
         TextField(
+          scrollPadding: kFormFieldScrollPadding,
           controller: _titleCtrl,
           decoration: InputDecoration(
             labelText: '${_t('event_owner_title')} *',
@@ -679,6 +697,7 @@ class _CreateCommunityEventScreenState
         ),
         const SizedBox(height: 12),
         TextField(
+          scrollPadding: kFormFieldScrollPadding,
           controller: _descCtrl,
           maxLines: 3,
           maxLength: 500,
@@ -789,6 +808,7 @@ class _CreateCommunityEventScreenState
         ),
         if (_isRecurring)
           TextField(
+            scrollPadding: kFormFieldScrollPadding,
             controller: _recurringCtrl,
             decoration: InputDecoration(
               hintText: _t('event_create_recurring_example'),
@@ -834,6 +854,7 @@ class _CreateCommunityEventScreenState
         ),
         if (!_isFree)
           TextField(
+            scrollPadding: kFormFieldScrollPadding,
             controller: _priceCtrl,
             decoration: InputDecoration(
               hintText: _t('event_create_price_example'),
@@ -851,6 +872,7 @@ class _CreateCommunityEventScreenState
   // ─── SCHRITT 3: Details & Kontakt ─────────────────────────────────────────
   Widget _step3(ThemeData theme) {
     return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         const SizedBox(height: 12),
@@ -875,6 +897,7 @@ class _CreateCommunityEventScreenState
         if (_venue == EventVenue.outdoor || _venue == EventVenue.beides) ...[
           const SizedBox(height: 12),
           TextField(
+            scrollPadding: kFormFieldScrollPadding,
             controller: _rainPlanCtrl,
             decoration: InputDecoration(
               labelText: _t('event_create_rain'),
@@ -936,6 +959,7 @@ class _CreateCommunityEventScreenState
                 ?.copyWith(color: theme.colorScheme.outline)),
         const SizedBox(height: 10),
         TextField(
+          scrollPadding: kFormFieldScrollPadding,
           controller: _contactNameCtrl,
           decoration: InputDecoration(
             labelText: _t('event_create_contact_name'),
@@ -945,6 +969,7 @@ class _CreateCommunityEventScreenState
         ),
         const SizedBox(height: 10),
         TextField(
+          scrollPadding: kFormFieldScrollPadding,
           controller: _contactPhoneCtrl,
           keyboardType: TextInputType.phone,
           decoration: InputDecoration(
@@ -955,6 +980,7 @@ class _CreateCommunityEventScreenState
         ),
         const SizedBox(height: 10),
         TextField(
+          scrollPadding: kFormFieldScrollPadding,
           controller: _urlCtrl,
           keyboardType: TextInputType.url,
           decoration: InputDecoration(
