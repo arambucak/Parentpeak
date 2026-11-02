@@ -54,7 +54,7 @@ class ShoppingBackendService {
           .postJsonAny(ShoppingContract.shoppingPath, requestBody);
       final normalized = ShoppingContract.parseSingleItem(payload);
       if (normalized == null) {
-        throw StateError('Ungueltige Shopping-Antwort vom Server.');
+        throw StateError('Ungültige Shopping-Antwort vom Server.');
       }
       return normalized;
     } catch (e) {
@@ -118,7 +118,7 @@ class ShoppingBackendService {
         raw.contains('tls') ||
         raw.contains('ssl') ||
         raw.contains('certificate')) {
-      return 'Server-Verbindung aktuell nicht sicher verfuegbar.';
+      return 'Server-Verbindung aktuell nicht sicher verfügbar.';
     }
 
     if (raw.contains('socketexception') ||

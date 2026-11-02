@@ -99,7 +99,7 @@ class TreasureHandoverCard extends StatelessWidget {
                   'treasureMonthlyFamiliesHelped',
                   {'count': '$monthlyFamiliesHelped'},
                   fallback:
-                      'Du hast diesen Monat schon $monthlyFamiliesHelped Familien in deiner Nachbarschaft gluecklich gemacht.',
+                      'Du hast diesen Monat schon $monthlyFamiliesHelped Familien in deiner Nachbarschaft glücklich gemacht.',
                 ),
                 style: const TextStyle(
                   fontSize: 13,

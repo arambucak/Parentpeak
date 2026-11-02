@@ -84,7 +84,7 @@ class _ContactsScreenState extends State<ContactsScreen>
     {'label': 'Polizei',         'number': '110',        'icon': Icons.local_police_rounded,    'color': Color(0xFF1D4ED8)},
     {'label': 'Notruf',          'number': '112',        'icon': Icons.emergency_rounded,       'color': Color(0xFFDC2626)},
     {'label': 'Gift-Notfall',    'number': '0228 19240', 'icon': Icons.science_rounded,         'color': Color(0xFF7C3AED)},
-    {'label': 'Aerztl. Bereit.', 'number': '116 117',   'icon': Icons.medical_services_rounded,'color': Color(0xFF059669)},
+    {'label': 'Ärztl. Bereit.', 'number': '116 117',   'icon': Icons.medical_services_rounded,'color': Color(0xFF059669)},
   ];
 
   @override
@@ -124,7 +124,7 @@ class _ContactsScreenState extends State<ContactsScreen>
       content: Row(children: [
         const Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
         const SizedBox(width: 10),
-        Expanded(child: Text('$number kopiert - in Telefon-App einfuegen')),
+        Expanded(child: Text('$number kopiert - in Telefon-App einfügen')),
       ]),
       backgroundColor: const Color(0xFF1E293B),
       behavior: SnackBarBehavior.floating,
@@ -449,13 +449,13 @@ class _ContactsScreenState extends State<ContactsScreen>
                       const Text('Noch keine Kontakte',
                         style: TextStyle(color: Colors.black45, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 6),
-                      const Text('Tippe auf + um wichtige Kontakte hinzuzufuegen.',
+                      const Text('Tippe auf + um wichtige Kontakte hinzuzufügen.',
                         textAlign: TextAlign.center, style: TextStyle(color: Colors.black38)),
                       const SizedBox(height: 20),
                       FilledButton.icon(
                         onPressed: _showAddOrEditDialog,
                         icon: const Icon(Icons.add_rounded),
-                        label: const Text('Kontakt hinzufuegen'),
+                        label: const Text('Kontakt hinzufügen'),
                       ),
                     ]),
                   )),

@@ -61,7 +61,7 @@ class _BackupQrScanScreenState extends State<BackupQrScanScreen> {
   void _importBackup() {
     final raw = _backupController.text.trim();
     if (raw.isEmpty) {
-      _setStatus('Bitte Backup-JSON einfuegen.');
+      _setStatus('Bitte Backup-JSON einfügen.');
       return;
     }
     _handleRaw(raw);
@@ -73,16 +73,16 @@ class _BackupQrScanScreenState extends State<BackupQrScanScreen> {
     final total = (chunk['total'] as num?)?.toInt();
     final payload = chunk['payload'] as String?;
     if (chunkId == null || index == null || total == null || payload == null) {
-      _setStatus('Ungueltiger QR-Teil erkannt.');
+      _setStatus('Ungültiger QR-Teil erkannt.');
       return;
     }
 
     if (total <= 0 || total > 200) {
-      _setStatus('Ungueltige Gesamtanzahl der QR-Teile.');
+      _setStatus('Ungültige Gesamtanzahl der QR-Teile.');
       return;
     }
     if (index <= 0 || index > total) {
-      _setStatus('Ungueltiger Teilindex im QR-Code.');
+      _setStatus('Ungültiger Teilindex im QR-Code.');
       return;
     }
 
@@ -93,7 +93,7 @@ class _BackupQrScanScreenState extends State<BackupQrScanScreen> {
     }
 
     if (_chunkId != chunkId || _expectedTotal != total) {
-      _setStatus('Anderer Backup-Satz erkannt. Bitte "Neu starten" druecken.');
+      _setStatus('Anderer Backup-Satz erkannt. Bitte "Neu starten" drücken.');
       return;
     }
 
@@ -186,7 +186,7 @@ class _BackupQrScanScreenState extends State<BackupQrScanScreen> {
                   padding: EdgeInsets.all(16),
                   child: Text(
                     'Der Backup-Scanner ist auf diesem iOS-Simulator nicht verfügbar.\n\n'
-                    'Fuege den Backup-Text hier ein, um die Wiederherstellung fortzusetzen.',
+                    'Füge den Backup-Text hier ein, um die Wiederherstellung fortzusetzen.',
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -212,7 +212,7 @@ class _BackupQrScanScreenState extends State<BackupQrScanScreen> {
                   OutlinedButton.icon(
                     onPressed: _pasteFromClipboard,
                     icon: const Icon(Icons.content_paste),
-                    label: const Text('Einfuegen'),
+                    label: const Text('Einfügen'),
                   ),
                   FilledButton.icon(
                     onPressed: _importBackup,
@@ -228,7 +228,7 @@ class _BackupQrScanScreenState extends State<BackupQrScanScreen> {
               const SizedBox(height: 16),
               if (_expectedTotal != null)
                 Text(
-                  'QR-Teile erkannt: ${_chunks.length}/$_expectedTotal · als naechstes: $_nextExpectedIndex',
+                  'QR-Teile erkannt: ${_chunks.length}/$_expectedTotal · als nächstes: $_nextExpectedIndex',
                   textAlign: TextAlign.center,
                 ),
               if (_statusMessage != null)

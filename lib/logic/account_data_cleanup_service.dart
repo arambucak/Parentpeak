@@ -27,7 +27,7 @@ class AccountDataCleanupService {
       await apiClient.delete('/api/account/$userId');
       return true;
     } catch (e) {
-      lastError = 'Backend-Daten konnten nicht geloescht werden: $e';
+      lastError = 'Backend-Daten konnten nicht gelöscht werden: $e';
       return false;
     }
   }

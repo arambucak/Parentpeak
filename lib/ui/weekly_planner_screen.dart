@@ -299,7 +299,7 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
               ),
               const SizedBox(height: 8),
               const Text(
-                'OCR-ready: Erkannten Text einfuegen, wir ordnen automatisch den Wochentagen zu.',
+                'OCR-ready: Erkannten Text einfügen, wir ordnen automatisch den Wochentagen zu.',
               ),
               const SizedBox(height: 10),
               TextField(
@@ -339,7 +339,7 @@ class _WeeklyPlannerScreenState extends State<WeeklyPlannerScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text(
-                'Kein gueltiger Wochentag erkannt. Bitte Format pruefen.')),
+                'Kein gültiger Wochentag erkannt. Bitte Format prüfen.')),
       );
       return;
     }
@@ -539,9 +539,9 @@ const List<Recipe> _demoRecipes = [
       RecipeIngredient(
           name: 'Brokkoli',
           amount: '200 g',
-          babyOption: 'In kleine Roeschen dämpfen'),
+          babyOption: 'In kleine Röschen dämpfen'),
       RecipeIngredient(
-          name: 'Frischkaese',
+          name: 'Frischkäse',
           amount: '150 g',
           babyOption: 'Ohne Salz für Baby-Portion'),
     ],
@@ -557,9 +557,9 @@ const List<Recipe> _demoRecipes = [
       RecipeIngredient(
           name: 'Reis (vorgekocht)',
           amount: '400 g',
-          babyOption: 'Mit Gemuesebrei mischen'),
+          babyOption: 'Mit Gemüsebrei mischen'),
       RecipeIngredient(
-          name: 'Erbsen', amount: '120 g', babyOption: 'Gut zerdruecken'),
+          name: 'Erbsen', amount: '120 g', babyOption: 'Gut zerdrücken'),
       RecipeIngredient(
           name: 'Ei', amount: '2 Stk', babyOption: 'Komplett durchgaren'),
     ],
@@ -599,25 +599,25 @@ const List<Recipe> _demoRecipes = [
       RecipeIngredient(
           name: 'Karotten', amount: '2 Stk', babyOption: 'Sehr weich kochen'),
       RecipeIngredient(
-          name: 'Gemuesebruehe',
+          name: 'Gemüsebrühe',
           amount: '750 ml',
-          babyOption: 'Fuer Baby nur Wasser verwenden'),
+          babyOption: 'Für Baby nur Wasser verwenden'),
     ],
   ),
   Recipe(
     id: 'r-5',
-    title: 'Gemuese-Reis-Pfanne',
+    title: 'Gemüse-Reis-Pfanne',
     durationMinutes: 25,
     isPickEaterFriendly: true,
     isOnePot: false,
     hideVegetables: false,
     ingredients: [
       RecipeIngredient(
-          name: 'Reis', amount: '300 g', babyOption: 'Etwas laenger garen'),
+          name: 'Reis', amount: '300 g', babyOption: 'Etwas länger garen'),
       RecipeIngredient(
           name: 'Paprika',
           amount: '2 Stk',
-          babyOption: 'Geschält und fein gewuerfelt'),
+          babyOption: 'Geschält und fein gewürfelt'),
       RecipeIngredient(
           name: 'Zucchini', amount: '1 Stk', babyOption: 'Weich dünsten'),
     ],

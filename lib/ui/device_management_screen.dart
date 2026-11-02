@@ -126,7 +126,7 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
                         ),
                         const SizedBox(width: 12),
                         const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text('Vertrauensgeraete',
+                          Text('Vertrauensgeräte',
                             style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800)),
                           Text('Zugriff verwalten und sichern',
                             style: TextStyle(color: Colors.white70, fontSize: 13)),
@@ -143,7 +143,7 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
                   ),
                 ),
               ),
-              title: const Text('Vertrauensgeraete',
+              title: const Text('Vertrauensgeräte',
                 style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 17)),
               titlePadding: const EdgeInsets.only(left: 54, bottom: 16),
             ),
@@ -170,7 +170,7 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Vertrauensgeraete sind Smartphones oder Tablets, von denen aus euer Familienraum zugegriffen werden darf. Entfernt ihr ein Geraet, verliert es sofort den Zugriff.',
+                        'Vertrauensgeräte sind Smartphones oder Tablets, von denen aus euer Familienraum zugegriffen werden darf. Entfernt ihr ein Gerät, verliert es sofort den Zugriff.',
                         style: TextStyle(color: Color(0xFF1E40AF), fontSize: 13, height: 1.4),
                       ),
                     ),
@@ -180,7 +180,7 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
 
                 // ── Aktive Geraete ──
                 if (active.isNotEmpty) ...[
-                  _sectionLabel(Icons.check_circle_rounded, 'Aktive Geraete', const Color(0xFF059669)),
+                  _sectionLabel(Icons.check_circle_rounded, 'Aktive Geräte', const Color(0xFF059669)),
                   const SizedBox(height: 10),
                   ...active.map((d) => _deviceCard(d, context)),
                   const SizedBox(height: 22),
@@ -188,7 +188,7 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
 
                 // ── Entfernte Geraete ──
                 if (revoked.isNotEmpty) ...[
-                  _sectionLabel(Icons.block_rounded, 'Entfernte Geraete', Colors.black38),
+                  _sectionLabel(Icons.block_rounded, 'Entfernte Geräte', Colors.black38),
                   const SizedBox(height: 10),
                   ...revoked.map((d) => _deviceCard(d, context)),
                 ],
@@ -199,7 +199,7 @@ class _DeviceManagementScreenState extends State<DeviceManagementScreen> {
                     child: Column(children: [
                       Icon(Icons.devices_rounded, size: 52, color: Colors.black26),
                       SizedBox(height: 12),
-                      Text('Keine Geraete registriert',
+                      Text('Keine Geräte registriert',
                         style: TextStyle(color: Colors.black45, fontWeight: FontWeight.w600)),
                     ]),
                   )),

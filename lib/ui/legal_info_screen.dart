@@ -122,7 +122,7 @@ class LegalInfoScreen extends StatelessWidget {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Parentpeak soll Struktur, Schutz und Vertrauen in Familien unterstuetzen. Nutzt die App nur dort, wo sie Beziehungen staerkt und nicht ersetzt.',
+                    'Parentpeak soll Struktur, Schutz und Vertrauen in Familien unterstützen. Nutzt die App nur dort, wo sie Beziehungen stärkt und nicht ersetzt.',
                   ),
                 ],
               ),

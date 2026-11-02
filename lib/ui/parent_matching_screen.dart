@@ -1043,7 +1043,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            _service.lastSyncError ?? 'OTP-Bestaetigung fehlgeschlagen.',
+            _service.lastSyncError ?? 'OTP-Bestätigung fehlgeschlagen.',
           ),
         ),
       );
@@ -1091,7 +1091,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
               ),
               const SizedBox(height: 8),
               const Text(
-                'Zum Schutz im Eltern-Matching wird ein OTP per SMS bestaetigt.',
+                'Zum Schutz im Eltern-Matching wird ein OTP per SMS bestätigt.',
                 style: TextStyle(
                   color: Color(0xFF5A6E86),
                   fontWeight: FontWeight.w600,
@@ -1143,7 +1143,7 @@ class _ParentMatchingScreenState extends State<ParentMatchingScreen> {
                   child: FilledButton.tonal(
                     onPressed: _isVerifyingPhone ? null : _confirmPhoneOtp,
                     child: Text(
-                      _isVerifyingPhone ? 'Pruefen...' : 'OTP bestaetigen',
+                      _isVerifyingPhone ? 'Pruefen...' : 'OTP bestätigen',
                     ),
                   ),
                 ),

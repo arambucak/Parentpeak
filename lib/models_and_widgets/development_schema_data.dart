@@ -319,7 +319,7 @@ const MilestoneDatabase kDevelopmentMilestoneDatabase = MilestoneDatabase(
               code: 'G.04',
               title: 'Metakognition',
               description:
-                  'Das Kind kann Ursachen für seine eigenen Aengste, Freuden oder Sorgen benennen und reflektieren.',
+                  'Das Kind kann Ursachen für seine eigenen Ängste, Freuden oder Sorgen benennen und reflektieren.',
             ),
           ],
         ),
