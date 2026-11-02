@@ -1378,6 +1378,13 @@ class AppStringsManager {
       'network_specials_hint': 'Notiz zu Besonderheiten (nur auf diesem Gerät)',
       'network_publish_failed':
           'Das Profil konnte nicht veröffentlicht werden. Bitte versuche es erneut.',
+      'network_publish_unauthenticated': 'Bitte melde dich erneut an.',
+      'network_publish_invalid': 'Bitte prüfe deine Angaben (Name, Ort).',
+      'network_publish_server_unavailable':
+          'Der Server ist gerade nicht erreichbar. Bitte versuche es später erneut.',
+      'network_publish_no_connection':
+          'Keine Verbindung. Bitte prüfe dein Netz.',
+      'network_publish_error_code': 'Fehlercode: {code}',
       'network_specials_local':
           'Diese Angaben bleiben nur auf deinem Gerät. Sie werden nicht veröffentlicht oder für das Backend-Matching verwendet.',
       'network_delete_failed':
@@ -6519,6 +6526,14 @@ class AppStringsManager {
       'network_specials_hint': 'Note about special circumstances (device only)',
       'network_publish_failed':
           'Could not publish your profile. Please try again.',
+      'network_publish_unauthenticated': 'Please sign in again.',
+      'network_publish_invalid':
+          'Please check your details (name, location).',
+      'network_publish_server_unavailable':
+          'The server is unavailable right now. Please try again later.',
+      'network_publish_no_connection':
+          'No connection. Please check your internet connection.',
+      'network_publish_error_code': 'Error code: {code}',
       'network_specials_local':
           'These details stay on your device only. They are not published or used for backend matching.',
       'network_delete_failed':
@@ -13919,6 +13934,14 @@ class AppStringsManager {
       'network_specials_hint': 'Nîşe li ser taybetmendiyan (tenê li ser amûrê)',
       'network_publish_failed':
           'Profîl nehat weşandin. Ji kerema xwe dîsa biceribîne.',
+      'network_publish_unauthenticated': 'Ji kerema xwe dîsa têkeve.',
+      'network_publish_invalid':
+          'Ji kerema xwe agahiyên xwe (nav, bajar) kontrol bike.',
+      'network_publish_server_unavailable':
+          'Niha server nayê dîtin. Ji kerema xwe paşê dîsa biceribîne.',
+      'network_publish_no_connection':
+          'Girêdan tune ye. Ji kerema xwe torê xwe kontrol bike.',
+      'network_publish_error_code': 'Koda çewtiyê: {code}',
       'network_specials_local':
           'Ev agahî tenê li ser amûra te dimînin. Nayên weşandin û ji bo lihevkirina backendê nayên bikaranîn.',
       'network_delete_failed':
@@ -20427,6 +20450,13 @@ class AppStringsManager {
       'network_child_name_local': 'Ad / takma ad (yalnızca bu cihazda)',
       'network_specials_hint': 'Özel durumlar hakkında not (yalnızca cihazda)',
       'network_publish_failed': 'Profil yayınlanamadı. Lütfen tekrar deneyin.',
+      'network_publish_unauthenticated': 'Lütfen yeniden giriş yap.',
+      'network_publish_invalid': 'Lütfen bilgilerini (ad, konum) kontrol et.',
+      'network_publish_server_unavailable':
+          'Sunucuya şu anda ulaşılamıyor. Lütfen daha sonra tekrar dene.',
+      'network_publish_no_connection':
+          'Bağlantı yok. Lütfen internetini kontrol et.',
+      'network_publish_error_code': 'Hata kodu: {code}',
       'network_specials_local':
           'Bu bilgiler yalnızca cihazınızda kalır. Yayınlanmaz ve sunucudaki eşleştirme için kullanılmaz.',
       'network_delete_failed':

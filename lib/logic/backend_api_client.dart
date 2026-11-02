@@ -16,6 +16,16 @@ class SuspendedAccountException implements Exception {
   String toString() => message;
 }
 
+class BackendAuthenticationRequiredException extends StateError {
+  BackendAuthenticationRequiredException([
+    super.message = 'Firebase session required for this request.',
+  ]);
+}
+
+class BackendInvalidResponseException implements Exception {
+  const BackendInvalidResponseException();
+}
+
 /// Fehlgeschlagene Backend-Antwort mit HTTP-Status und (falls vorhanden) der
 /// Server-Fehlermeldung. Erlaubt Aufrufern, Auth-Fehler (401) von Server-/
 /// Upstream-Fehlern (z.B. 502) zu unterscheiden, statt nur eine generische
@@ -28,13 +38,28 @@ class BackendApiException implements Exception {
     required this.statusCode,
     this.serverMessage,
     this.serverCode,
+    this.responseBody,
   });
+
+  factory BackendApiException.fromResponse({
+    required String method,
+    required String path,
+    required http.Response response,
+  }) => BackendApiException(
+    method: method,
+    path: path,
+    statusCode: response.statusCode,
+    serverMessage: _extractServerError(response.body),
+    serverCode: _extractServerCode(response.body),
+    responseBody: response.body,
+  );
 
   final String method;
   final String path;
   final int statusCode;
   final String? serverMessage;
   final String? serverCode;
+  final String? responseBody;
 
   bool get isUnauthorized => statusCode == 401;
   bool get isForbidden => statusCode == 403;
@@ -130,15 +155,13 @@ class BackendApiClient {
         if (normalized != null && normalized.isNotEmpty) {
           return normalized;
         }
-      } catch (e) {
-        debugPrint(
-          'BackendApiClient._resolveAuthToken(): token provider failed: $e',
-        );
+      } catch (_) {
+        debugPrint('BackendApiClient: reason=tokenUnavailable status=none');
       }
     }
 
     if (requireAuthToken) {
-      throw StateError('Firebase session required for this request.');
+      throw BackendAuthenticationRequiredException();
     }
     final staticToken = authToken?.trim();
     if (staticToken != null && staticToken.isNotEmpty) {
@@ -252,6 +275,7 @@ class BackendApiClient {
     String path,
     Map<String, dynamic> body, {
     Duration? timeout,
+    bool requireValidJson = false,
   }) async {
     final effectiveTimeout = timeout ?? const Duration(seconds: 30);
     final encoded = jsonEncode(body);
@@ -274,15 +298,20 @@ class BackendApiClient {
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
       _throwIfSuspended(response);
-      throw BackendApiException(
+      throw BackendApiException.fromResponse(
         method: 'POST',
         path: path,
-        statusCode: response.statusCode,
-        serverMessage: _extractServerError(response.body),
-        serverCode: _extractServerCode(response.body),
+        response: response,
       );
     }
 
+    if (requireValidJson) {
+      try {
+        return jsonDecode(response.body);
+      } on FormatException {
+        throw const BackendInvalidResponseException();
+      }
+    }
     return _decodeResponse(response.body);
   }
 

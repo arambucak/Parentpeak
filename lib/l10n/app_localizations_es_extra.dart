@@ -1944,6 +1944,13 @@ const appLocalizationsEsExtra = <String, String>{
       'Tu nombre visible, tu zona, tu ubicación aproximada muy redondeada (si está disponible), las edades aproximadas de los niños, los idiomas, el tipo de familia, los valores, las actividades que buscáis y tu biografía se guardarán en nuestro servidor y se mostrarán a otras familias de la red. Los nombres de los niños, las fechas de nacimiento y las particularidades se quedan en este dispositivo. No incluyas nombres de niños, tu dirección ni datos de salud en tu biografía pública. La búsqueda de familias no usa IA. Puedes borrar tu perfil en cualquier momento.',
   'network_publish_failed':
       'No se pudo publicar tu perfil. Inténtalo de nuevo.',
+  'network_publish_unauthenticated': 'Inicia sesión de nuevo.',
+  'network_publish_invalid': 'Revisa tus datos (nombre, lugar).',
+  'network_publish_server_unavailable':
+      'El servidor no está disponible ahora. Inténtalo de nuevo más tarde.',
+  'network_publish_no_connection':
+      'Sin conexión. Comprueba tu conexión a internet.',
+  'network_publish_error_code': 'Código de error: {code}',
   'network_publish_title': '¿Publicar el perfil para quedadas entre niños?',
   'network_qr_code': 'Código QR',
   'network_qr_create_failed':

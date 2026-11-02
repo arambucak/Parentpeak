@@ -1955,6 +1955,13 @@ const appLocalizationsItExtra = <String, String>{
       'Il tuo nome visualizzato, la zona, la posizione approssimata e arrotondata (se disponibile), l\'età indicativa dei bambini, le lingue, il tipo di famiglia, i valori, le attività che cercate e la tua bio vengono salvati sul nostro backend e mostrati alle altre famiglie della rete. I nomi dei bambini, le date di nascita e le particolarità restano su questo dispositivo. Non inserire nomi dei bambini, indirizzo o dati sulla salute nella tua bio pubblica. L\'abbinamento non usa l\'IA. Puoi eliminare il tuo profilo in qualsiasi momento.',
   'network_publish_failed':
       'Non è stato possibile pubblicare il profilo. Riprova.',
+  'network_publish_unauthenticated': 'Accedi di nuovo.',
+  'network_publish_invalid': 'Controlla i tuoi dati (nome, luogo).',
+  'network_publish_server_unavailable':
+      'Il server non è al momento raggiungibile. Riprova più tardi.',
+  'network_publish_no_connection':
+      'Nessuna connessione. Controlla la tua rete.',
+  'network_publish_error_code': 'Codice errore: {code}',
   'network_publish_title': 'Pubblicare il profilo per incontri tra bambini?',
   'network_qr_code': 'Codice QR',
   'network_qr_create_failed':

@@ -13,6 +13,7 @@ import 'package:parentpeak/ui/widgets/user_avatar.dart';
 import 'package:parentpeak/logic/playmate_suggestions.dart';
 import 'package:parentpeak/logic/parent_matching_backend_service.dart';
 import 'package:parentpeak/logic/playmate_profile_service.dart';
+import 'package:parentpeak/logic/playmate_publication_failure.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/logic/friendship_service.dart';
@@ -24,6 +25,7 @@ import 'package:parentpeak/logic/location_autocomplete_service.dart';
 import 'package:parentpeak/widgets/ala_rengin_flag_painter.dart';
 import 'package:parentpeak/ui/widgets/location_picker_widget.dart';
 import 'package:parentpeak/ui/widgets/playmate_publication_dialog.dart';
+import 'package:parentpeak/ui/widgets/playmate_publication_error.dart';
 import 'package:parentpeak/ui/widgets/playmate_profile_status.dart';
 import 'package:parentpeak/ui/widgets/playmate_discovery_error.dart';
 import 'package:parentpeak/ui/widgets/playmate_discovery_empty_state.dart';
@@ -64,6 +66,7 @@ String networkChildAgeLabel(String language, String tag) {
 
 class ElternNetzwerkScreen extends StatefulWidget {
   final String? initialFriendCode;
+  final ParentMatchingBackendService? matchingService;
 
   /// 0 = Chats, 1 = Netzwerk, 2 = Spielfreunde
   final int initialTab;
@@ -71,6 +74,7 @@ class ElternNetzwerkScreen extends StatefulWidget {
     super.key,
     this.initialFriendCode,
     this.initialTab = 0,
+    this.matchingService,
   });
   @override
   State<ElternNetzwerkScreen> createState() => _ScreenState();
@@ -79,9 +83,10 @@ class ElternNetzwerkScreen extends StatefulWidget {
 class _ScreenState extends State<ElternNetzwerkScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabs;
-  final _matching = ParentMatchingBackendService(
-    apiClient: BackendServiceFactory.createApiClient(),
-  );
+  late final _matching = widget.matchingService ??
+      ParentMatchingBackendService(
+        apiClient: BackendServiceFactory.createApiClient(),
+      );
   FamilyMatchProfile? _profile;
   bool _editingProfile = false;
   bool _deletingProfile = false;
@@ -1319,45 +1324,66 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                 : null,
             onSave: (p) async {
               final uid = AuthService.instance.currentUser?.uid;
-              if (uid == null || uid.isEmpty) {
+              if (uid == null || uid.trim().isEmpty) {
+                const failure = PlaymatePublicationFailure(
+                  PlaymatePublicationFailureReason.missingUser,
+                );
+                logPlaymatePublicationFailure(failure);
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(_t('network_copy_login_required'))),
+                    playmatePublicationErrorSnackBar(
+                      context,
+                      language: languageService.currentLanguage,
+                      failure: failure,
+                    ),
                   );
                 }
                 return;
               }
+              final publication = PlaymateProfileService(
+                matchingService: _matching,
+              );
               try {
-                final result =
-                    await PlaymateProfileService(
-                      matchingService: _matching,
-                    ).publishProfile(
-                      p,
-                      uid,
-                      confirmPublication: () async {
-                        final confirmed = await confirmPlaymatePublication(
-                          context,
-                        );
-                        return mounted &&
-                            AuthService.instance.currentUser?.uid == uid &&
-                            confirmed;
-                      },
+                final result = await publication.publishProfile(
+                  p,
+                  uid,
+                  confirmPublication: () async {
+                    final confirmed = await confirmPlaymatePublication(
+                      context,
                     );
+                    return mounted &&
+                        AuthService.instance.currentUser?.uid == uid &&
+                        confirmed;
+                  },
+                );
                 if (!mounted || result == PlaymatePublicationResult.cancelled) {
                   return;
                 }
                 if (AuthService.instance.currentUser?.uid != uid) return;
                 if (result == PlaymatePublicationResult.failed) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(_t('network_publish_failed')),
-                      backgroundColor: theme.colorScheme.error,
+                    playmatePublicationErrorSnackBar(
+                      context,
+                      language: languageService.currentLanguage,
+                      failure: publication.lastPublicationFailure ??
+                          const PlaymatePublicationFailure(
+                            PlaymatePublicationFailureReason.unknown,
+                          ),
                     ),
                   );
                   return;
                 }
               } on SuspendedAccountException {
-                if (mounted) await showAccountSuspendedNotice(context);
+                if (mounted && AuthService.instance.currentUser?.uid == uid) {
+                  await showAccountSuspendedNotice(
+                    context,
+                    diagnosticText: playmatePublicationDiagnosticText(
+                      language: languageService.currentLanguage,
+                      failure: publication.lastPublicationFailure ??
+                          PlaymatePublicationFailure.fromStatus(403),
+                    ),
+                  );
+                }
                 return;
               }
               setState(() => _editingProfile = false);
@@ -3050,11 +3076,17 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
         createdAt: widget.initialProfile?.createdAt ?? DateTime.now(),
       );
       await widget.onSave(profile);
-    } catch (e) {
+    } catch (_) {
+      const failure = PlaymatePublicationFailure(
+        PlaymatePublicationFailureReason.unknown,
+      );
+      logPlaymatePublicationFailure(failure);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_t('network_save_error').replaceAll('{error}', '$e')),
+          playmatePublicationErrorSnackBar(
+            context,
+            language: languageService.currentLanguage,
+            failure: failure,
           ),
         );
       }

@@ -1,5 +1,6 @@
-import 'package:flutter/foundation.dart';
+import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/logic/parent_matching_backend_service.dart';
+import 'package:parentpeak/logic/playmate_publication_failure.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -28,7 +29,13 @@ class PlaymateProfileService {
   PlaymateProfileService({required this.matchingService});
 
   final ParentMatchingBackendService matchingService;
+  PlaymatePublicationFailure? lastPublicationFailure;
   static bool _assigningLegacyDraft = false;
+
+  void _reportPublicationFailure(PlaymatePublicationFailure failure) {
+    lastPublicationFailure = failure;
+    logPlaymatePublicationFailure(failure);
+  }
 
   Future<PlaymateProfileState> loadState(String userId) async {
     final profile = await FamilyMatchProfile.load(
@@ -93,32 +100,62 @@ class PlaymateProfileService {
     String userId, {
     required Future<bool> Function() confirmPublication,
   }) async {
+    lastPublicationFailure = null;
     if (!await confirmPublication()) return PlaymatePublicationResult.cancelled;
     if (userId.trim().isEmpty) {
-      debugPrint('PlaymateProfileService.publishProfile: user ID missing');
+      matchingService.lastSyncError =
+          'Profil-Speicherung fehlgeschlagen: Benutzer fehlt';
+      _reportPublicationFailure(
+        const PlaymatePublicationFailure(
+          PlaymatePublicationFailureReason.missingUser,
+        ),
+      );
       return PlaymatePublicationResult.failed;
     }
-    final saved = await matchingService.createProfile(
-      userId: userId,
-      name: profile.displayName,
-      city: profile.city?.trim().isNotEmpty == true
-          ? profile.city!.trim()
-          : profile.district,
-      latitude: coarseCoordinate(profile.latitude),
-      longitude: coarseCoordinate(profile.longitude),
-      interests: profile.lookingFor.where((v) => v.trim().isNotEmpty).toList(),
-      languages: profile.languages,
-      valuesFocus: profile.values,
-      childAges: profile.children.map((child) {
-        final months = child.ageMonths;
-        return months >= 12 ? '${months ~/ 12}J' : '${months}M';
-      }).toList(),
-      familyForm: profile.familyForm,
-      bio: profile.bio,
-    );
-    if (saved == null || saved.id.isEmpty || saved.userId != userId) {
-      debugPrint(
-        'PlaymateProfileService.publishProfile: profile not acknowledged',
+    final ParentMatchingProfile? saved;
+    try {
+      saved = await matchingService.createProfile(
+        userId: userId,
+        name: profile.displayName,
+        city: profile.city?.trim().isNotEmpty == true
+            ? profile.city!.trim()
+            : profile.district,
+        latitude: coarseCoordinate(profile.latitude),
+        longitude: coarseCoordinate(profile.longitude),
+        interests:
+            profile.lookingFor.where((v) => v.trim().isNotEmpty).toList(),
+        languages: profile.languages,
+        valuesFocus: profile.values,
+        childAges: profile.children.map((child) {
+          final months = child.ageMonths;
+          return months >= 12 ? '${months ~/ 12}J' : '${months}M';
+        }).toList(),
+        familyForm: profile.familyForm,
+        bio: profile.bio,
+      );
+    } on SuspendedAccountException {
+      _reportPublicationFailure(
+        matchingService.lastProfileCreationFailure ??
+            PlaymatePublicationFailure.fromStatus(403),
+      );
+      rethrow;
+    }
+    if (saved == null) {
+      _reportPublicationFailure(
+        matchingService.lastProfileCreationFailure ??
+            const PlaymatePublicationFailure(
+              PlaymatePublicationFailureReason.unknown,
+            ),
+      );
+      return PlaymatePublicationResult.failed;
+    }
+    if (saved.id.trim().isEmpty || saved.userId != userId) {
+      matchingService.lastSyncError =
+          'Profil-Speicherung fehlgeschlagen: ungültige Bestätigung';
+      _reportPublicationFailure(
+        const PlaymatePublicationFailure(
+          PlaymatePublicationFailureReason.invalidResponse,
+        ),
       );
       return PlaymatePublicationResult.failed;
     }
