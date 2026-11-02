@@ -1,7 +1,8 @@
 # Eltern-Netzwerk – Redesign-Konzept
 
 Status: **Konzept, kein Code.** Grundlage ist `origin/main` bei `f6ae923` (nach #234).
-Alle Zeilenangaben beziehen sich auf diesen Stand.
+Alle Zeilenangaben beziehen sich auf diesen Stand. Die Entscheidungen in Abschnitt 9
+hat der Nutzer am 2026-11-03 bestätigt.
 
 Kennzeichnung in diesem Dokument:
 
@@ -114,7 +115,7 @@ Schritt-Titel, FAB und Kontakt-Buttons lila. [V]
 
 | # | Befund | Beleg | Status |
 |---|---|---|---|
-| W1 | **Discovery-Kontakt umgeht das Prinzip „erst gegenseitig".** „Verbinden" und „Hallo sagen" erzeugen eine Freundschaft. Ist das Zielkonto öffentlich (`UserProfile.isPrivate = false`), wird sie **sofort** `accepted`, und der Freundes-Chat ist offen. Default ist privat (`DEFAULT TRUE`), also normalerweise `pending`. | `backend/server.js:9680-9692`, `:5493`, Chat-Prüfung `areFriends` `:10651-10657` | [V] |
+| W1 | **Discovery-Kontakt umgeht das Prinzip „erst gegenseitig".** „Verbinden" und „Hallo sagen" erzeugen eine Freundschaft. Ist das Zielkonto öffentlich (`UserProfile.isPrivate = false`), wird sie **sofort** `accepted`, und der Freundes-Chat ist offen. Default ist privat (`DEFAULT TRUE`), also normalerweise `pending`. **Sofort-Fix:** PR #238 (`fix/friendship-discovery-pending`, Aufgabe 4 vom 2026-11-03): Der Client sendet bei Discovery-Kontakten `source: "discovery"`, der Server setzt dann immer `pending`. Ohne `source` (ältere App-Versionen, Einladungslink, QR) bleibt das alte Verhalten; ältere Apps bleiben bis zum Update ein Restrisiko. Endgültig gelöst wird W1 erst mit dem Match-Ablauf (c–e). | `backend/server.js:9680-9692`, `:5493`, Chat-Prüfung `areFriends` `:10651-10657` | [V] |
 | W2 | Die Parent-Matching-Logik (`like`/`pass`, Mutual, Nachrichten nur nach Match) ist im Backend vorhanden, wird vom aktiven UI aber **nicht benutzt**. | Siehe 3.1; UI ruft nur `findMatchesWithFallback` am Matching-Service auf | [V] |
 | W3 | Der Client-Service enthält Platzhalter, die leer zurückgeben: `fetchProfiles`, `fetchConnectedProfileIds`, `fetchMessages`, `sendMessage`, `streamMessages`. | `lib/logic/parent_matching_backend_service.dart:459-523` | [V] |
 | W4 | `sendAction` setzt `connected = true`, sobald die Aktion **gespeichert** wurde, nicht wenn sie gegenseitig ist. `recordAction` wertet `connected`/`matchState` der Antwort nicht aus. | `parent_matching_backend_service.dart:525-545`, `:651-693` | [V] |
@@ -184,7 +185,7 @@ Drei Bereiche als Tabs. Das eigene Profil liegt hinter dem Avatar oben rechts.
 - **Entfernung** gerundet: „unter 1 km", „ca. 3 km", „in deiner Stadt". Nie Straße oder Koordinaten.
 - **„Nicht jetzt"** → Aktion `pass`. Die Karte verschwindet leise, ohne Animation einer Ablehnung.
 - **„Interessiert"** → Aktion `like`. Die Antwort enthält `connected`/`matchState`. Bei `matched` folgt der Match-Bildschirm.
-- **Wischen** (optional, Entscheidung 9.3): rechts = Interessiert, links = Nicht jetzt. Immer mit
+- **Wischen** (nicht zum Start, später; Entscheidung 9.3): rechts = Interessiert, links = Nicht jetzt. Immer mit
   denselben Buttons. Wischen ist nie der einzige Weg.
 - **Rückgängig** der letzten „Nicht jetzt"-Entscheidung als Snackbar-Aktion für einige Sekunden.
   Technisch ein neues `like` (siehe 3.1). [A] Ob das gewollt ist, ist Teil von 9.
@@ -219,8 +220,7 @@ Ruhig, ohne Konfetti, ohne Countdown.
 ### 2.4 Matches
 
 - **Neu**: gegenseitig, noch keine Nachricht. Antippen öffnet den Chat.
-- **Interesse an euch**: eingehendes `like` ohne eigene Entscheidung. Aktionen: „Interessiert" / „Nicht jetzt".
-  Ob dieser Bereich sichtbar sein soll, ist Entscheidung 9.5 (Bumble zeigt eingehendes Interesse nicht offen).
+- ~~**Interesse an euch**~~: entfällt (Entscheidung 9.5). Eingehendes Interesse wird erst beim Match sichtbar.
 - **Deine Anfragen**: eigene `like` ohne Antwort, mit Name statt „Familie" (1.2 d). Aktion „Zurückziehen".
 - Kein Hinweis wie „wartet seit 5 Tagen" und keine Ablaufzeit.
 
@@ -291,7 +291,7 @@ Heute laufen Discovery-Kontakte über Freundschaften (W1, 1.2 a). Im Zielbild gi
 - Für das Chat-Ziel nach einem Match gibt es zwei Wege (Entscheidung im PR e):
   1. Matching-Nachrichten (`/parent-matching/messages`) im Client anbinden. Sie sind serverseitig schon an Mutual gebunden.
   2. Bei Mutual serverseitig eine `accepted`-Freundschaft anlegen und den bestehenden Freundes-Chat nutzen. Dafür ist ein Backend-Eingriff nötig.
-  Empfehlung [A]: Weg 2. Er nutzt die fertige Chat-UI mit Melden, Blockieren und Verlauf löschen und vermeidet zwei Chat-Systeme.
+  **Entschieden (9.9): Weg 2.** Er nutzt die fertige Chat-UI mit Melden, Blockieren und Verlauf löschen und vermeidet zwei Chat-Systeme.
 
 ---
 
@@ -303,11 +303,11 @@ Heute laufen Discovery-Kontakte über Freundschaften (W1, 1.2 a). Im Zielbild gi
 | Melden/Blockieren überall | Match-Karte: ja. Karussell: nein (W9). Chat: ja (über Freundes-Chat). | Menü ⋮ auf jeder Karte, im Match-Bildschirm, in Matches und im Chat. |
 | Nur grobe Entfernung | Server liefert gerundete Koordinaten und `distanceKm` als ganze Zahl (`server.js:13453-13457`). Wizard speichert `coarseCoordinate` (`eltern_netzwerk_screen.dart:3061-3062`). | Anzeige in Stufen („unter 1 km", „ca. 3 km", „bis 10 km"), keine Kartenansicht. |
 | Keine Kindernamen/-fotos | Kinderdaten bleiben lokal; Server bekommt nur `childAges` (Text `app_localizations_all.dart:1356`). | Bleibt. Bio-Hinweis „keine Kindernamen" im Wizard beibehalten. |
-| Fotos | Konto-Avatar-URL wird in Freundes-Karten angezeigt (`:2056-2058`). | Zum Start keine Fotos in Entdecken/Matches, nur Initialen oder Illustration (Entscheidung 9.2). |
-| Missbrauch / Rate-Limit | Nur globales IP-Limit (L8), OTP eigenes Limit (`server.js:8528-8534`). | Pro Nutzer: Tageslimit für `like` als **Sicherheitslimit**, nicht als Bezahlschranke. Wert offen [N]. Kein Upsell-Hinweis. |
-| Moderation | Meldungen → `SafetyReport` `pending`; Admin entscheidet und sperrt manuell. Keine Schwelle für automatisches Ausblenden. | Vor breitem Launch: Schwelle „ab n Meldungen von verschiedenen Personen vorläufig ausblenden bis Prüfung" [A]. Admin-Ablauf dokumentieren. |
+| Fotos | Konto-Avatar-URL wird in Freundes-Karten angezeigt (`:2056-2058`). | Zum Start keine Fotos in Entdecken/Matches, nur Initialen oder Illustration; entschieden: keine Fotos (9.2). |
+| Missbrauch / Rate-Limit | Nur globales IP-Limit (L8), OTP eigenes Limit (`server.js:8528-8534`). | Pro Nutzer: **50 „Interessiert" pro Tag** als Sicherheitslimit (9.7), serverseitig änderbar, nicht als Bezahlschranke. Kein Upsell-Hinweis. |
+| Moderation | Meldungen → `SafetyReport` `pending`; Admin entscheidet und sperrt manuell. Keine Schwelle für automatisches Ausblenden. | Siehe 9.8: 1 Meldung → Admin-Warteschlange, für Meldende ausgeblendet; ab 3 Meldungen von verschiedenen Konten für alle vorläufig ausgeblendet, bis der Admin entscheidet. Umsetzung im Moderations-Paket (Abschnitt 8). |
 | Blockieren | Discovery einseitig (L6). | Beidseitig in Discovery und Actions. |
-| Verifizierung | `phoneVerified` nur über toten Screen erreichbar (W6, W7). | Badge „Telefon bestätigt" auf der Karte, wenn `true`. OTP-Schritt im Profil-Menü. Ob Pflicht für „Interessiert", ist Entscheidung 9.6. |
+| Verifizierung | `phoneVerified` nur über toten Screen erreichbar (W6, W7). | Badge „Telefon bestätigt" auf der Karte, wenn `true`. OTP-Schritt im Profil-Menü. Nicht Pflicht für „Interessiert", nur Badge (9.6). |
 
 ---
 
@@ -321,7 +321,7 @@ Neue Bausteine lesen Farben, Text und Formen aus `Theme.of(context)`.
 - **Hauptfarbe**: `colorScheme.primary` = Türkis `0xFF0F766E` (hell) / `0xFF14B8A6` (dunkel) (`theme_service.dart:61-66`, `:155-160`).
   Für Tabs, Primär-Buttons, aktive Schritt-Punkte, Links.
 - **Akzent**: `colorScheme.tertiary` = Amber `0xFFF59E0B` (hell) / `0xFFFBBF24` (dunkel). Nur sparsam: Badge „Neu", Hinweis-Icons.
-  Alternative: `secondary` Indigo. Entscheidung 9.1.
+  Entschieden (9.1): Amber als Akzent, kein Indigo.
 - **Erfolg/Fehler**: `colorScheme.primary` bzw. `colorScheme.error`. Das harte Grün `0xFF16A34A` entfällt.
 - Alle Literal-Farben aus 1.2 b entfallen. Eine Avatar-Palette (aus `UserAvatar`), an das Theme angepasst.
 
@@ -385,16 +385,22 @@ Neue Bausteine lesen Farben, Text und Formen aus `Theme.of(context)`.
 
 | PR | Inhalt | Abhängig von | Risiko |
 |---|---|---|---|
-| **(f0) Sofort-Korrekturen** | `network_copy_reason_same_city` in 8 Sprachen + neutraler Fallback statt Rohcode; Pflichtfelder Name/Ort (und Familienform) beim „Weiter" in Schritt 1 prüfen | – | gering |
+| **(f0) Sofort-Korrekturen** | `network_copy_reason_same_city` in 8 Sprachen, unbekannte Gründe ausblenden statt Rohcode; Pflichtfelder Name/Ort beim „Weiter" in Schritt 1 prüfen. Umgesetzt in PR #239. Zusätzlich W1-Sofort-Fix in PR #238. | – | gering |
 | **(a) Designsystem-Komponenten** | `FamilyAvatar`, `FamilyCard`, `InfoChip`, Aktions-Buttons, `NetworkEmptyState`, `NetworkBanner`, `SafetyMenu`; nur Theme-Werte; Widget-Tests (360×640, 2× Text, RTL) | – | gering, keine Verhaltensänderung |
 | **(b) Navigation** | Tabs Entdecken / Matches / Chats; Profil hinter Avatar; Einladen ins Profilmenü; Statusbanner nur bei Handlungsbedarf; doppeltes Karussell entfernen. Verhalten der Buttons noch unverändert. | a | mittel: Deep-Links `initialTab` (`eltern_netzwerk_screen.dart:69-70`) und `home_screen.dart:159`, `:685` anpassen |
 | **(c) Entdecken-Karten** | Eine Karte nach der anderen; „Nicht jetzt" = `pass`, „Interessiert" = `like`; `recordAction` wertet `matchState` aus (W4); Backend: bewertete Profile ausschließen (L1), Blockieren beidseitig (L6) | a, b | **hoch**: ändert Kontaktweg von Freundschaft auf Matching. Backend-Änderung mit Tests gegen echtes Schema (Schema-Guard aus #237). |
 | **(d) Match-Bildschirm und Matches** | „Es passt"-Ansicht mit Vorschlägen; Liste „Neu"; neue Route für eingehendes/ausgehendes Interesse (L4) | c | mittel |
 | **(e) Chat-Anbindung** | Chat nach Match (Weg 1 oder 2 aus 3.3); Platzhalter im Client entfernen (W3, W5) | d | **hoch**: Datenschutz, Chat-Zugriff |
+| **(m) Moderations-Paket** | Umsetzung von 9.8, in kleinen PRs: (m1) Admin sieht Profilname, Ort und Bio zur Meldung; (m2) Admin-Aktionen „Freigeben", „Profil deaktivieren", „Konto sperren" mit je einem Klick; (m3) Meldende sehen das gemeldete Profil nicht mehr, Zählung verschiedener Meldender, ab 3 vorläufig für alle ausgeblendet; (m4) Melden-Menü auf allen Karten (Karussell, Anfragen); (m5) Benachrichtigung des Admins bei neuer Meldung. Details siehe Bericht zur Moderation, Phase A. | – | mittel: Backend-Filter in Discovery, Tests gegen echtes Schema |
 | **(f) Aufräumen** | toten `ParentMatchingScreen` entfernen, OTP-UI ins Profilmenü übernehmen (W6, W7); Legacy-`familyForm: null` (L11); Literal-Farben/-Größen entfernen | c | gering bis mittel |
 
-Reihenfolge: f0 → a → b → c → d → e → f.
-**Launch-Minimum** (Vorschlag des Nutzers): f0, a, b, c. Danach d und e, wenn die Basis ruhig läuft.
+Reihenfolge: f0 → a → b → m → (c + d + e) → f.
+**Launch-Umfang (bestätigt, 9.11):** f0, a, b und das Moderations-Paket (m). Der
+Match-Ablauf c bis e folgt danach als **zusammenhängendes Paket**. c allein wäre eine
+Sackgasse: Ohne Match-Bildschirm und Chat gäbe es nach gegenseitigem Interesse keinen
+Weg zum Gespräch. c, d und e können als einzelne PRs reviewt, sollten aber gemeinsam
+freigeschaltet werden (z. B. hinter einem internen Schalter, nicht über die
+Monetarisierungs-Flags).
 
 Risiken quer:
 
@@ -406,19 +412,33 @@ Risiken quer:
 
 ---
 
-## 9. Offene Entscheidungen für den Nutzer
+## 9. Entscheidungen (vom Nutzer bestätigt, 2026-11-03)
 
-1. **Akzentfarbe**: Amber (`tertiary`) oder Indigo (`secondary`) neben Türkis?
-2. **Fotos**: Zum Start nur Initialen/Illustrationen (Empfehlung) oder Elternfoto optional? Kinderfotos sind ausgeschlossen.
-3. **Wischen**: Wischen + Buttons oder nur Buttons zum Start? Empfehlung: nur Buttons zum Launch, Wischen später.
-4. **Rückgängig** für „Nicht jetzt": ja (kurz, per Snackbar) oder nein?
-5. **Eingehendes Interesse anzeigen**: offen sichtbar („Interesse an euch") oder erst beim Match (Bumble-Stil)?
-6. **Verifizierung**: Telefon-Bestätigung Pflicht für „Interessiert" oder nur Badge?
-7. **Sicherheitslimit** für „Interessiert" pro Tag: Wert? (Kein Bezahl-Limit.)
-8. **Moderationsschwelle**: Ab wie vielen Meldungen wird ein Profil bis zur Prüfung ausgeblendet?
-9. **Chat-Weg nach Match**: Matching-Nachrichten anbinden oder Match in Freundschaft überführen (3.3)?
-10. **Wiederanzeige** nach „Nicht jetzt": nie, oder nach welcher Zeit?
-11. **Umfang zum Launch**: f0 + a + b + c (Vorschlag) bestätigen?
+| # | Thema | Entscheidung |
+|---|---|---|
+| 1 | Akzentfarbe | Amber aus dem Theme (`tertiary`) neben Türkis (`primary`). Kein zweites Theme. |
+| 2 | Fotos | Nur Initialen und Illustrationen, keine Fotos (auch keine Elternfotos) in Entdecken und Matches. Kinderfotos bleiben ausgeschlossen. |
+| 3 | Wischen | Zum Start nur Buttons. Wischen kommt später, immer mit Button-Alternative. |
+| 4 | Rückgängig bei „Nicht jetzt" | Ja, kurz per Snackbar. |
+| 5 | Eingehendes Interesse | Erst beim Match sichtbar, keine Liste „Interesse an euch". |
+| 6 | Verifizierung | Telefon-Bestätigung nur als Badge, nicht Pflicht. |
+| 7 | Sicherheitslimit | 50 „Interessiert" pro Tag, serverseitig änderbar. Reines Sicherheitslimit ohne Upsell, kein Tarif-Limit. |
+| 8 | Moderation | Der Nutzer moderiert allein als Admin. 1 Meldung legt ein Profil in seine Warteschlange. Wer meldet, sieht das Profil nicht mehr. Für alle anderen vorläufig ausgeblendet erst ab 3 Meldungen von verschiedenen Konten, bis der Admin entschieden hat. |
+| 9 | Chat nach Match | Der Server legt beim Match eine Freundschaft an; Chat über die vorhandene Oberfläche (Weg 2 in 3.3). |
+| 10 | Wiederanzeige nach „Nicht jetzt" | Nach 30 Tagen. |
+| 11 | Launch-Umfang | f0, a, b plus Moderations-Paket. Der Match-Ablauf (c bis e) folgt danach als zusammenhängendes Paket (Begründung in Abschnitt 8). |
+
+Folgen für die Umsetzung [A]:
+
+- 9.5 und 9.10: Discovery muss `pass` mit Zeitstempel kennen und nach 30 Tagen wieder
+  zulassen; `like` ohne Gegenseite bleibt für die andere Seite unsichtbar (L1, L4).
+- 9.7: Limit als Konfigurationswert im Backend (z. B. Umgebungsvariable mit Default 50),
+  Antwort bei Überschreitung neutral formuliert („Für heute ist Schluss, morgen geht es
+  weiter"), ohne Hinweis auf Tarife.
+- 9.8: braucht Zählung verschiedener Meldender, einen Ausblende-Status am Profil und
+  einen Filter in Discovery (heute nicht vorhanden, siehe Abschnitt 4).
+- 9.9: Freundschaft beim Match serverseitig anlegen ersetzt den W1-Sofort-Fix (#238)
+  für Discovery-Kontakte.
 
 ---
 
