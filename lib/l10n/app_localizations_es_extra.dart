@@ -174,7 +174,10 @@ const appLocalizationsEsExtra = <String, String>{
   'auth_email_label': 'Correo electrónico',
   'auth_email_required': 'El correo es obligatorio.',
   'auth_email_resent': '✅ Se ha enviado un nuevo enlace.',
-  'auth_email_sent': 'Hemos enviado un correo de confirmación a\n{email}.',
+  'auth_email_sent':
+      'Hemos enviado un correo de confirmación a\n{email}.\nRevisa también la carpeta de correo no deseado.',
+  'auth_email_delivery_failed':
+      'No se ha podido enviar el correo de confirmación en este momento. Inténtalo de nuevo.',
   'auth_password_label': 'Contraseña',
   'auth_password_required': 'La contraseña es obligatoria.',
   'auth_resend_link': 'Reenviar enlace',
@@ -2024,9 +2027,10 @@ const appLocalizationsEsExtra = <String, String>{
   'organization_title': 'Organización',
   'parent_role': 'Progenitor',
   'password_reset_instructions':
-      'Escribe tu correo electrónico. Te enviaremos un enlace para restablecerla.',
+      'Escribe tu correo electrónico. Si hay una cuenta asociada, recibirás un enlace en breve. Revisa también la carpeta de correo no deseado.',
   'password_reset_send_link': 'Enviar enlace',
-  'password_reset_sent': '¡Correo enviado! Revisa tu bandeja de entrada.',
+  'password_reset_sent':
+      'Si hay una cuenta asociada a esta dirección, recibirás un correo en breve. Revisa tu bandeja de entrada y la carpeta de correo no deseado.',
   'password_reset_title': 'Restablecer la contraseña',
   'payment_accept_agb': 'Aceptar las condiciones y la política de privacidad',
   'payment_accept_terms': 'Acepta las condiciones',

@@ -60,3 +60,9 @@ parentpeak-website/
 cypress/
 devtools_options.yaml
 public/
+!/backend/public/
+/backend/public/*
+!/backend/public/auth-action.html
+!/backend/public/auth-action.css
+!/backend/public/auth-action.js
+!/backend/public/brand-logo.png

@@ -164,7 +164,10 @@ const appLocalizationsArExtra = <String, String>{
   'auth_email_label': 'البريد الإلكتروني',
   'auth_email_required': 'البريد الإلكتروني مطلوب.',
   'auth_email_resent': '✅ تم إرسال رابط جديد.',
-  'auth_email_sent': 'أرسلنا رسالة تأكيد إلى\n{email}.',
+  'auth_email_sent':
+      'أرسلنا رسالة تأكيد إلى\n{email}.\nيُرجى التحقق أيضًا من مجلد الرسائل غير المرغوب فيها.',
+  'auth_email_delivery_failed':
+      'تعذّر إرسال رسالة التأكيد الآن. يُرجى المحاولة مرة أخرى.',
   'auth_password_label': 'كلمة المرور',
   'auth_password_required': 'كلمة المرور مطلوبة.',
   'auth_resend_link': 'إعادة إرسال الرابط',
@@ -1932,9 +1935,10 @@ const appLocalizationsArExtra = <String, String>{
   'organization_title': 'التنظيم',
   'parent_role': 'أحد الوالدين',
   'password_reset_instructions':
-      'أدخِل عنوان بريدك الإلكتروني. وسنرسل إليك رابطًا لإعادة التعيين.',
+      'أدخِل عنوان بريدك الإلكتروني. إذا كان هناك حساب مرتبط به، فستصلك رسالة قريبًا. يُرجى التحقق أيضًا من مجلد الرسائل غير المرغوب فيها.',
   'password_reset_send_link': 'إرسال الرابط',
-  'password_reset_sent': 'تم إرسال البريد الإلكتروني! تحقّق من صندوق الوارد.',
+  'password_reset_sent':
+      'إذا كان هناك حساب مرتبط بهذا العنوان، فستصلك رسالة قريبًا. يُرجى التحقق من صندوق الوارد ومجلد الرسائل غير المرغوب فيها.',
   'password_reset_title': 'إعادة تعيين كلمة المرور',
   'payment_accept_agb': 'قبول الشروط والأحكام وسياسة الخصوصية',
   'payment_accept_terms': 'يُرجى قبول الشروط',

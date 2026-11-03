@@ -47,16 +47,25 @@ class AuthResult {
   final AuthErrorCode? errorCode;
   final String? errorMessage;
   final ParentUser? user;
+  final bool? verificationEmailSent;
 
   const AuthResult._({
     required this.success,
     this.errorCode,
     this.errorMessage,
     this.user,
+    this.verificationEmailSent,
   });
 
-  factory AuthResult.ok(ParentUser user) =>
-      AuthResult._(success: true, user: user);
+  factory AuthResult.ok(
+    ParentUser user, {
+    bool? verificationEmailSent,
+  }) =>
+      AuthResult._(
+        success: true,
+        user: user,
+        verificationEmailSent: verificationEmailSent,
+      );
 
   factory AuthResult.fail(AuthErrorCode code, String message) =>
       AuthResult._(success: false, errorCode: code, errorMessage: message);
@@ -332,16 +341,27 @@ class AuthService with ChangeNotifier {
           password: password,
         );
 
-        await credential.user?.updateDisplayName(cleanName);
-        await credential.user?.sendEmailVerification();
+        final firebaseUser = credential.user;
+        if (firebaseUser == null) {
+          return AuthResult.fail(
+            AuthErrorCode.unknown,
+            'Registrierung ist fehlgeschlagen. Bitte versuche es erneut.',
+          );
+        }
+        await firebaseUser.updateDisplayName(cleanName);
+        final verificationEmailSent =
+            await _sendVerificationEmail(firebaseUser);
         final user = await _readOrCreateFirebaseUser(
-          credential.user!,
+          firebaseUser,
           preferredDisplayName: cleanName,
           forceNewRegisteredAt: true,
         );
         _currentUser = user;
         await refreshEntitlements();
-        return AuthResult.ok(user);
+        return AuthResult.ok(
+          user,
+          verificationEmailSent: verificationEmailSent,
+        );
       } on FirebaseAuthException catch (e) {
         debugPrint(
           'AuthService.register(): Firebase signup failed. code=${e.code}',
@@ -451,7 +471,7 @@ class AuthService with ChangeNotifier {
         }
 
         if (!firebaseUser.emailVerified) {
-          await firebaseUser.sendEmailVerification();
+          await _sendVerificationEmail(firebaseUser);
           await auth.signOut();
           return AuthResult.fail(
             AuthErrorCode.emailNotVerified,
@@ -658,6 +678,54 @@ class AuthService with ChangeNotifier {
     return recoverableCodes.contains(normalizedCode);
   }
 
+  Future<bool> _sendBrandedVerificationEmail(User user) async {
+    final backendUrl = APIConfig.getBackendBaseUrl();
+    if (backendUrl == null || backendUrl.isEmpty) return false;
+
+    try {
+      final idToken = await user.getIdToken();
+      if (idToken == null || idToken.isEmpty) return false;
+      final response = await http
+          .post(
+            Uri.parse('$backendUrl/auth/send-verification-email'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $idToken',
+            },
+            body: jsonEncode({}),
+          )
+          .timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) return true;
+      debugPrint(
+        'AuthService: branded verification email returned ${response.statusCode}.',
+      );
+    } catch (error) {
+      _logIgnoredError(
+        'AuthService: branded verification email unavailable',
+        error,
+      );
+    }
+    return false;
+  }
+
+  Future<bool> _sendVerificationEmail(User user) async {
+    if (await _sendBrandedVerificationEmail(user)) return true;
+    try {
+      await user.sendEmailVerification();
+      return true;
+    } on FirebaseAuthException catch (error) {
+      debugPrint(
+        'AuthService: verification email fallback failed. code=${error.code}',
+      );
+    } catch (error) {
+      _logIgnoredError(
+        'AuthService: verification email fallback failed',
+        error,
+      );
+    }
+    return false;
+  }
+
   // ── Logout ─────────────────────────────────────────────────────────────────
   Future<String?> sendPasswordReset(String email) async {
     final cleanEmail = email.trim();
@@ -714,7 +782,7 @@ class AuthService with ChangeNotifier {
       final code = e.code.trim().toLowerCase().replaceAll('_', '-');
       switch (code) {
         case 'user-not-found':
-          return 'Kein Konto mit dieser E-Mail gefunden.';
+          return null;
         case 'invalid-email':
           return 'Bitte gib eine gültige E-Mail-Adresse ein.';
         case 'too-many-requests':
@@ -812,16 +880,18 @@ class AuthService with ChangeNotifier {
     }
   }
 
-  Future<void> resendVerificationEmail(String email) async {
+  Future<bool> resendVerificationEmail(String email) async {
     try {
-      final auth = FirebaseAuth.instance;
-      // Re-sign-in is not possible without password here; use currentUser if available
-      final user = auth.currentUser;
-      if (user != null && !user.emailVerified) {
-        await user.sendEmailVerification();
+      final user = _firebaseAuth?.currentUser;
+      if (user == null ||
+          user.emailVerified ||
+          user.email?.trim().toLowerCase() != email.trim().toLowerCase()) {
+        return false;
       }
+      return _sendVerificationEmail(user);
     } catch (e) {
-      debugPrint('resendVerificationEmail failed: $e');
+      _logIgnoredError('AuthService.resendVerificationEmail() failed', e);
+      return false;
     }
   }
 
