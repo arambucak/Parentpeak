@@ -3162,7 +3162,9 @@ class AppStringsManager {
       'auth_url_open_failed': 'Konnte {url} nicht öffnen.',
       'auth_email_confirm_title': 'E-Mail bestätigen 📬',
       'auth_email_sent':
-          'Wir haben eine Bestätigungs-E-Mail an\n{email}\ngesendet.',
+          'Eine Bestätigungs-E-Mail geht an\n{email}.\nBitte prüfe auch deinen Spam-Ordner.',
+      'auth_email_delivery_failed':
+          'Die Bestätigungs-E-Mail konnte gerade nicht gesendet werden. Bitte versuche es erneut.',
       'auth_email_confirm_instructions':
           'Bitte klicke auf den Link in der E-Mail. Danach kannst du dich einloggen.',
       'auth_email_resent': '✅ Neuer Link wurde gesendet.',
@@ -3335,8 +3337,9 @@ class AppStringsManager {
       'login_forgot_password': 'Passwort vergessen?',
       'password_reset_title': 'Passwort zurücksetzen',
       'password_reset_instructions':
-          'Gib deine E-Mail-Adresse ein. Wir senden dir einen Link zum Zurücksetzen.',
-      'password_reset_sent': 'E-Mail gesendet! Prüfe deinen Posteingang.',
+          'Gib deine E-Mail-Adresse ein. Falls ein Konto dazu gehört, erhältst du in Kürze einen Link. Bitte prüfe auch deinen Spam-Ordner.',
+      'password_reset_sent':
+          'Falls ein Konto zu dieser Adresse gehört, erhältst du in Kürze eine E-Mail. Bitte prüfe deinen Posteingang und Spam-Ordner.',
       'password_reset_send_link': 'Link senden',
       'login_google_popup_blocked':
           'Popups sind blockiert. Bitte nutze E-Mail + Passwort oder öffne die Seite in Safari.',
@@ -5981,7 +5984,10 @@ class AppStringsManager {
           '{provider} sign-in is coming in the next version.',
       'auth_url_open_failed': 'Could not open {url}.',
       'auth_email_confirm_title': 'Confirm your email 📬',
-      'auth_email_sent': 'We sent a confirmation email to\n{email}.',
+      'auth_email_sent':
+          'A confirmation email is on its way to\n{email}.\nPlease also check your spam folder.',
+      'auth_email_delivery_failed':
+          'We could not send the confirmation email just now. Please try again.',
       'auth_email_confirm_instructions':
           'Open the link in the email. You can then sign in.',
       'auth_email_resent': '✅ A new link was sent.',
@@ -6149,8 +6155,9 @@ class AppStringsManager {
       'login_forgot_password': 'Forgot password?',
       'password_reset_title': 'Reset password',
       'password_reset_instructions':
-          'Enter your email address. We will send you a reset link.',
-      'password_reset_sent': 'Email sent! Check your inbox.',
+          'Enter your email address. If an account exists for it, a reset link will arrive shortly. Please also check your spam folder.',
+      'password_reset_sent':
+          'If an account exists for this address, an email will arrive shortly. Please check your inbox and spam folder.',
       'password_reset_send_link': 'Send link',
       'login_google_popup_blocked':
           'Popups are blocked. Use email and password or open the page in Safari.',
@@ -15683,7 +15690,10 @@ class AppStringsManager {
           'Têketina {provider} di guhertoya bê de tê.',
       'auth_url_open_failed': '{url} nehat vekirin.',
       'auth_email_confirm_title': 'E-nameyê piştrast bike 📬',
-      'auth_email_sent': 'Me e-nameyeke piştrastkirinê ji\n{email}\nre şand.',
+      'auth_email_sent':
+          'E-nameya piştrastkirinê ji bo\n{email}\nbi rê ket. Qutiya spamê jî kontrol bike.',
+      'auth_email_delivery_failed':
+          'Niha nekarîn e-nameya piştrastkirinê bişînin. Ji kerema xwe dîsa biceribîne.',
       'auth_email_confirm_instructions':
           'Li ser lînka di e-nameyê de pêl bike. Dû re tu dikarî têkevî.',
       'auth_email_resent': '✅ Lînka nû hat şandin.',
@@ -15806,8 +15816,9 @@ class AppStringsManager {
       'login_forgot_password': 'Te şîfre ji bîr kir?',
       'password_reset_title': 'Şîfreyê ji nû ve saz bike',
       'password_reset_instructions':
-          'Navnîşana e-nameya xwe binivîse. Em ê lînkeke ji nû ve sazkirinê bişînin.',
-      'password_reset_sent': 'E-name hat şandin! Qutiya xwe kontrol bike.',
+          'Navnîşana e-nameya xwe binivîse. Heke hesabek bi vê navnîşanê hebe, em ê di demeke nêz de lînkek bişînin. Qutiya spamê jî kontrol bike.',
+      'password_reset_sent':
+          'Heke hesabek bi vê navnîşanê hebe, em ê di demeke nêz de e-nameyek bişînin. Qutiya xwe û spamê kontrol bike.',
       'password_reset_send_link': 'Lînkê bişîne',
       'login_google_popup_blocked':
           'Pencereyên derketî hatine blokekirin. E-name + şîfre bi kar bîne an rûpelê di Safari de veke.',
@@ -22207,7 +22218,10 @@ class AppStringsManager {
           '{provider} ile giriş sonraki sürümde geliyor.',
       'auth_url_open_failed': '{url} açılamadı.',
       'auth_email_confirm_title': 'E-posta adresini doğrula 📬',
-      'auth_email_sent': 'Doğrulama e-postasını\n{email}\nadresine gönderdik.',
+      'auth_email_sent':
+          'Doğrulama e-postası\n{email}\nadresine gönderiliyor. Lütfen spam klasörünü de kontrol et.',
+      'auth_email_delivery_failed':
+          'Doğrulama e-postası şu anda gönderilemedi. Lütfen tekrar dene.',
       'auth_email_confirm_instructions':
           'Lütfen e-postadaki bağlantıya dokun. Ardından giriş yapabilirsin.',
       'auth_email_resent': '✅ Yeni bağlantı gönderildi.',
@@ -22329,8 +22343,9 @@ class AppStringsManager {
       'login_forgot_password': 'Şifreni mi unuttun?',
       'password_reset_title': 'Şifreyi sıfırla',
       'password_reset_instructions':
-          'E-posta adresini gir. Sana şifre sıfırlama bağlantısı göndereceğiz.',
-      'password_reset_sent': 'E-posta gönderildi! Gelen kutunu kontrol et.',
+          'E-posta adresini gir. Bu adrese bağlı bir hesap varsa kısa süre içinde bir bağlantı alırsın. Lütfen spam klasörünü de kontrol et.',
+      'password_reset_sent':
+          'Bu adrese bağlı bir hesap varsa kısa süre içinde e-posta alırsın. Gelen kutunu ve spam klasörünü kontrol et.',
       'password_reset_send_link': 'Bağlantıyı gönder',
       'login_google_popup_blocked':
           'Açılır pencereler engellenmiş. E-posta ve şifreyle giriş yap veya sayfayı Safari’de aç.',

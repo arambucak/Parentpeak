@@ -171,7 +171,10 @@ const appLocalizationsItExtra = <String, String>{
   'auth_email_label': 'E-mail',
   'auth_email_required': 'L\'e-mail è obbligatoria.',
   'auth_email_resent': '✅ È stato inviato un nuovo link.',
-  'auth_email_sent': 'Abbiamo inviato un\'e-mail di conferma a\n{email}.',
+  'auth_email_sent':
+      'Abbiamo inviato un\'e-mail di conferma a\n{email}.\nControlla anche la cartella della posta indesiderata.',
+  'auth_email_delivery_failed':
+      'Al momento non è stato possibile inviare l\'e-mail di conferma. Riprova.',
   'auth_password_label': 'Password',
   'auth_password_required': 'La password è obbligatoria.',
   'auth_resend_link': 'Invia di nuovo il link',
@@ -2037,9 +2040,10 @@ const appLocalizationsItExtra = <String, String>{
   'organization_title': 'Organizzazione',
   'parent_role': 'Genitore',
   'password_reset_instructions':
-      'Inserisci il tuo indirizzo email. Ti invieremo un link per reimpostarla.',
+      'Inserisci il tuo indirizzo email. Se è associato a un account, riceverai presto un link. Controlla anche la cartella della posta indesiderata.',
   'password_reset_send_link': 'Invia il link',
-  'password_reset_sent': 'Email inviata! Controlla la tua casella di posta.',
+  'password_reset_sent':
+      'Se a questo indirizzo è associato un account, riceverai presto un\'email. Controlla la posta in arrivo e la cartella della posta indesiderata.',
   'password_reset_title': 'Reimposta la password',
   'payment_accept_agb': 'Accetta Condizioni e Informativa sulla privacy',
   'payment_accept_terms': 'Accetta le condizioni',

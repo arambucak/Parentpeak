@@ -65,20 +65,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
       setState(() => _isLoading = false);
 
       if (result.success) {
-        // Sign out immediately — user must verify email first
-        await AuthService.instance.logout();
-        if (!mounted) return;
         await showDialog<void>(
           context: context,
           barrierDismissible: false,
           builder: (_) => _EmailVerificationDialog(
             email: _emailCtrl.text.trim().toLowerCase(),
+            emailSent: result.verificationEmailSent ?? true,
             onDone: () {
-              Navigator.of(context).pop(); // close dialog
-              Navigator.of(context).pop(); // go back to login
+              Navigator.of(context).pop();
             },
           ),
         );
+        if (!mounted) return;
+        await AuthService.instance.logout();
+        if (!mounted) return;
+        Navigator.of(context).pop();
       } else {
         setState(
           () => _errorMessage =
@@ -631,8 +632,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
 }
 
 class _EmailVerificationDialog extends StatefulWidget {
-  const _EmailVerificationDialog({required this.email, required this.onDone});
+  const _EmailVerificationDialog({
+    required this.email,
+    required this.emailSent,
+    required this.onDone,
+  });
   final String email;
+  final bool emailSent;
   final VoidCallback onDone;
 
   @override
@@ -642,6 +648,7 @@ class _EmailVerificationDialog extends StatefulWidget {
 
 class _EmailVerificationDialogState extends State<_EmailVerificationDialog> {
   bool _resent = false;
+  bool _sendFailed = false;
   bool _sending = false;
 
   Future<void> _resend() async {
@@ -649,11 +656,13 @@ class _EmailVerificationDialogState extends State<_EmailVerificationDialog> {
       _sending = true;
       _resent = false;
     });
-    await AuthService.instance.resendVerificationEmail(widget.email);
+    final sent =
+        await AuthService.instance.resendVerificationEmail(widget.email);
     if (mounted) {
       setState(() {
         _sending = false;
-        _resent = true;
+        _resent = sent;
+        _sendFailed = !sent;
       });
     }
   }
@@ -667,7 +676,19 @@ class _EmailVerificationDialogState extends State<_EmailVerificationDialog> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(context.tr('auth_email_sent', values: {'email': widget.email})),
+          Text(
+            widget.emailSent
+                ? context.tr('auth_email_sent',
+                    values: {'email': widget.email})
+                : context.tr('auth_email_delivery_failed'),
+          ),
+          if (_sendFailed) ...[
+            const SizedBox(height: 10),
+            Text(
+              context.tr('auth_email_delivery_failed'),
+              style: const TextStyle(color: Color(0xFF8C3E28), fontSize: 13),
+            ),
+          ],
           const SizedBox(height: 12),
           Text(
             context.tr('auth_email_confirm_instructions'),

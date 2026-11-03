@@ -172,7 +172,10 @@ const appLocalizationsFrExtra = <String, String>{
   'auth_email_label': 'E-mail',
   'auth_email_required': 'L\'e-mail est requis.',
   'auth_email_resent': '✅ Un nouveau lien a été envoyé.',
-  'auth_email_sent': 'Nous avons envoyé un e-mail de confirmation à\n{email}.',
+  'auth_email_sent':
+      'Nous avons envoyé un e-mail de confirmation à\n{email}.\nPense à vérifier tes courriers indésirables.',
+  'auth_email_delivery_failed':
+      'L’e-mail de confirmation n’a pas pu être envoyé pour le moment. Veuillez réessayer.',
   'auth_password_label': 'Mot de passe',
   'auth_password_required': 'Le mot de passe est requis.',
   'auth_resend_link': 'Renvoyer le lien',
@@ -2045,9 +2048,10 @@ const appLocalizationsFrExtra = <String, String>{
   'organization_title': 'Organisation',
   'parent_role': 'Parent',
   'password_reset_instructions':
-      'Saisis ton adresse e-mail. Nous t\'enverrons un lien de réinitialisation.',
+      'Saisis ton adresse e-mail. Si un compte y est associé, tu recevras bientôt un lien. Pense aussi à vérifier tes courriers indésirables.',
   'password_reset_send_link': 'Envoyer le lien',
-  'password_reset_sent': 'E-mail envoyé ! Vérifie ta boîte de réception.',
+  'password_reset_sent':
+      'Si un compte est associé à cette adresse, tu recevras bientôt un e-mail. Vérifie ta boîte de réception et tes courriers indésirables.',
   'password_reset_title': 'Réinitialiser le mot de passe',
   'payment_accept_agb': 'Accepter les CGU et la politique de confidentialité',
   'payment_accept_terms': 'Merci d\'accepter les conditions',

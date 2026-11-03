@@ -3963,7 +3963,7 @@ const firebaseRequireAuth = (process.env.FIREBASE_REQUIRE_AUTH || '0') === '1';
 const socialNoTokenWritePaths = [
   '/calendar/events', '/todo', '/todos', '/shopping', '/friend-chat',
   '/api/friends', '/api/safety', '/api/onboarding', '/api/account',
-  '/api/profile', '/api/friendships', '/api/recipes',
+  '/api/profile', '/api/friendships', '/api/recipes', '/auth/send-password-reset',
 ];
 
 function isNoTokenWritePath(reqPath) {
@@ -4154,7 +4154,7 @@ app.use(async (req, res, next) => {
 
   // Legacy exceptions; hardened routes such as calendar enforce Firebase
   // identity locally even when these global guards continue.
-  const noTokenPaths = ['/calendar/events', '/todo', '/todos', '/shopping', '/friend-chat', '/api/friends', '/api/safety', '/api/onboarding', '/api/account', '/api/profile', '/api/friendships'];
+  const noTokenPaths = ['/calendar/events', '/todo', '/todos', '/shopping', '/friend-chat', '/api/friends', '/api/safety', '/api/onboarding', '/api/account', '/api/profile', '/api/friendships', '/auth/send-password-reset'];
   if (noTokenPaths.some(p => req.path === p || req.path.startsWith(p + '/'))) {
     const authHeader = req.headers.authorization || '';
     if (authHeader.startsWith('Bearer ') && firebaseAdmin) {
@@ -12793,19 +12793,30 @@ async function sendPushToUser(userId, { title, body, data = {} }) {
 }
 
 // ── Firebase Custom Auth Action Handler ─────────────────────────────────────
-// Serves the branded German auth-action page. Firebase sends users here for
-// password reset, email verification and email-change recovery.
+// Firebase fallback emails use this page only after configuring the handler URL.
 // Set this URL in Firebase Console → Auth → Settings → Email action handler URL:
 //   https://parentpeak.onrender.com/auth/action
 const publicDir = path.join(__dirname, 'public');
 if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
 app.get('/auth/action', (_req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('Content-Security-Policy', "default-src 'none'; script-src 'self' https://www.gstatic.com https://apis.google.com; style-src 'self'; img-src 'self'; connect-src https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; frame-ancestors 'none'; base-uri 'none'; form-action 'none'");
   res.sendFile(path.join(publicDir, 'auth-action.html'));
+});
+app.get('/auth/brand-logo.png', (_req, res) => {
+  res.sendFile(path.join(publicDir, 'brand-logo.png'));
+});
+app.get('/auth/action.css', (_req, res) => {
+  res.sendFile(path.join(publicDir, 'auth-action.css'));
+});
+app.get('/auth/action.js', (_req, res) => {
+  res.sendFile(path.join(publicDir, 'auth-action.js'));
 });
 
 // ── Branded Email Service (modern alternative to Firebase email templates) ───
-// Uses nodemailer + Firebase Admin SDK to send fully custom German HTML emails.
-// Required env vars: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS
+// Uses Resend or nodemailer + Firebase Admin SDK for German HTML/text emails.
+// Requires RESEND_API_KEY or SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS.
 // Optional: SMTP_FROM_NAME (default: "ParentPeak"), SMTP_FROM_EMAIL
 // The custom auth-action.html page handles the user interaction after click.
 
@@ -12829,10 +12840,10 @@ function createMailTransporter() {
 }
 
 /**
- * sendEmail({ to, subject, html })
+ * sendEmail({ to, subject, html, text })
  * Priority: 1) Resend API  2) SMTP/nodemailer  3) returns false (Firebase fallback)
  */
-async function sendEmail({ to, subject, html }) {
+async function sendEmail({ to, subject, html, text }) {
   // ── 1. Resend (recommended: modern API, excellent deliverability, free 3k/mo) ──
   const resendKey = process.env.RESEND_API_KEY;
   if (resendKey) {
@@ -12842,6 +12853,7 @@ async function sendEmail({ to, subject, html }) {
       to,
       subject,
       html,
+      text,
     });
     if (error) throw new Error(`Resend error: ${error.message}`);
     return true;
@@ -12855,6 +12867,7 @@ async function sendEmail({ to, subject, html }) {
       to,
       subject,
       html,
+      text,
     });
     return true;
   }
@@ -12866,101 +12879,129 @@ async function sendEmail({ to, subject, html }) {
 
 /** Build a custom action URL pointing to our handler, preserving oobCode + mode */
 function buildCustomActionUrl(firebaseLink, mode) {
-  try {
-    const u = new URL(firebaseLink);
-    const oobCode   = u.searchParams.get('oobCode');
-    const apiKey    = u.searchParams.get('apiKey');
-    const continueUrl = u.searchParams.get('continueUrl');
-    const custom = new URL(ACTION_HANDLER_BASE);
-    custom.searchParams.set('mode', mode);
-    if (oobCode)    custom.searchParams.set('oobCode', oobCode);
-    if (apiKey)     custom.searchParams.set('apiKey', apiKey);
-    if (continueUrl) custom.searchParams.set('continueUrl', continueUrl);
-    return custom.toString();
-  } catch {
-    return firebaseLink; // fallback to original if URL parsing fails
+  const oobCode = new URL(firebaseLink).searchParams.get('oobCode');
+  if (!oobCode || !['resetPassword', 'verifyEmail', 'recoverEmail'].includes(mode)) {
+    throw new Error('Invalid Firebase action link');
   }
+  const custom = new URL(ACTION_HANDLER_BASE);
+  const localHttp = custom.protocol === 'http:' &&
+    ['localhost', '127.0.0.1', '[::1]'].includes(custom.hostname);
+  if ((custom.protocol !== 'https:' && !localHttp) || custom.username || custom.password) {
+    throw new Error('Auth action URL must use HTTPS (or local HTTP for development)');
+  }
+  custom.search = '';
+  custom.hash = '';
+  custom.searchParams.set('mode', mode);
+  custom.searchParams.set('oobCode', oobCode);
+  return custom.toString();
 }
 
 const EMAIL_STYLE = `
-  font-family:-apple-system,Arial,sans-serif;max-width:520px;margin:0 auto;
-  padding:32px 24px;background:#ffffff;color:#2D3748;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;
+  color:#183B56;line-height:1.65;
 `;
 
+function buildAuthEmail({ preview, title, intro, actionUrl, actionLabel, note }) {
+  const safeActionUrl = escapeEmailHtml(actionUrl);
+  const logoUrl = escapeEmailHtml(new URL('/auth/brand-logo.png', ACTION_HANDLER_BASE).href);
+  return `<!DOCTYPE html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title></head>
+<body style="margin:0;padding:0;background:#F7F4EE;${EMAIL_STYLE}">
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">${preview}</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F7F4EE;">
+    <tr><td align="center" style="padding:32px 16px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#FFFFFF;border:1px solid #E5E8E7;border-radius:24px;overflow:hidden;">
+        <tr><td align="center" style="padding:32px 24px 24px;background:#EDF4F5;border-bottom:1px solid #E0E9EA;">
+          <img src="${logoUrl}" width="88" height="88" alt="ParentPeak – Familie im Mittelpunkt" style="display:block;border:0;border-radius:20px;margin:0 auto 12px;">
+          <p style="font-size:25px;font-weight:750;letter-spacing:-0.8px;margin:0;color:#153E5A;">ParentPeak</p>
+          <p style="font-size:13px;margin:3px 0 0;color:#4D6573;">Gemeinsam gut durch den Familienalltag.</p>
+        </td></tr>
+        <tr><td style="padding:32px 28px;">
+          <p style="font-size:12px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#5E746C;margin:0 0 12px;">Für dich und deine Familie</p>
+          <h1 style="font-size:27px;line-height:1.25;letter-spacing:-0.7px;color:#153E5A;margin:0 0 20px;">${title}</h1>
+          <div style="font-size:16px;color:#4B606B;margin:0 0 24px;">${intro}</div>
+          <table role="presentation" cellpadding="0" cellspacing="0"><tr><td bgcolor="#153E5A" style="border-radius:12px;">
+            <a href="${safeActionUrl}" style="display:inline-block;padding:15px 24px;border:1px solid #153E5A;border-radius:12px;color:#FFFFFF;font-size:16px;font-weight:700;text-decoration:none;">${actionLabel}</a>
+          </td></tr></table>
+          <p style="font-size:13px;color:#586C76;margin:20px 0 24px;">Der Link ist nur begrenzte Zeit gültig und kann einmal verwendet werden.</p>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FBF6EB;border-radius:12px;border:1px solid #EEE4CF;">
+            <tr><td style="padding:16px;font-size:14px;color:#625844;">${note}</td></tr>
+          </table>
+          <p style="font-size:15px;margin:24px 0 0;color:#4B606B;">Herzliche Grüße<br><strong style="color:#153E5A;">Dein ParentPeak-Team</strong></p>
+          <p style="font-size:12px;line-height:1.6;color:#586C76;margin:24px 0 0;border-top:1px solid #E5E8E7;padding-top:20px;">
+            Der Button funktioniert nicht? Kopiere diesen Link in deinen Browser:<br>
+            <a href="${safeActionUrl}" style="color:#245C72;word-break:break-all;overflow-wrap:anywhere;">${safeActionUrl}</a>
+          </p>
+        </td></tr>
+      </table>
+      <p style="font-size:12px;color:#586C76;margin:20px 0 0;">ParentPeak · Ein bisschen mehr Leichtigkeit für Familien.</p>
+    </td></tr>
+  </table>
+</body></html>`;
+}
+
+function escapeEmailHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function buildPasswordResetEmail(actionUrl) {
-  return `
-<div style="${EMAIL_STYLE}">
-  <div style="font-size:36px;margin-bottom:12px;text-align:center;">🌿</div>
-  <h2 style="font-size:22px;font-weight:800;color:#2D3748;margin:0 0 8px 0;">Passwort zurücksetzen</h2>
-  <p style="font-size:15px;color:#718096;margin:0 0 20px 0;">
-    Hallo!<br><br>
-    Kein Stress — das passiert den Besten. 😊<br>
-    Klick auf den Button um ein neues Passwort für dein <strong>ParentPeak</strong>-Konto festzulegen:
-  </p>
-  <a href="${actionUrl}" style="display:inline-block;background:#4CAF50;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:12px;font-weight:700;font-size:15px;">
-    Neues Passwort festlegen →
-  </a>
-  <p style="font-size:13px;color:#A0AEC0;margin:20px 0 8px 0;">⏱ Der Link ist <strong>1 Stunde</strong> gültig.</p>
-  <p style="font-size:13px;color:#A0AEC0;margin:0 0 24px 0;">
-    Falls du diese Anfrage <strong>nicht</strong> gestellt hast, kannst du diese E-Mail ignorieren. Dein Konto bleibt sicher.
-  </p>
-  <hr style="border:none;border-top:1px solid #EDF2F7;margin:24px 0;">
-  <p style="font-size:12px;color:#CBD5E0;margin:0;">
-    Liebe Grüße,<br>
-    <strong style="color:#4CAF50;">Dein ParentPeak-Team 💚</strong><br>
-    <em>Dein digitaler Begleiter für Eltern</em>
-  </p>
-</div>`;
+  return buildAuthEmail({
+    preview: 'Ein neues Passwort, und du bist wieder bei ParentPeak dabei.',
+    title: 'Passwort sicher zurücksetzen',
+    intro: 'Hallo,<br><br>im Familienalltag ist an vieles zu denken. Falls dein Passwort gerade nicht dazugehört: kein Problem. Hier kannst du in Ruhe ein neues für dein ParentPeak-Konto festlegen.',
+    actionUrl,
+    actionLabel: 'Neues Passwort festlegen',
+    note: '<strong>Du hast das nicht angefragt?</strong><br>Dann brauchst du nichts zu tun. Dein Passwort bleibt unverändert. Wir fragen dich niemals per E-Mail nach deinem Passwort.',
+  });
 }
 
 function buildVerificationEmail(displayName, actionUrl) {
-  const name = displayName || 'dort';
-  return `
-<div style="${EMAIL_STYLE}">
-  <div style="font-size:36px;margin-bottom:12px;text-align:center;">🌿</div>
-  <h2 style="font-size:22px;font-weight:800;color:#2D3748;margin:0 0 8px 0;">E-Mail-Adresse bestätigen</h2>
-  <p style="font-size:15px;color:#718096;margin:0 0 20px 0;">
-    Hallo ${name}! 🎉<br><br>
-    Schön, dass du dabei bist. Bestätige jetzt deine E-Mail-Adresse:
-  </p>
-  <a href="${actionUrl}" style="display:inline-block;background:#4CAF50;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:12px;font-weight:700;font-size:15px;">
-    E-Mail bestätigen →
-  </a>
-  <p style="font-size:13px;color:#A0AEC0;margin:20px 0 24px 0;">
-    Falls du kein ParentPeak-Konto erstellt hast, kannst du diese E-Mail ignorieren.
-  </p>
-  <hr style="border:none;border-top:1px solid #EDF2F7;margin:24px 0;">
-  <p style="font-size:12px;color:#CBD5E0;margin:0;">
-    Herzlich willkommen,<br>
-    <strong style="color:#4CAF50;">Dein ParentPeak-Team 💚</strong><br>
-    <em>Dein digitaler Begleiter für Eltern</em>
-  </p>
-</div>`;
+  const greeting = displayName.trim()
+    ? `Hallo ${escapeEmailHtml(displayName.trim())},`
+    : 'Hallo,';
+  return buildAuthEmail({
+    preview: 'Schön, dass du da bist. Bestätige deine E-Mail und starte mit ParentPeak.',
+    title: 'Willkommen bei ParentPeak',
+    intro: `${greeting}<br><br>Familie ist voller kleiner und großer Momente. Schön, dass wir dich dabei begleiten dürfen.<br><br>Ein kleiner Schritt fehlt noch: Bitte bestätige deine E-Mail-Adresse, um deine Anmeldung in unserer Eltern-Community abzuschließen.`,
+    actionUrl,
+    actionLabel: 'E-Mail-Adresse bestätigen',
+    note: '<strong>Kein Konto bei uns erstellt?</strong><br>Dann kannst du diese Nachricht einfach ignorieren. Du musst nichts weiter tun.',
+  });
+}
+
+function buildPasswordResetEmailText(actionUrl) {
+  return `Hallo,\n\nim Familienalltag ist an vieles zu denken. Falls dein Passwort gerade nicht dazugehört: kein Problem. Hier kannst du in Ruhe ein neues für dein ParentPeak-Konto festlegen:\n${actionUrl}\n\nDer Link ist nur begrenzte Zeit gültig und kann einmal verwendet werden.\n\nDu hast das nicht angefragt? Dann brauchst du nichts zu tun. Dein Passwort bleibt unverändert. Wir fragen dich niemals per E-Mail nach deinem Passwort.\n\nHerzliche Grüße\nDein ParentPeak-Team\nGemeinsam gut durch den Familienalltag.`;
+}
+
+function buildVerificationEmailText(displayName, actionUrl) {
+  const greeting = displayName.trim() ? `Hallo ${displayName.trim()},` : 'Hallo,';
+  return `${greeting}\n\nFamilie ist voller kleiner und großer Momente. Schön, dass wir dich dabei begleiten dürfen.\n\nEin kleiner Schritt fehlt noch: Bitte bestätige deine E-Mail-Adresse, um deine Anmeldung in unserer Eltern-Community abzuschließen:\n${actionUrl}\n\nDer Link ist nur begrenzte Zeit gültig und kann einmal verwendet werden.\n\nWenn du kein ParentPeak-Konto erstellt hast, kannst du diese Nachricht ignorieren.\n\nHerzliche Grüße\nDein ParentPeak-Team\nGemeinsam gut durch den Familienalltag.`;
 }
 
 /**
  * POST /auth/send-password-reset
  * Body: { email: string }
  * Generates a Firebase password reset link via Admin SDK and sends it
- * through nodemailer with a fully branded German HTML email.
- * Always returns 200 to avoid leaking user existence.
+ * through the configured email provider. User existence is never disclosed.
  */
 app.post('/auth/send-password-reset', async (req, res) => {
-  const email = (req.body?.email || '').trim().toLowerCase();
+  const email = typeof req.body?.email === 'string'
+    ? req.body.email.trim().toLowerCase()
+    : '';
 
   // Basic email format validation (prevents unnecessary Firebase calls)
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return res.status(400).json({ error: 'Ungültige E-Mail-Adresse' });
   }
 
-  // Always 200 so callers can't enumerate users
-  res.json({ success: true });
-
-  // Async: generate link + send email (fire-and-forget after response)
   try {
     if (!firebaseAdmin) {
-      console.warn('⚠️ /auth/send-password-reset: Firebase Admin nicht initialisiert');
-      return;
+      return res.status(503).json({ error: 'E-Mail-Versand ist derzeit nicht verfügbar' });
     }
 
     const firebaseLink = await firebaseAdmin.auth().generatePasswordResetLink(email, {
@@ -12972,15 +13013,19 @@ app.post('/auth/send-password-reset', async (req, res) => {
       to: email,
       subject: 'Dein ParentPeak-Passwort zurücksetzen',
       html: buildPasswordResetEmail(actionUrl),
+      text: buildPasswordResetEmailText(actionUrl),
     });
-    if (sent) {
-      console.log(`✉️ Passwort-Reset E-Mail gesendet an ${email.slice(0, 3)}***`);
+    if (!sent) {
+      return res.status(503).json({ error: 'E-Mail-Versand ist derzeit nicht verfügbar' });
     }
+    console.log(`✉️ Passwort-Reset E-Mail gesendet an ${email.slice(0, 3)}***`);
+    return res.json({ success: true });
   } catch (err) {
-    // Don't expose errors — user is already told "success"
-    if (err.code !== 'auth/user-not-found') {
-      console.error('❌ Password reset email error:', err.message);
+    if (err.code === 'auth/user-not-found') {
+      return res.json({ success: true });
     }
+    console.error('❌ Password reset email failed:', err.code || err.name || 'unknown');
+    return res.status(503).json({ error: 'E-Mail-Versand ist derzeit nicht verfügbar' });
   }
 });
 
@@ -12990,7 +13035,12 @@ app.post('/auth/send-password-reset', async (req, res) => {
  * Generates an email verification link and sends branded German email.
  */
 app.post('/auth/send-verification-email', async (req, res) => {
-  const idToken = (req.body?.idToken || '').trim();
+  const authorization = typeof req.headers.authorization === 'string'
+    ? req.headers.authorization
+    : '';
+  const idToken = authorization.startsWith('Bearer ')
+    ? authorization.slice(7).trim()
+    : (typeof req.body?.idToken === 'string' ? req.body.idToken.trim() : '');
   if (!idToken) return res.status(400).json({ error: 'idToken erforderlich' });
 
   try {
@@ -13008,17 +13058,21 @@ app.post('/auth/send-verification-email', async (req, res) => {
     const actionUrl   = buildCustomActionUrl(firebaseLink, 'verifyEmail');
     const displayName = decoded.name || '';
 
-    await sendEmail({
+    const sent = await sendEmail({
       to: decoded.email,
       subject: 'Bestätige deine ParentPeak E-Mail-Adresse ✅',
       html: buildVerificationEmail(displayName, actionUrl),
+      text: buildVerificationEmailText(displayName, actionUrl),
     });
+    if (!sent) {
+      return res.status(503).json({ error: 'E-Mail-Versand ist derzeit nicht verfügbar' });
+    }
 
     console.log(`✉️ Verification E-Mail gesendet an ${decoded.email.slice(0, 3)}***`);
     res.json({ success: true });
   } catch (err) {
-    console.error('❌ Verification email error:', err.message);
-    res.status(500).json({ error: 'E-Mail konnte nicht gesendet werden' });
+    console.error('❌ Verification email failed:', err.code || err.name || 'unknown');
+    res.status(503).json({ error: 'E-Mail-Versand ist derzeit nicht verfügbar' });
   }
 });
 

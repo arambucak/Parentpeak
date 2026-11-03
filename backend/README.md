@@ -1,5 +1,71 @@
 # Parentpeak Marktplatz Backend
 
+## Gebrandete Konto-E-Mails und Kontoseiten
+
+Passwort-Reset und E-Mail-Bestaetigung verwenden die gemeinsamen
+HTML-/Textvorlagen in `server.js`. Das bereitgestellte ParentPeak-Schildlogo
+wird als optimiertes PNG unter `/auth/brand-logo.png` ausgeliefert; die
+Originaldateien im App-Iconpaket werden nicht geaendert. Die Kontoseite unter
+`/auth/action` verwendet dieselbe Gestaltung, ohne Analytics oder externe
+Fonts. Einmalcodes werden nach dem Einlesen aus der Browseradresse entfernt.
+Passwoerter gehen ausschliesslich ueber das Firebase Auth SDK an Firebase,
+nicht an das ParentPeak-Backend. Erfolg wird erst nach Firebase-Bestaetigung
+angezeigt. Abgelaufene/benutzte Links, Verbindungsfehler und Firebase-
+Passwortrichtlinien erhalten eigene Meldungen. Wiederherstellung der
+Anmelde-E-Mail erfordert eine ausdrueckliche Bestaetigung.
+
+### Bereitstellung (nicht allein durch einen App-Build erledigt)
+
+1. Backend inklusive `public/auth-action.html`, `auth-action.css`,
+   `auth-action.js` und `brand-logo.png` bereitstellen. `AUTH_ACTION_URL`
+   muss auf die oeffentliche HTTPS-Kontoseite zeigen; Standard ist
+   `https://parentpeak.onrender.com/auth/action`. Logo und Assets muessen
+   auf demselben Host erreichbar sein.
+2. Einen bestehenden Mailanbieter konfigurieren: entweder `RESEND_API_KEY`
+   oder SMTP mit `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` und
+   gegebenenfalls `SMTP_SECURE=true` fuer Port 465. Keine Zugangsdaten ins
+   Repository oder in Logs kopieren. `SMTP_FROM_NAME=ParentPeak` und
+   `SMTP_FROM_EMAIL` auf eine beim Anbieter verifizierte Absenderadresse
+   setzen (auch fuer Resend). SPF/DKIM und die passende DMARC-Konfiguration
+   beim eigenen Domain-/Mailanbieter pruefen. Kein neuer Anbieter und keine
+   Domain-/DNS-Aenderung werden durch diesen Code automatisch eingerichtet.
+3. In Firebase Console → Authentication → Templates fuer Passwort-Reset,
+   E-Mail-Bestaetigung und Wiederherstellung der E-Mail die benutzerdefinierte
+   Aktions-URL auf dieselbe `/auth/action`-Adresse setzen. Die beim Firebase-
+   Projekt erlaubten Domains muessen den verwendeten Host enthalten.
+   `continueUrl` allein ersetzt den Firebase-Aktionshandler **nicht**.
+   Die Web-Konfiguration der Kontoseite muss zum Projekt der App gehoeren.
+4. Bei unkonfiguriertem/fehlgeschlagenem Backend-Mailversand liefert das
+   Backend 503; die App versucht weiterhin den Firebase-Mailversand.
+   Dieser Fallback bleibt absichtlich erhalten. Er verwendet die in Firebase
+   konfigurierten Mailtexte und kann **nicht** automatisch das eigene
+   HTML-Layout/Logo uebernehmen. Mit Schritt 3 fuehrt sein Link trotzdem auf
+   die eigene Kontoseite. Ohne konfigurierten Mailanbieter ist eine
+   vollstaendig gebrandete E-Mail daher nicht zugesichert.
+5. Nach Freigabe mit einem eigenen Testkonto beide Versandpfade und die
+   Links auf dem Handy pruefen: Reset, Bestaetigung, erneuter Versand,
+   abgelaufene/benutzte Links, falsche Passwortwiederholung und
+   Rueckkehr zur App. Lokale Tests pruefen keine produktive
+   Providerkonfiguration, Posteingangszustellung oder Spam-Einstufung.
+
+Das Logo im **Mailinhalt** ist unabhaengig vom Absender-Avatar in Gmail & Co.
+Dessen Anzeige wird vom empfangenden Dienst bzw. dessen Markenverifikation
+bestimmt und kann nicht per HTML erzwungen werden. Auch bei blockierten
+Bildern bleiben Markenname, Texte und Link nutzbar.
+
+Der anonyme Reset-Endpunkt bleibt hinter den bestehenden Write-Rate-Limits
+und validiert das E-Mail-Format. Nicht vorhandene Konten erhalten dieselbe
+generische Erfolgsantwort wie ein angenommener Versand. Das ist keine
+Garantie gegen zeitbasierte Konto-Enumeration oder verteilten Missbrauch.
+Verifizierungsmails verwenden den Firebase-ID-Token der aktiven Sitzung.
+
+Lokale Regressionen (Node 24, synthetische Codes und gemocktes Firebase,
+kein echter Versand/Produktionszugriff):
+
+```bash
+cd backend && API_BASE=http://127.0.0.1:9 node --test tests/unit/auth-email-delivery.test.js tests/unit/auth-action.test.js
+```
+
 ## FoodFeed-Veroeffentlichung
 
 Oeffentliche Rezeptdetails (`GET /api/food-feed/recipes/:id`), Kommentare
