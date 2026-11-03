@@ -149,7 +149,6 @@ async function initializePrisma() {
 
 const app = express();
 const PORT = Number.parseInt(process.env.PORT || '3000', 10);
-const backendApiToken = (process.env.BACKEND_API_TOKEN || '').trim();
 const geminiApiKey = (process.env.GEMINI_API_KEY || '').trim();
 // Moderations-Admins: kommagetrennte Firebase-UIDs aus der Render-Env.
 // Niemals hardcodiert — nur ueber ADMIN_USER_IDS konfiguriert.
@@ -3926,27 +3925,18 @@ async function authorizeAccountOwner(req, res, userId) {
     }
     return true;
   }
-  const authHeader = req.headers.authorization || '';
-  if (backendApiToken && authHeader === `Bearer ${backendApiToken}`) {
-    return true;
-  }
 
   const { uid, verified } = await verifyFirebaseIdToken(req);
-  if (verified) {
-    if (uid !== userId) {
-      res.status(403).json({ error: 'Konto-Loeschung nur fuer das eigene Konto erlaubt' });
-      return false;
-    }
-    req.firebaseUid = uid;
-    return true;
+  if (!verified || !uid) {
+    res.status(401).json({ error: 'Gueltiger Firebase ID-Token erforderlich' });
+    return false;
   }
-
-  if (!isProduction && !requireAuthForWrites && !firebaseRequireAuth) {
-    return true;
+  if (uid !== userId) {
+    res.status(403).json({ error: 'Konto-Loeschung nur fuer das eigene Konto erlaubt' });
+    return false;
   }
-
-  res.status(401).json({ error: 'Gueltiger Firebase ID-Token erforderlich' });
-  return false;
+  req.firebaseUid = uid;
+  return true;
 }
 
 async function authorizeProfileOwner(req, res, userId) {
@@ -3994,10 +3984,6 @@ async function firebaseAuthMiddleware(req, res, next) {
   if (isNoTokenWritePath(req.path)) {
     const { uid, verified } = await verifyFirebaseIdToken(req);
     if (verified) req.firebaseUid = uid;
-    return next();
-  }
-  const authHeader = req.headers.authorization || '';
-  if (backendApiToken && authHeader === `Bearer ${backendApiToken}`) {
     return next();
   }
   const { uid, verified } = await verifyFirebaseIdToken(req);
@@ -4181,14 +4167,7 @@ app.use(async (req, res, next) => {
   }
 
   const authHeader = req.headers.authorization || '';
-  const hasBearer = authHeader.startsWith('Bearer ');
-
-  if (backendApiToken && authHeader === `Bearer ${backendApiToken}`) {
-    next();
-    return;
-  }
-
-  if (hasBearer && firebaseAdmin) {
+  if (authHeader.startsWith('Bearer ') && firebaseAdmin) {
     const { uid, verified } = await verifyFirebaseIdToken(req);
     if (verified) {
       req.firebaseUid = uid;
@@ -4197,7 +4176,7 @@ app.use(async (req, res, next) => {
     }
   }
 
-  if (!backendApiToken && !firebaseAdmin) {
+  if (!firebaseAdmin) {
     res.status(503).json({ error: 'Server-Konfiguration unvollstaendig (Auth nicht konfiguriert).' });
     return;
   }
@@ -10286,15 +10265,8 @@ app.post('/api/safety/report', requireVerifiedUser, async (req, res) => {
 });
 
 // ─── Moderations-Dashboard (Admin) ─────────────────────────────────────────
-// Zugriff nur fuer Firebase-UIDs aus ADMIN_USER_IDS (Render-Env). Der
-// Backend-API-Token wird als Fallback fuer serverseitige Tools akzeptiert.
+// Zugriff nur fuer verifizierte Firebase-UIDs aus ADMIN_USER_IDS (Render-Env).
 async function requireAdmin(req, res, next) {
-  // Fallback: statischer Server-Token (nur fuer serverseitige Tools).
-  const authHeader = req.headers.authorization || '';
-  if (backendApiToken && authHeader === `Bearer ${backendApiToken}`) {
-    return next();
-  }
-  // Regulaer: Firebase-ID-Token pruefen und UID gegen die Admin-Liste.
   const { uid, verified } = await verifyFirebaseIdToken(req);
   if (!verified || !uid) {
     return res.status(401).json({ error: 'Anmeldung erforderlich' });
@@ -14239,13 +14211,9 @@ app.post('/api/food-feed/recipes/:id/report', requireVerifiedUser, async (req, r
 
 /**
  * GET /api/food-feed/reports
- * List food-offer reports (admin token required)
+ * List food-offer reports (allowlisted Firebase admin required)
  */
-app.get('/api/food-feed/reports', async (req, res) => {
-  if (!isAdminTokenAuthorized(req)) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
+app.get('/api/food-feed/reports', requireAdmin, async (req, res) => {
   const { status, maxResults = 50, offset = 0 } = req.query;
 
   try {
@@ -14278,13 +14246,9 @@ app.get('/api/food-feed/reports', async (req, res) => {
 
 /**
  * POST /api/food-feed/reports/:reportId/resolve
- * Resolve or dismiss a food-offer report (admin token required)
+ * Resolve or dismiss a food-offer report (allowlisted Firebase admin required)
  */
-app.post('/api/food-feed/reports/:reportId/resolve', async (req, res) => {
-  if (!isAdminTokenAuthorized(req)) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
+app.post('/api/food-feed/reports/:reportId/resolve', requireAdmin, async (req, res) => {
   const { reportId } = req.params;
   const { action = 'resolved' } = req.body;
   const normalizedAction = String(action).trim();
@@ -15268,13 +15232,6 @@ app.get('/api/treasures', async (req, res) => {
     res.status(500).json({ error: `Failed to list treasures: ${err.message}` });
   }
 });
-
-function isAdminTokenAuthorized(req) {
-  if (!backendApiToken) return false;
-  const authHeader = req.headers.authorization || '';
-  return authHeader === `Bearer ${backendApiToken}`;
-}
-
 function normalizeTreasureReportReason(value) {
   return String(value || '')
     .trim()
@@ -15972,7 +15929,7 @@ app.get('/api/treasures/mine', async (req, res) => {
 
 /**
  * GET /api/treasures/reports
- * List treasure reports (admin token required)
+ * List treasure reports (allowlisted Firebase admin required)
  */
 app.get('/api/treasures/reports', requireAdmin, async (req, res) => {
   const {
@@ -16011,7 +15968,7 @@ app.get('/api/treasures/reports', requireAdmin, async (req, res) => {
 
 /**
  * POST /api/treasures/reports/:reportId/resolve
- * Resolve or dismiss a treasure report (admin token required)
+ * Resolve or dismiss a treasure report (allowlisted Firebase admin required)
  */
 app.post('/api/treasures/reports/:reportId/resolve', requireAdmin, async (req, res) => {
   const { reportId } = req.params;
