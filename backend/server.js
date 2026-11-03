@@ -10171,6 +10171,246 @@ app.post('/api/recipes/:id/react', requireVerifiedUser, async (req, res) => {
   }
 });
 
+// ============================================================================
+// MOMENTE — Eltern teilen Familien-Momente (Text + mehrere Bilder)
+// ============================================================================
+// Sichtbarkeit: 'public' (alle in der Community) | 'friends' (nur verbundene
+// Familien, Default) | 'private' (nur ich). Bilder als JSON-Array von URLs
+// (vom bereits vorhandenen /uploads/image). Herz-Reaktion + Kommentare in M-B2.
+
+let momentsSchemaEnsured = false;
+async function ensureMomentsSchemaReady() {
+  if (momentsSchemaEnsured) return;
+  await ensureSocialSchemaReady();
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "Moment" (
+      "id" TEXT PRIMARY KEY,
+      "authorUserId" TEXT NOT NULL,
+      "authorName" TEXT NOT NULL DEFAULT 'Familie',
+      "text" TEXT NOT NULL DEFAULT '',
+      "imageUrls" TEXT NOT NULL DEFAULT '[]',
+      "visibility" TEXT NOT NULL DEFAULT 'friends',
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_moment_author" ON "Moment"("authorUserId");`);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_moment_visibility" ON "Moment"("visibility");`);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_moment_created" ON "Moment"("createdAt");`);
+  // Herz-Reaktion: genau eine Zeile pro (Moment, Nutzer, Typ) -> togglebar.
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "MomentReaction" (
+      "momentId" TEXT NOT NULL,
+      "userId" TEXT NOT NULL,
+      "type" TEXT NOT NULL DEFAULT 'heart',
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY ("momentId", "userId", "type")
+    );
+  `);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_momentreaction_moment" ON "MomentReaction"("momentId");`);
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "MomentComment" (
+      "id" TEXT PRIMARY KEY,
+      "momentId" TEXT NOT NULL,
+      "authorUserId" TEXT NOT NULL,
+      "authorName" TEXT NOT NULL DEFAULT 'Familie',
+      "text" TEXT NOT NULL,
+      "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+  `);
+  await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_momentcomment_moment" ON "MomentComment"("momentId", "createdAt");`);
+  momentsSchemaEnsured = true;
+}
+
+// Erlaubte Sichtbarkeiten (gleich wie Rezepte).
+const MOMENT_VISIBILITIES = new Set(['public', 'friends', 'private']);
+
+// In-Memory-Fallback (nur wenn DB nicht verfuegbar + Fallbacks erlaubt).
+const momentsMem = new Map();
+const momentReactionsMem = new Map();
+const momentCommentsMem = new Map();
+
+// Baut die Client-Antwort fuer einen Moment inkl. Herz-/Kommentar-Zaehler und
+// ob der anfragende Nutzer selbst ein Herz gesetzt hat.
+async function buildMomentForClient(row, requesterUid) {
+  const id = row.id;
+  let hearts = 0;
+  let myHeart = false;
+  let comments = 0;
+  try {
+    const rrows = await prisma.$queryRawUnsafe(
+      `SELECT "userId" FROM "MomentReaction" WHERE "momentId" = $1 AND "type" = 'heart'`, id
+    );
+    hearts = rrows.length;
+    myHeart = rrows.some(r => r.userId === requesterUid);
+    const crows = await prisma.$queryRawUnsafe(
+      `SELECT COUNT(*)::int AS n FROM "MomentComment" WHERE "momentId" = $1`, id
+    );
+    comments = crows?.[0]?.n ?? 0;
+  } catch (_) {
+    const list = momentReactionsMem.get(id) || [];
+    hearts = list.length;
+    myHeart = list.some(r => r.userId === requesterUid);
+    comments = (momentCommentsMem.get(id) || []).length;
+  }
+  return {
+    id,
+    authorUserId: row.authorUserId,
+    authorName: row.authorName || 'Familie',
+    text: row.text || '',
+    imageUrls: parseJsonArray(row.imageUrls),
+    visibility: row.visibility || 'friends',
+    createdAt: row.createdAt,
+    heartCount: hearts,
+    commentCount: comments,
+    heartedByMe: myHeart,
+    isMine: row.authorUserId === requesterUid,
+  };
+}
+
+// Moment erstellen. Bild-URLs kommen vom bereits vorhandenen /uploads/image.
+app.post('/api/moments', requireVerifiedUser, async (req, res) => {
+  const authorUserId = req.firebaseUid;
+  const claimedAuthor = (req.body.authorUserId || '').toString().trim();
+  if (claimedAuthor && claimedAuthor !== authorUserId) {
+    return res.status(403).json({ error: 'Nur fuer das eigene Konto erlaubt' });
+  }
+  const text = (req.body.text || '').toString().trim().slice(0, 2000);
+  const imageUrls = Array.isArray(req.body.imageUrls)
+      ? req.body.imageUrls
+          .map(x => x.toString().trim())
+          .filter(Boolean)
+          .slice(0, 10)
+      : [];
+  // Ein Moment braucht mindestens Text ODER ein Bild.
+  if (!text && imageUrls.length === 0) {
+    return res.status(400).json({ error: 'Text oder Bild erforderlich' });
+  }
+  if (await isUserSuspended(authorUserId)) return respondSuspended(res);
+  const authorName = (req.body.authorName || 'Familie').toString().trim().slice(0, 100) || 'Familie';
+  let visibility = (req.body.visibility || 'friends').toString().trim();
+  if (!MOMENT_VISIBILITIES.has(visibility)) visibility = 'friends';
+  const id = generateId('mnt');
+  const row = {
+    id, authorUserId, authorName, text,
+    imageUrls: JSON.stringify(imageUrls), visibility,
+    createdAt: new Date().toISOString(),
+  };
+  try {
+    await ensureMomentsSchemaReady();
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "Moment" ("id","authorUserId","authorName","text","imageUrls","visibility","createdAt")
+       VALUES ($1,$2,$3,$4,$5,$6,NOW())`,
+      id, authorUserId, authorName, text, row.imageUrls, visibility
+    );
+    return res.status(201).json({ ok: true, moment: await buildMomentForClient(row, authorUserId) });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /api/moments', error)) return;
+    momentsMem.set(id, row);
+    return res.status(201).json({ ok: true, moment: await buildMomentForClient(row, authorUserId) });
+  }
+});
+
+// Momente-Feed: eigene + oeffentliche + von verbundenen Familien. Sichtbarkeit
+// SERVERSEITIG durchgesetzt. Geblockte (beide Richtungen) werden ausgeblendet.
+app.get('/api/moments', requireVerifiedUser, async (req, res) => {
+  const uid = req.firebaseUid;
+  try {
+    await ensureMomentsSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT * FROM "Moment" ORDER BY "createdAt" DESC LIMIT 500`
+    );
+    // Verbundene Familien (bestaetigte Freundschaften) des Anfragenden.
+    const friendUids = new Set();
+    if (uid) {
+      try {
+        const fr = await prisma.$queryRawUnsafe(
+          `SELECT "userLow","userHigh" FROM "Friendship"
+           WHERE ("userLow" = $1 OR "userHigh" = $1) AND "status" = 'accepted'`,
+          uid
+        );
+        for (const f of fr) friendUids.add(f.userLow === uid ? f.userHigh : f.userLow);
+      } catch (_) {}
+    }
+    // Geblockte UIDs (beide Richtungen) ausblenden.
+    const blockedUids = new Set();
+    if (uid) {
+      try {
+        const bl = await prisma.$queryRawUnsafe(
+          `SELECT "blockerUserId","blockedUserId" FROM "SafetyBlock"
+           WHERE "blockerUserId" = $1 OR "blockedUserId" = $1`,
+          uid
+        );
+        for (const b of bl) {
+          blockedUids.add(b.blockerUserId === uid ? b.blockedUserId : b.blockerUserId);
+        }
+      } catch (_) {}
+    }
+    const visible = rows.filter(r => {
+      if (blockedUids.has(r.authorUserId)) return false;     // geblockt: nie
+      if (r.authorUserId === uid) return true;               // eigene immer
+      if (r.visibility === 'public') return true;            // fuer alle
+      if (r.visibility === 'friends') return friendUids.has(r.authorUserId);
+      return false;                                          // 'private': nie fremd
+    });
+    const out = [];
+    for (const r of visible) out.push(await buildMomentForClient(r, uid));
+    return res.json({ moments: out });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /api/moments', error)) return;
+    return res.json({ moments: [] });
+  }
+});
+
+// Einzelner Moment (mit Sichtbarkeits- und Block-Pruefung).
+app.get('/api/moments/:id', requireVerifiedUser, async (req, res) => {
+  const id = (req.params.id || '').toString().trim();
+  const uid = req.firebaseUid;
+  if (!id) return res.status(400).json({ error: 'id erforderlich' });
+  try {
+    await ensureMomentsSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(`SELECT * FROM "Moment" WHERE "id" = $1`, id);
+    if (rows.length === 0) return res.status(404).json({ error: 'Moment nicht gefunden' });
+    const r = rows[0];
+    if (await isBlockedBetween(uid, r.authorUserId)) {
+      return res.status(403).json({ error: 'Kein Zugriff', code: 'not_visible' });
+    }
+    let allowed = r.authorUserId === uid || r.visibility === 'public';
+    if (!allowed && r.visibility === 'friends' && uid) {
+      allowed = await areFriends(uid, r.authorUserId);
+    }
+    if (!allowed) return res.status(403).json({ error: 'Kein Zugriff', code: 'not_visible' });
+    return res.json({ moment: await buildMomentForClient(r, uid) });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /api/moments/:id', error)) return;
+    return res.status(404).json({ error: 'Moment nicht gefunden' });
+  }
+});
+
+// Moment loeschen (nur der Autor). Entfernt auch Reaktionen + Kommentare.
+app.delete('/api/moments/:id', requireVerifiedUser, async (req, res) => {
+  const id = (req.params.id || '').toString().trim();
+  const uid = req.firebaseUid;
+  if (!id) return res.status(400).json({ error: 'id erforderlich' });
+  try {
+    await ensureMomentsSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(`SELECT "authorUserId" FROM "Moment" WHERE "id" = $1`, id);
+    if (rows.length === 0) return res.json({ ok: true }); // schon weg
+    if (rows[0].authorUserId !== uid) {
+      return res.status(403).json({ error: 'Nur der Autor darf loeschen' });
+    }
+    await prisma.$executeRawUnsafe(`DELETE FROM "MomentReaction" WHERE "momentId" = $1`, id);
+    await prisma.$executeRawUnsafe(`DELETE FROM "MomentComment" WHERE "momentId" = $1`, id);
+    await prisma.$executeRawUnsafe(`DELETE FROM "Moment" WHERE "id" = $1`, id);
+    return res.json({ ok: true });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'DELETE /api/moments/:id', error)) return;
+    momentsMem.delete(id);
+    momentReactionsMem.delete(id);
+    momentCommentsMem.delete(id);
+    return res.json({ ok: true });
+  }
+});
+
 // ─── DSGVO: Konto-Loeschung (Recht auf Loeschung, Art. 17) ─────────────────
 // Entfernt ALLE personenbezogenen Zeilen zu einem Nutzer (per userId UND per
 // zugehoerigem Freundes-Code). Token-exempt (/api/onboarding-Muster: userId
