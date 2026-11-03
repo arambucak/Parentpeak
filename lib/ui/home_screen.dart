@@ -680,8 +680,10 @@ class _HomeScreenState extends State<HomeScreen>
         id: 'eltern_match',
         label: AppStringsManager.getString(lang, 'tile_network'),
         description: AppStringsManager.getString(lang, 'tile_network_desc'),
-        icon: Icons.people_rounded,
-        color: const Color(0xFF0EA5A4),
+        // Warmes Community-Icon (mehrere Familien) + eigenstaendige Akzentfarbe,
+        // die sich klar von Tuerkis/Blau/Lila der uebrigen Kacheln abhebt.
+        icon: Icons.diversity_1_rounded,
+        color: const Color(0xFFEC4899),
         builder: (_) => const ElternNetzwerkScreen(),
         featureId: 'eltern_match',
       ),
