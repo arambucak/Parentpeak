@@ -8902,6 +8902,30 @@ app.get('/parent-matching/interest', requireVerifiedUser, requireOwnFamily, asyn
   }
 });
 
+// Legt bei einem beidseitigen Match eine bestaetigte Freundschaft zwischen den
+// beiden UIDs an (idempotent), damit der bestehende Freundes-Chat genutzt
+// werden kann (Weg 2 des Eltern-Netzwerk-Redesigns). Fehler werden geschluckt:
+// das Match selbst darf nicht an einem Chat-Setup scheitern.
+async function ensureMatchFriendship(uidA, uidB) {
+  const a = (uidA || '').toString().trim();
+  const b = (uidB || '').toString().trim();
+  if (!a || !b || a === b) return;
+  try {
+    await ensureSocialSchemaReady();
+    if (await isBlockedBetween(a, b, { strict: true })) return;
+    const [low, high] = pairKey(a, b);
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "Friendship" ("userLow", "userHigh", "status", "requestedBy", "createdAt", "updatedAt")
+       VALUES ($1, $2, 'accepted', $3, NOW(), NOW())
+       ON CONFLICT ("userLow", "userHigh") DO UPDATE SET
+         "status" = 'accepted', "updatedAt" = NOW()`,
+      low, high, a
+    );
+  } catch (error) {
+    console.error('ensureMatchFriendship failed:', error && error.message);
+  }
+}
+
 async function recordParentMatchingAction(req, res) {
   const familyId = req.ownFamily.id;
   const profileIdInput = (req.body.profileId || req.body.matchedProfileId || '').toString().trim();
@@ -8957,6 +8981,9 @@ async function recordParentMatchingAction(req, res) {
 
     const mutualProfileIds = await getMutualConnectionProfileIds(familyId, actorUserId);
     const connected = actionValue === 'like' && mutualProfileIds.includes(targetProfile.id);
+    if (connected) {
+      await ensureMatchFriendship(actorUserId, targetProfile.ownerUserId);
+    }
 
     return res.status(201).json({
       item: createdAction,
