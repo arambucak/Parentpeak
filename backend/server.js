@@ -7167,7 +7167,20 @@ async function getRemainingMediaReferences() {
      UNION ALL SELECT "imageUrl" FROM "CommunityEvent" WHERE "imageUrl" IS NOT NULL
      UNION ALL SELECT "avatar" FROM "User" WHERE "avatar" IS NOT NULL`,
   );
-  return rows.map(row => row.url).filter(Boolean);
+  const urls = rows.map(row => row.url).filter(Boolean);
+  // Momente speichern mehrere Bild-URLs als JSON-Text -> separat einsammeln.
+  try {
+    const momentRows = await prisma.$queryRawUnsafe(
+      `SELECT "imageUrls" FROM "Moment" WHERE "imageUrls" <> '[]'`
+    );
+    for (const row of momentRows) {
+      try {
+        const arr = JSON.parse(row.imageUrls || '[]');
+        if (Array.isArray(arr)) urls.push(...arr.filter(Boolean));
+      } catch (_) {}
+    }
+  } catch (_) {}
+  return urls.filter(Boolean);
 }
 
 async function deleteUnreferencedAccountMedia(mediaUrls, userId) {
@@ -10411,6 +10424,149 @@ app.delete('/api/moments/:id', requireVerifiedUser, async (req, res) => {
   }
 });
 
+// Zugriffspruefung auf einen Moment fuer Reaktion/Kommentar: liefert den
+// Moment-Datensatz zurueck, wenn der Nutzer ihn sehen darf, sonst null (und
+// hat dann bereits eine Fehlerantwort gesendet).
+async function loadVisibleMomentOr403(res, id, uid) {
+  const rows = await prisma.$queryRawUnsafe(`SELECT * FROM "Moment" WHERE "id" = $1`, id);
+  if (rows.length === 0) { res.status(404).json({ error: 'Moment nicht gefunden' }); return null; }
+  const r = rows[0];
+  if (await isBlockedBetween(uid, r.authorUserId)) {
+    res.status(403).json({ error: 'Kein Zugriff', code: 'not_visible' }); return null;
+  }
+  let allowed = r.authorUserId === uid || r.visibility === 'public';
+  if (!allowed && r.visibility === 'friends' && uid) {
+    allowed = await areFriends(uid, r.authorUserId);
+  }
+  if (!allowed) { res.status(403).json({ error: 'Kein Zugriff', code: 'not_visible' }); return null; }
+  return r;
+}
+
+// Herz toggeln. Nur erlaubt, wenn der Moment fuer den Nutzer sichtbar ist.
+// Gesperrte Nutzer koennen nicht reagieren.
+app.post('/api/moments/:id/react', requireVerifiedUser, async (req, res) => {
+  const id = (req.params.id || '').toString().trim();
+  const uid = req.firebaseUid;
+  if (!id) return res.status(400).json({ error: 'id erforderlich' });
+  if (await isUserSuspended(uid)) return respondSuspended(res);
+  try {
+    await ensureMomentsSchemaReady();
+    const r = await loadVisibleMomentOr403(res, id, uid);
+    if (!r) return;
+    const existing = await prisma.$queryRawUnsafe(
+      `SELECT 1 FROM "MomentReaction" WHERE "momentId" = $1 AND "userId" = $2 AND "type" = 'heart' LIMIT 1`,
+      id, uid
+    );
+    if (existing.length > 0) {
+      await prisma.$executeRawUnsafe(
+        `DELETE FROM "MomentReaction" WHERE "momentId" = $1 AND "userId" = $2 AND "type" = 'heart'`,
+        id, uid
+      );
+    } else {
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO "MomentReaction" ("momentId","userId","type","createdAt") VALUES ($1,$2,'heart',NOW())
+         ON CONFLICT ("momentId","userId","type") DO NOTHING`,
+        id, uid
+      );
+    }
+    return res.json({ ok: true, moment: await buildMomentForClient(r, uid) });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /api/moments/:id/react', error)) return;
+    return res.json({ ok: true });
+  }
+});
+
+// Kommentare eines Moments laden (nur wenn sichtbar).
+app.get('/api/moments/:id/comments', requireVerifiedUser, async (req, res) => {
+  const id = (req.params.id || '').toString().trim();
+  const uid = req.firebaseUid;
+  if (!id) return res.status(400).json({ error: 'id erforderlich' });
+  try {
+    await ensureMomentsSchemaReady();
+    const r = await loadVisibleMomentOr403(res, id, uid);
+    if (!r) return;
+    const rows = await prisma.$queryRawUnsafe(
+      `SELECT "id","momentId","authorUserId","authorName","text","createdAt"
+       FROM "MomentComment" WHERE "momentId" = $1 ORDER BY "createdAt" ASC LIMIT 500`,
+      id
+    );
+    const comments = rows.map(c => ({
+      id: c.id,
+      momentId: c.momentId,
+      authorUserId: c.authorUserId,
+      authorName: c.authorName || 'Familie',
+      text: c.text || '',
+      createdAt: c.createdAt,
+      isMine: c.authorUserId === uid,
+    }));
+    return res.json({ comments });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /api/moments/:id/comments', error)) return;
+    return res.json({ comments: [] });
+  }
+});
+
+// Kommentar erstellen (nur wenn der Moment sichtbar ist). Suspend-Gate.
+app.post('/api/moments/:id/comments', requireVerifiedUser, async (req, res) => {
+  const id = (req.params.id || '').toString().trim();
+  const uid = req.firebaseUid;
+  if (!id) return res.status(400).json({ error: 'id erforderlich' });
+  const text = (req.body.text || '').toString().trim().slice(0, 1000);
+  if (!text) return res.status(400).json({ error: 'Text erforderlich' });
+  if (await isUserSuspended(uid)) return respondSuspended(res);
+  const authorName = (req.body.authorName || 'Familie').toString().trim().slice(0, 100) || 'Familie';
+  const commentId = generateId('mcm');
+  try {
+    await ensureMomentsSchemaReady();
+    const r = await loadVisibleMomentOr403(res, id, uid);
+    if (!r) return;
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "MomentComment" ("id","momentId","authorUserId","authorName","text","createdAt")
+       VALUES ($1,$2,$3,$4,$5,NOW())`,
+      commentId, id, uid, authorName, text
+    );
+    return res.status(201).json({
+      ok: true,
+      comment: {
+        id: commentId, momentId: id, authorUserId: uid, authorName,
+        text, createdAt: new Date().toISOString(), isMine: true,
+      },
+    });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /api/moments/:id/comments', error)) return;
+    return res.status(503).json({ error: 'Kommentar derzeit nicht verfuegbar' });
+  }
+});
+
+// Kommentar loeschen: der Autor des Kommentars ODER der Autor des Moments.
+app.delete('/api/moments/:id/comments/:commentId', requireVerifiedUser, async (req, res) => {
+  const id = (req.params.id || '').toString().trim();
+  const commentId = (req.params.commentId || '').toString().trim();
+  const uid = req.firebaseUid;
+  if (!id || !commentId) return res.status(400).json({ error: 'id erforderlich' });
+  try {
+    await ensureMomentsSchemaReady();
+    const crows = await prisma.$queryRawUnsafe(
+      `SELECT "authorUserId" FROM "MomentComment" WHERE "id" = $1 AND "momentId" = $2`,
+      commentId, id
+    );
+    if (crows.length === 0) return res.json({ ok: true }); // schon weg
+    const mrows = await prisma.$queryRawUnsafe(
+      `SELECT "authorUserId" FROM "Moment" WHERE "id" = $1`, id
+    );
+    const commentAuthor = crows[0].authorUserId;
+    const momentAuthor = mrows.length > 0 ? mrows[0].authorUserId : null;
+    if (uid !== commentAuthor && uid !== momentAuthor) {
+      return res.status(403).json({ error: 'Nur der Autor darf loeschen' });
+    }
+    await prisma.$executeRawUnsafe(`DELETE FROM "MomentComment" WHERE "id" = $1`, commentId);
+    return res.json({ ok: true });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'DELETE /api/moments/:id/comments/:commentId', error)) return;
+    return res.json({ ok: true });
+  }
+});
+
 // ─── DSGVO: Konto-Loeschung (Recht auf Loeschung, Art. 17) ─────────────────
 // Entfernt ALLE personenbezogenen Zeilen zu einem Nutzer (per userId UND per
 // zugehoerigem Freundes-Code). Token-exempt (/api/onboarding-Muster: userId
@@ -10462,6 +10618,26 @@ app.delete('/api/account/:userId', async (req, res) => {
       recipePhotoUrls = rows.map(r => r.photoUrl).filter(Boolean);
     } catch (_) {}
     await run('recipes', `DELETE FROM "Recipe" WHERE "authorUserId" = $1`, userId);
+    // Momente: Reaktionen/Kommentare des Nutzers + eigene Momente (inkl. deren
+    // Reaktionen/Kommentare). Bild-URLs vorher einsammeln (physische Loeschung
+    // unten, best effort).
+    let momentImageUrls = [];
+    try {
+      const rows = await prisma.$queryRawUnsafe(
+        `SELECT "imageUrls" FROM "Moment" WHERE "authorUserId" = $1`, userId
+      );
+      for (const row of rows) {
+        try {
+          const arr = JSON.parse(row.imageUrls || '[]');
+          if (Array.isArray(arr)) momentImageUrls.push(...arr.filter(Boolean));
+        } catch (_) {}
+      }
+    } catch (_) {}
+    await run('momentReactionsByUser', `DELETE FROM "MomentReaction" WHERE "userId" = $1`, userId);
+    await run('momentReactionsOnOwn', `DELETE FROM "MomentReaction" WHERE "momentId" IN (SELECT "id" FROM "Moment" WHERE "authorUserId" = $1)`, userId);
+    await run('momentCommentsByUser', `DELETE FROM "MomentComment" WHERE "authorUserId" = $1`, userId);
+    await run('momentCommentsOnOwn', `DELETE FROM "MomentComment" WHERE "momentId" IN (SELECT "id" FROM "Moment" WHERE "authorUserId" = $1)`, userId);
+    await run('moments', `DELETE FROM "Moment" WHERE "authorUserId" = $1`, userId);
     // UID-basierte Chat-Raeume (roomId enthaelt die UID)
     await run('chatRoomsUid', `DELETE FROM "FriendChatMessage" WHERE "roomId" LIKE $1`, `%${userId}%`);
     // Freundschafts-Registry + Kanten (per userId-Code)
@@ -10501,6 +10677,15 @@ app.delete('/api/account/:userId', async (req, res) => {
         deleted.recipeMedia = media;
       } catch (e) {
         deleted.recipeMedia = `error: ${e?.message || e}`;
+      }
+    }
+    // DSGVO: Momente-Bilddateien physisch entfernen (referenz-sicher).
+    if (momentImageUrls.length > 0) {
+      try {
+        const media = await deleteUnreferencedAccountMedia(momentImageUrls, userId);
+        deleted.momentMedia = media;
+      } catch (e) {
+        deleted.momentMedia = `error: ${e?.message || e}`;
       }
     }
 

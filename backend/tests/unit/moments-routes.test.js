@@ -22,9 +22,13 @@ function fixture({
   friends = [], // Paare [a,b] = accepted Friendship
   blocks = [], // Paare [blocker, blocked]
   suspended = [],
+  reactions = [], // {momentId, userId}
+  comments = [], // {id, momentId, authorUserId}
 } = {}) {
   const routes = new Map();
   const store = new Map(moments.map(m => [m.id, { ...m }]));
+  const reactionStore = reactions.map(r => ({ type: 'heart', ...r }));
+  const commentStore = comments.map(c => ({ authorName: c.authorUserId, text: 't', ...c }));
 
   function friendUidsOf(uid) {
     const set = new Set();
@@ -63,12 +67,34 @@ function fixture({
         return blocks.some(([x, y]) =>
           (x === a && y === b) || (x === b && y === a)) ? [{ one: 1 }] : [];
       }
-      if (sql.includes('FROM "MomentReaction"')) return [];
-      if (sql.includes('FROM "MomentComment"')) return [{ n: 0 }];
+      // react-Route: existiert ein Herz dieses Nutzers?
+      if (sql.includes('FROM "MomentReaction"') && sql.includes('LIMIT 1')) {
+        return reactionStore.some(r => r.momentId === args[0] && r.userId === args[1])
+          ? [{ one: 1 }] : [];
+      }
+      if (sql.includes('FROM "MomentReaction"')) {
+        return reactionStore
+          .filter(r => r.momentId === args[0])
+          .map(r => ({ userId: r.userId }));
+      }
+      // Kommentar-Count (buildMomentForClient) vs. Liste (comments-Route).
+      if (sql.includes('FROM "MomentComment"') && sql.includes('COUNT')) {
+        return [{ n: commentStore.filter(c => c.momentId === args[0]).length }];
+      }
+      if (sql.includes('FROM "MomentComment"') && sql.includes('authorUserId')
+          && sql.includes('"id" =')) {
+        const c = commentStore.find(x => x.id === args[0] && x.momentId === args[1]);
+        return c ? [{ authorUserId: c.authorUserId }] : [];
+      }
+      if (sql.includes('FROM "MomentComment"')) {
+        return commentStore
+          .filter(c => c.momentId === args[0])
+          .map(c => ({ ...c }));
+      }
       return [];
     },
     $executeRawUnsafe: async (sql, ...args) => {
-      if (sql.includes('INSERT INTO "Moment"')) {
+      if (sql.includes('INSERT INTO "Moment"') && !sql.includes('Reaction') && !sql.includes('Comment')) {
         const [id, authorUserId, authorName, text, imageUrls, visibility] = args;
         store.set(id, {
           id, authorUserId, authorName, text, imageUrls, visibility,
@@ -76,6 +102,16 @@ function fixture({
         });
       } else if (sql.includes('DELETE FROM "Moment" WHERE')) {
         store.delete(args[0]);
+      } else if (sql.includes('INSERT INTO "MomentReaction"')) {
+        reactionStore.push({ momentId: args[0], userId: args[1], type: 'heart' });
+      } else if (sql.includes('DELETE FROM "MomentReaction"')) {
+        const i = reactionStore.findIndex(r => r.momentId === args[0] && r.userId === args[1]);
+        if (i >= 0) reactionStore.splice(i, 1);
+      } else if (sql.includes('INSERT INTO "MomentComment"')) {
+        commentStore.push({ id: args[0], momentId: args[1], authorUserId: args[2], text: args[4] });
+      } else if (sql.includes('DELETE FROM "MomentComment" WHERE "id"')) {
+        const i = commentStore.findIndex(c => c.id === args[0]);
+        if (i >= 0) commentStore.splice(i, 1);
       }
       return 1;
     },
@@ -142,7 +178,7 @@ function fixture({
     await run(0);
     return { status, body: payload };
   }
-  return { call, store };
+  return { call, store, reactionStore, commentStore };
 }
 
 function moment(id, author, visibility, extra = {}) {
@@ -264,4 +300,119 @@ test('DELETE /api/moments/:id only by the author', async () => {
   const own = await call2('DELETE /api/moments/:id', 'me', { params: { id: 'm1' } });
   assert.equal(own.status, 200);
   assert.equal(store2.has('m1'), false);
+});
+
+// ── M-B2: Herz-Reaktion ─────────────────────────────────────────────────────
+
+test('POST /api/moments/:id/react toggles a heart on a visible moment', async () => {
+  const { call, reactionStore } = fixture({
+    moments: [moment('m1', 'stranger', 'public')],
+  });
+  // Erstes Tippen setzt ein Herz.
+  const on = await call('POST /api/moments/:id/react', 'me', { params: { id: 'm1' } });
+  assert.equal(on.status, 200);
+  assert.equal(reactionStore.some(r => r.momentId === 'm1' && r.userId === 'me'), true);
+  // Zweites Tippen entfernt es wieder.
+  const off = await call('POST /api/moments/:id/react', 'me', { params: { id: 'm1' } });
+  assert.equal(off.status, 200);
+  assert.equal(reactionStore.some(r => r.momentId === 'm1' && r.userId === 'me'), false);
+});
+
+test('POST /api/moments/:id/react is denied on a non-visible friends moment', async () => {
+  const { call, reactionStore } = fixture({
+    moments: [moment('m1', 'stranger', 'friends')],
+  });
+  const r = await call('POST /api/moments/:id/react', 'me', { params: { id: 'm1' } });
+  assert.equal(r.status, 403);
+  assert.equal(reactionStore.length, 0);
+});
+
+test('POST /api/moments/:id/react blocks suspended users', async () => {
+  const { call } = fixture({
+    moments: [moment('m1', 'stranger', 'public')],
+    suspended: ['me'],
+  });
+  const r = await call('POST /api/moments/:id/react', 'me', { params: { id: 'm1' } });
+  assert.equal(r.status, 403);
+});
+
+// ── M-B2: Kommentare ────────────────────────────────────────────────────────
+
+test('POST /api/moments/:id/comments needs text and stores the comment', async () => {
+  const { call, commentStore } = fixture({
+    moments: [moment('m1', 'stranger', 'public')],
+  });
+  const empty = await call('POST /api/moments/:id/comments', 'me', {
+    params: { id: 'm1' }, body: { text: '  ' },
+  });
+  assert.equal(empty.status, 400);
+  const ok = await call('POST /api/moments/:id/comments', 'me', {
+    params: { id: 'm1' }, body: { text: 'Schöner Ausflug!' },
+  });
+  assert.equal(ok.status, 201);
+  assert.equal(ok.body.comment.text, 'Schöner Ausflug!');
+  assert.equal(ok.body.comment.isMine, true);
+  assert.equal(commentStore.length, 1);
+});
+
+test('POST /api/moments/:id/comments denied when moment not visible', async () => {
+  const { call, commentStore } = fixture({
+    moments: [moment('m1', 'stranger', 'friends')],
+  });
+  const r = await call('POST /api/moments/:id/comments', 'me', {
+    params: { id: 'm1' }, body: { text: 'Hallo' },
+  });
+  assert.equal(r.status, 403);
+  assert.equal(commentStore.length, 0);
+});
+
+test('GET /api/moments/:id/comments lists comments for a visible moment', async () => {
+  const { call } = fixture({
+    moments: [moment('m1', 'me', 'public')],
+    comments: [
+      { id: 'c1', momentId: 'm1', authorUserId: 'friend' },
+      { id: 'c2', momentId: 'm1', authorUserId: 'me' },
+    ],
+  });
+  const r = await call('GET /api/moments/:id/comments', 'me', { params: { id: 'm1' } });
+  assert.equal(r.status, 200);
+  const list = JSON.parse(JSON.stringify(r.body.comments));
+  assert.equal(list.length, 2);
+  assert.equal(list.find(c => c.id === 'c2').isMine, true);
+  assert.equal(list.find(c => c.id === 'c1').isMine, false);
+});
+
+test('DELETE comment: comment author or moment author may delete, others cannot', async () => {
+  // Fremder darf nicht.
+  const f1 = fixture({
+    moments: [moment('m1', 'owner', 'public')],
+    comments: [{ id: 'c1', momentId: 'm1', authorUserId: 'friend' }],
+  });
+  const forbidden = await f1.call('DELETE /api/moments/:id/comments/:commentId', 'me', {
+    params: { id: 'm1', commentId: 'c1' },
+  });
+  assert.equal(forbidden.status, 403);
+  assert.equal(f1.commentStore.length, 1);
+
+  // Kommentar-Autor darf.
+  const f2 = fixture({
+    moments: [moment('m1', 'owner', 'public')],
+    comments: [{ id: 'c1', momentId: 'm1', authorUserId: 'friend' }],
+  });
+  const byCommentAuthor = await f2.call('DELETE /api/moments/:id/comments/:commentId', 'friend', {
+    params: { id: 'm1', commentId: 'c1' },
+  });
+  assert.equal(byCommentAuthor.status, 200);
+  assert.equal(f2.commentStore.length, 0);
+
+  // Moment-Autor darf fremden Kommentar auf eigenem Moment entfernen.
+  const f3 = fixture({
+    moments: [moment('m1', 'me', 'public')],
+    comments: [{ id: 'c1', momentId: 'm1', authorUserId: 'friend' }],
+  });
+  const byMomentAuthor = await f3.call('DELETE /api/moments/:id/comments/:commentId', 'me', {
+    params: { id: 'm1', commentId: 'c1' },
+  });
+  assert.equal(byMomentAuthor.status, 200);
+  assert.equal(f3.commentStore.length, 0);
 });
