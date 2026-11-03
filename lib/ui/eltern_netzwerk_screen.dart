@@ -47,10 +47,31 @@ String networkWizardOptionLabel(
 String _t(String key) =>
     AppStringsManager.getString(languageService.currentLanguage, key);
 
-String networkMatchReasonLabel(String language, String code) {
+/// Liefert den übersetzten Match-Grund oder `null`, wenn der Code unbekannt
+/// ist. Rohcodes vom Server werden so nie angezeigt.
+String? networkMatchReasonLabel(String language, String code) {
   final key = 'network_copy_reason_$code';
   final label = AppStringsManager.getString(language, key);
-  return label == key ? code : label;
+  return label == key ? null : label;
+}
+
+/// Sichtbare Match-Gründe einer Karte: unbekannte Codes entfallen, und
+/// `same_city` entfällt, wenn die Meta-Zeile „In deiner Stadt" schon zeigt.
+List<String> networkMatchReasonLabels(
+  String language,
+  Iterable<String> codes, {
+  bool sameCityInMeta = false,
+  int limit = 3,
+}) {
+  final labels = <String>[];
+  for (final code in codes) {
+    if (sameCityInMeta && code == 'same_city') continue;
+    final label = networkMatchReasonLabel(language, code);
+    if (label == null || labels.contains(label)) continue;
+    labels.add(label);
+    if (labels.length >= limit) break;
+  }
+  return labels;
 }
 
 String networkChildAgeLabel(String language, String tag) {
@@ -1577,13 +1598,18 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         ? ''
         : '\u{1F9D2} ${p.childAges.map((tag) => networkChildAgeLabel(languageService.currentLanguage, tag)).join(' \u{2022} ')}';
     final distanceKm = m.breakdown['distanceKm'];
-    final reasonCodes = (m.breakdown['reasons'] as List? ?? const [])
-        .map((reason) => reason.toString())
-        .take(3);
+    final sameCityInMeta =
+        distanceKm == null && m.breakdown['locationLabel'] == 'same_city';
+    final reasonLabels = networkMatchReasonLabels(
+      languageService.currentLanguage,
+      (m.breakdown['reasons'] as List? ?? const []).map(
+        (reason) => reason.toString(),
+      ),
+      sameCityInMeta: sameCityInMeta,
+    );
     final meta = <String>[
       if (distanceKm != null) '\u{1F4CD} $distanceKm km',
-      if (distanceKm == null && m.breakdown['locationLabel'] == 'same_city')
-        _t('network_copy_same_city'),
+      if (sameCityInMeta) _t('network_copy_same_city'),
       if (p.languages.isNotEmpty)
         p.languages
             .take(3)
@@ -1788,18 +1814,15 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                   .toList(),
             ),
           ],
-          if (reasonCodes.isNotEmpty) ...[
+          if (reasonLabels.isNotEmpty) ...[
             const SizedBox(height: 10),
             Wrap(
               spacing: 6,
               runSpacing: 6,
-              children: reasonCodes
+              children: reasonLabels
                   .map(
-                    (code) => Text(
-                      networkMatchReasonLabel(
-                        languageService.currentLanguage,
-                        code,
-                      ),
+                    (label) => Text(
+                      label,
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: const Color(0xFF0E7F77),
                         fontWeight: FontWeight.w700,
@@ -2927,6 +2950,10 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
   // Schritt 1: Grundinfos
   final _nameCtrl = TextEditingController();
   final _districtCtrl = TextEditingController();
+  final _nameFocus = FocusNode(debugLabel: 'playmate-name');
+  final _districtFocus = FocusNode(debugLabel: 'playmate-district');
+  String? _nameError;
+  String? _districtError;
   PickedLocation? _pickedLocation;
   String _familyForm = 'kernfamilie';
   final _familyFormCustomCtrl = TextEditingController();
@@ -2999,6 +3026,8 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
     _pageCtrl.dispose();
     _nameCtrl.dispose();
     _districtCtrl.dispose();
+    _nameFocus.dispose();
+    _districtFocus.dispose();
     _familyFormCustomCtrl.dispose();
     _valuesCustomCtrl.dispose();
     _lookingForCustomCtrl.dispose();
@@ -3011,7 +3040,34 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
     super.dispose();
   }
 
+  /// Prüft die Pflichtfelder in Schritt 1, zeigt Fehler direkt am Feld und
+  /// setzt den Fokus auf das erste fehlende Feld.
+  bool _validateStep1() {
+    final nameMissing = _nameCtrl.text.trim().isEmpty;
+    final districtMissing = _districtCtrl.text.trim().isEmpty;
+    setState(() {
+      _nameError = nameMissing ? _t('network_field_name_required') : null;
+      _districtError = districtMissing
+          ? _t('network_field_district_required')
+          : null;
+    });
+    if (!nameMissing && !districtMissing) return true;
+    final target = nameMissing ? _nameFocus : _districtFocus;
+    target.requestFocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final targetContext = target.context;
+      if (!mounted || targetContext == null) return;
+      Scrollable.ensureVisible(
+        targetContext,
+        alignment: 0.1,
+        duration: const Duration(milliseconds: 200),
+      );
+    });
+    return false;
+  }
+
   void _next() {
+    if (_step == 0 && !_validateStep1()) return;
     if (_step < _totalSteps - 1) {
       _pageCtrl.nextPage(
         duration: const Duration(milliseconds: 300),
@@ -3297,19 +3353,36 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 8),
+          Text(
+            _t('network_required_fields_note'),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 8),
           _inputField(
             _nameCtrl,
-            _t('network_copy_name_hint'),
+            '${_t('network_copy_name_hint')} *',
             _t('network_copy_name_example'),
             Icons.person_rounded,
+            focusNode: _nameFocus,
+            errorText: _nameError,
+            onChanged: (value) {
+              if (_nameError != null && value.trim().isNotEmpty) {
+                setState(() => _nameError = null);
+              }
+            },
           ),
           const SizedBox(height: 14),
           LocationPickerWidget(
             initialLocation: _pickedLocation,
-            hint: _t('network_copy_location_hint'),
+            hint: '${_t('network_copy_location_hint')} *',
+            focusNode: _districtFocus,
+            errorText: _districtError,
             onLocationPicked: (loc) => setState(() {
               _pickedLocation = loc;
               _districtCtrl.text = loc.displayName;
+              _districtError = null;
             }),
           ),
           if (_pickedLocation == null && _districtCtrl.text.isNotEmpty)
@@ -4111,14 +4184,21 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
     TextEditingController ctrl,
     String label,
     String hint,
-    IconData icon,
-  ) {
+    IconData icon, {
+    FocusNode? focusNode,
+    String? errorText,
+    ValueChanged<String>? onChanged,
+  }) {
     return TextField(
       controller: ctrl,
+      focusNode: focusNode,
+      onChanged: onChanged,
       scrollPadding: kFormFieldScrollPadding,
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
+        errorText: errorText,
+        errorMaxLines: 3,
         prefixIcon: Icon(icon, size: 20),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
         focusedBorder: OutlineInputBorder(

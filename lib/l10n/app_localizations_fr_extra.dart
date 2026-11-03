@@ -1757,6 +1757,7 @@ const appLocalizationsFrExtra = <String, String>{
   'network_copy_no_gender': 'Non précisé',
   'network_copy_playmates': 'Copains de jeu',
   'network_copy_reason_nearby': 'À proximité',
+  'network_copy_reason_same_city': 'Dans votre ville',
   'network_copy_reason_shared_family_form': 'Forme de famille similaire',
   'network_copy_reason_shared_interests': 'Intérêts communs',
   'network_copy_reason_shared_languages': 'Langues communes',
@@ -1991,6 +1992,10 @@ const appLocalizationsFrExtra = <String, String>{
   'network_tab_chats': 'Discussions',
   'network_tab_network': 'Réseau',
   'network_validation_district': 'Veuillez saisir votre quartier (étape 1)',
+  'network_field_name_required': 'Veuillez saisir votre nom.',
+  'network_field_district_required':
+      'Veuillez choisir votre quartier ou code postal.',
+  'network_required_fields_note': '* Champ obligatoire',
   'network_validation_name': 'Veuillez saisir votre nom (étape 1)',
   'network_values_custom_hint': 'Qu\'est-ce qui compte encore pour vous ?',
   'network_values_heading': 'Qu\'est-ce que vous vivez ?',
