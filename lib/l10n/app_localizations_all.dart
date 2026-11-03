@@ -12,7 +12,8 @@ class AppStringsManager {
   static const Map<String, Map<String, String>> allStrings = {
     // Deutsch
     'de': {
-      'network_match_title': 'Es passt!',
+      'network_match_title': 'Ihr seid verbunden!',
+      'network_connected_new': 'Neu verbunden',
       'network_match_subtitle':
           'Ihr seid beide interessiert. Sagt Hallo, wann es für euch passt.',
       'network_match_icebreaker_1':
@@ -3466,7 +3467,8 @@ class AppStringsManager {
     },
     // English
     'en': {
-      'network_match_title': 'It\'s a match!',
+      'network_match_title': 'You\'re connected!',
+      'network_connected_new': 'Newly connected',
       'network_match_subtitle':
           'You\'re both interested. Say hello whenever it suits you.',
       'network_match_icebreaker_1': 'Hi! We\'re often out at the playground.',
@@ -6848,7 +6850,8 @@ class AppStringsManager {
     },
     // Français
     'fr': {
-      'network_match_title': 'Ça matche !',
+      'network_match_title': 'Vous êtes connectés !',
+      'network_connected_new': 'Nouvelles connexions',
       'network_match_subtitle':
           'Vous êtes tous les deux intéressés. Dites bonjour quand ça vous convient.',
       'network_match_icebreaker_1':
@@ -7755,7 +7758,8 @@ class AppStringsManager {
     },
     // Español
     'es': {
-      'network_match_title': '¡Hay match!',
+      'network_match_title': '¡Estáis conectados!',
+      'network_connected_new': 'Recién conectados',
       'network_match_subtitle':
           'Los dos tenéis interés. Saludad cuando os venga bien.',
       'network_match_icebreaker_1': '¡Hola! Solemos ir al parque infantil.',
@@ -8647,7 +8651,8 @@ class AppStringsManager {
     },
     // Italiano
     'it': {
-      'network_match_title': 'È un match!',
+      'network_match_title': 'Siete connessi!',
+      'network_connected_new': 'Appena connessi',
       'network_match_subtitle':
           'Siete entrambi interessati. Salutatevi quando vi fa comodo.',
       'network_match_icebreaker_1': 'Ciao! Siamo spesso al parco giochi.',
@@ -11181,7 +11186,8 @@ class AppStringsManager {
     },
     // العربية (Arabic)
     'ar': {
-      'network_match_title': 'تطابق!',
+      'network_match_title': 'أنتما متصلان الآن!',
+      'network_connected_new': 'متصلون حديثاً',
       'network_match_subtitle': 'كلاكما مهتم. ألقِ التحية متى شئت.',
       'network_match_icebreaker_1': 'مرحبًا! نذهب كثيرًا إلى الملعب.',
       'network_match_icebreaker_2': 'هل ترغبون في لقاء مع الأطفال؟',
@@ -12856,7 +12862,8 @@ class AppStringsManager {
     },
     // کوردی Kurmancî (ku)
     'ku': {
-      'network_match_title': 'Lihevhatin!',
+      'network_match_title': 'Hûn girêdayî ne!',
+      'network_connected_new': 'Nû girêdayî',
       'network_match_subtitle':
           'Herdu jî bala we heye. Kengî ji we re guncan e silav bikin.',
       'network_match_icebreaker_1': 'Silav! Em pir diçin cihê lîstikê.',
@@ -19448,7 +19455,8 @@ class AppStringsManager {
     },
     // Türkçe (Turkish)
     'tr': {
-      'network_match_title': 'Eşleştiniz!',
+      'network_match_title': 'Bağlandınız!',
+      'network_connected_new': 'Yeni bağlantılar',
       'network_match_subtitle':
           'İkiniz de ilgileniyorsunuz. Size uygun olduğunda merhaba deyin.',
       'network_match_icebreaker_1': 'Merhaba! Sık sık oyun parkındayız.',
