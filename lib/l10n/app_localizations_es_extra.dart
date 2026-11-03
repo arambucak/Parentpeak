@@ -119,6 +119,13 @@ const appLocalizationsEsExtra = <String, String>{
       'La cuenta quedará oculta en la red y en la búsqueda. El bloqueo es reversible: no se borra ningún dato.\n\nID de usuario: {userId}',
   'admin_suspend_title': '¿Suspender la cuenta?',
   'admin_suspended': 'Cuenta bloqueada.',
+  'admin_distinct_reporters': '{count} denunciantes',
+  'admin_profile_hidden': 'oculto',
+  'admin_deactivate_title': '¿Ocultar el perfil?',
+  'admin_deactivate_message':
+      'El perfil de {name} quedará oculto en la búsqueda. La cuenta sigue activa y puede volver a activarlo.',
+  'admin_deactivate_action': 'Ocultar perfil',
+  'admin_deactivated': 'Perfil oculto.',
   'admin_title': 'Moderación',
   'admin_unlock': 'Desbloquear',
   'admin_unsuspended': 'Bloqueo retirado.',

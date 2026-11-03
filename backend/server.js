@@ -10355,6 +10355,13 @@ app.post('/api/safety/report', requireVerifiedUser, async (req, res) => {
       reportedUserId
     );
     const reportCount = countRows?.[0]?.n ?? 1;
+    // m5: Admin-Hinweis, sobald die Ausblende-Schwelle erreicht ist. (Ein
+    // echter Push-Kanal zum Admin kann hier spaeter andocken; vorerst Log.)
+    const hideThreshold = Number.parseInt(
+      process.env.PARENT_MATCHING_REPORT_HIDE_THRESHOLD || '3', 10);
+    if (reportCount >= hideThreshold) {
+      console.warn(`[moderation] Profil ${reportedUserId} erreichte ${reportCount} verschiedene Melder — zur Admin-Pruefung ausgeblendet.`);
+    }
     return res.json({ ok: true, id, reportCount });
   } catch (error) {
     if (respondWithStrictPersistenceError(res, 'POST /api/safety/report', error)) return;
@@ -10389,13 +10396,19 @@ app.get('/admin/reports', requireAdmin, async (req, res) => {
     const rows = await prisma.$queryRawUnsafe(
       `SELECT r."reportedUserId",
               COUNT(*)::int AS "reportCount",
+              COUNT(DISTINCT r."reporterUserId")::int AS "distinctReporters",
               MAX(r."createdAt") AS "lastReportedAt",
               (ARRAY_AGG(r."reason" ORDER BY r."createdAt" DESC))[1] AS "lastReason",
               BOOL_OR(s."userId" IS NOT NULL) AS "suspended",
-              MAX(reg."name") AS "displayName"
+              MAX(reg."name") AS "displayName",
+              MAX(pm."name") AS "profileName",
+              MAX(pm."city") AS "profileCity",
+              MAX(pm."bio") AS "profileBio",
+              BOOL_OR(pm."isActive") AS "profileActive"
        FROM "SafetyReport" r
        LEFT JOIN "SafetySuspension" s ON s."userId" = r."reportedUserId"
        LEFT JOIN "FriendRegistry" reg ON reg."code" = r."reportedUserId" OR reg."userId" = r."reportedUserId"
+       LEFT JOIN "ParentMatchingProfile" pm ON pm."ownerUserId" = r."reportedUserId"
        ${where}
        GROUP BY r."reportedUserId"
        ORDER BY "lastReportedAt" DESC
@@ -10500,6 +10513,24 @@ app.post('/admin/users/:userId/unsuspend', requireAdmin, async (req, res) => {
     if (respondWithStrictPersistenceError(res, 'POST /admin/users/unsuspend', error)) return;
     for (const ident of identities) { safetySuspensions.delete(ident); invalidateSuspensionCache(ident); }
     return res.json({ ok: true, suspended: false });
+  }
+});
+
+// m2: Admin deaktiviert ein Matching-Profil (blendet es aus der Discovery aus,
+// ohne das Konto zu sperren). Umkehrbar ueber Reaktivierung durch den Nutzer.
+app.post('/admin/profiles/:userId/deactivate', requireAdmin, async (req, res) => {
+  const userId = (req.params.userId || '').toString().trim();
+  if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
+  try {
+    await ensureParentMatchingSchemaReady();
+    const result = await prisma.parentMatchingProfile.updateMany({
+      where: { ownerUserId: userId },
+      data: { isActive: false },
+    });
+    return res.json({ ok: true, deactivated: result.count });
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'POST /admin/profiles/deactivate', error)) return;
+    return res.status(503).json({ error: 'Profil-Deaktivierung nicht verfuegbar' });
   }
 });
 

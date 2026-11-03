@@ -118,6 +118,13 @@ const appLocalizationsFrExtra = <String, String>{
       'Le compte sera masqué du réseau et de la découverte. La suspension est réversible — aucune donnée n\'est supprimée.\n\nID utilisateur : {userId}',
   'admin_suspend_title': 'Suspendre le compte ?',
   'admin_suspended': 'Compte suspendu.',
+  'admin_distinct_reporters': '{count} signaleurs',
+  'admin_profile_hidden': 'masqué',
+  'admin_deactivate_title': 'Masquer le profil ?',
+  'admin_deactivate_message':
+      'Le profil de {name} sera masqué de la découverte. Le compte reste actif et peut le réactiver.',
+  'admin_deactivate_action': 'Masquer le profil',
+  'admin_deactivated': 'Profil masqué.',
   'admin_title': 'Modération',
   'admin_unlock': 'Lever la suspension',
   'admin_unsuspended': 'Suspension levée.',

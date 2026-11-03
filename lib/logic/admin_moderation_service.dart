@@ -6,25 +6,58 @@ import 'package:parentpeak/logic/backend_service_factory.dart';
 class ReportGroup {
   final String reportedUserId;
   final int reportCount;
+
+  /// Anzahl verschiedener Melder – entscheidend fuer die Ausblende-Schwelle.
+  final int distinctReporters;
   final String lastReason;
   final DateTime? lastReportedAt;
   final bool suspended;
 
+  /// Daten des gemeldeten Matching-Profils (falls vorhanden), damit der Admin
+  /// nicht nur eine anonyme User-ID sieht.
+  final String? profileName;
+  final String? profileCity;
+  final String? profileBio;
+
+  /// Ob das gemeldete Matching-Profil aktuell sichtbar (aktiv) ist.
+  final bool profileActive;
+
   const ReportGroup({
     required this.reportedUserId,
     required this.reportCount,
+    required this.distinctReporters,
     required this.lastReason,
     required this.lastReportedAt,
     required this.suspended,
+    required this.profileName,
+    required this.profileCity,
+    required this.profileBio,
+    required this.profileActive,
   });
+
+  /// Ob ein Matching-Profil zu dieser Meldung existiert (Name vorhanden).
+  bool get hasProfile => (profileName ?? '').trim().isNotEmpty;
 
   factory ReportGroup.fromJson(Map<String, dynamic> j) => ReportGroup(
         reportedUserId: j['reportedUserId'] as String? ?? '',
         reportCount: (j['reportCount'] as num?)?.toInt() ?? 0,
+        distinctReporters: (j['distinctReporters'] as num?)?.toInt() ??
+            (j['reportCount'] as num?)?.toInt() ??
+            0,
         lastReason: j['lastReason'] as String? ?? '',
         lastReportedAt:
             DateTime.tryParse(j['lastReportedAt']?.toString() ?? ''),
         suspended: j['suspended'] == true,
+        profileName: (j['profileName'] as String?)?.trim().isEmpty ?? true
+            ? null
+            : (j['profileName'] as String).trim(),
+        profileCity: (j['profileCity'] as String?)?.trim().isEmpty ?? true
+            ? null
+            : (j['profileCity'] as String).trim(),
+        profileBio: (j['profileBio'] as String?)?.trim().isEmpty ?? true
+            ? null
+            : (j['profileBio'] as String).trim(),
+        profileActive: j['profileActive'] != false,
       );
 }
 
@@ -133,6 +166,21 @@ class AdminModerationService {
       return true;
     } catch (e) {
       debugPrint('AdminModerationService.unsuspendUser failed: $e');
+      return false;
+    }
+  }
+
+  /// Deaktiviert das Matching-Profil eines Nutzers (blendet es aus der
+  /// Entdecken-Liste aus), ohne das Konto zu sperren. Umkehrbar durch den
+  /// Nutzer. Gibt true bei Erfolg zurueck.
+  Future<bool> deactivateProfile(String userId) async {
+    final api = _api;
+    if (api == null) return false;
+    try {
+      await api.postJsonAny('/admin/profiles/$userId/deactivate', {});
+      return true;
+    } catch (e) {
+      debugPrint('AdminModerationService.deactivateProfile failed: $e');
       return false;
     }
   }
