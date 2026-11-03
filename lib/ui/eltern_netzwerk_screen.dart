@@ -2217,6 +2217,16 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                     ),
                   ),
                 ),
+                SafetyMenu(
+                  userId: f.uid,
+                  userName: f.name,
+                  reportLabel: _t('network_report'),
+                  blockLabel: _t('network_block'),
+                  onBlock: () async {
+                    await BlockReportService.instance.blockUser(f.uid, f.name);
+                    await FriendshipService.instance.remove(f.uid);
+                  },
+                ),
                 IconButton(
                   icon: const Icon(
                     Icons.check_circle_rounded,
@@ -2631,6 +2641,21 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Align(
+            alignment: Alignment.centerRight,
+            child: SafetyMenu(
+              userId: s.userId,
+              userName: s.name,
+              reportLabel: _t('network_report'),
+              blockLabel: _t('network_block'),
+              onBlock: () async {
+                await BlockReportService.instance.blockUser(s.userId, s.name);
+                if (mounted) {
+                  setState(() => _dismissedSuggestions.add(s.userId));
+                }
+              },
+            ),
+          ),
           Center(
             child: Container(
               width: 56,
