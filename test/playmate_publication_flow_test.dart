@@ -131,7 +131,7 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.enterText(
-        _fieldWithLabel(_t('network_copy_name_hint')),
+        _fieldWithLabel('${_t('network_copy_name_hint')} *'),
         'Test family',
       );
       tester
@@ -195,7 +195,9 @@ void main() {
       await _back(tester);
       expect(
         tester
-            .widget<TextField>(_fieldWithLabel(_t('network_copy_name_hint')))
+            .widget<TextField>(
+              _fieldWithLabel('${_t('network_copy_name_hint')} *'),
+            )
             .controller!
             .text,
         'Test family',
