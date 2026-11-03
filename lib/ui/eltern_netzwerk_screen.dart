@@ -1853,20 +1853,22 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
+              gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Color(0xFF5B21B6),
-                  Color(0xFF7C3AED),
-                  Color(0xFF8B5CF6),
+                  theme.colorScheme.primary,
+                  Color.lerp(
+                    theme.colorScheme.primary,
+                    theme.colorScheme.tertiary,
+                    0.35,
+                  )!,
                 ],
-                stops: [0.0, 0.55, 1.0],
               ),
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF7C3AED).withValues(alpha: 0.4),
+                  color: theme.colorScheme.primary.withValues(alpha: 0.3),
                   blurRadius: 28,
                   offset: const Offset(0, 10),
                 ),
@@ -2530,13 +2532,13 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                                 : _t('network_copy_request_failed'),
                           ),
                           behavior: SnackBarBehavior.floating,
-                          backgroundColor: ok ? const Color(0xFF16A34A) : null,
+                          backgroundColor: ok ? theme.colorScheme.primary : null,
                         ),
                       );
                     }
                   },
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF7C3AED),
+                    backgroundColor: theme.colorScheme.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     shape: RoundedRectangleBorder(
