@@ -1274,6 +1274,10 @@ class AppStringsManager {
       'network_code_copied': 'Code kopiert ✓!',
       // ─── Redesign: Chats-Tab + Netzwerk + Gruppenchat ───────────────────
       'network_tab_chats': 'Chats',
+      'network_tab_discover': 'Entdecken',
+      'network_tab_matches': 'Matches',
+      'network_matches_empty_title': 'Noch keine Matches',
+      'network_matches_empty_body': 'Wenn ihr und eine andere Familie beide auf „Interessiert“ tippt, erscheint euer Match hier.',
       'network_tab_network': 'Netzwerk',
       'network_new_chat': 'Neuer Chat',
       // Chat löschen (WhatsApp-Stil)
@@ -6434,6 +6438,10 @@ class AppStringsManager {
       'network_code_copied': 'Code copied ✓!',
       // ─── Redesign: Chats tab + network + group chat ─────────────────────
       'network_tab_chats': 'Chats',
+      'network_tab_discover': 'Discover',
+      'network_tab_matches': 'Matches',
+      'network_matches_empty_title': 'No matches yet',
+      'network_matches_empty_body': 'When you and another family both tap “Interested”, your match shows up here.',
       'network_tab_network': 'Network',
       'network_new_chat': 'New chat',
       // Delete chat (WhatsApp style)
@@ -13835,6 +13843,10 @@ class AppStringsManager {
       'network_code_copied': 'Kod hat kopîkirin ✓!',
       // ─── Redesign: Chats + Tor + Chata komê ─────────────────────────────
       'network_tab_chats': 'Chat',
+      'network_tab_discover': 'Nas bike',
+      'network_tab_matches': 'Hevgirtin',
+      'network_matches_empty_title': 'Hête tiç hevgirtin',
+      'network_matches_empty_body': 'Dema hemû tû hûn her dû li ser “Bala min heye” bitikinî, hevgirtina we li vir xuya dibe.',
       'network_tab_network': 'Tor',
       'network_new_chat': 'Chata nû',
       // Jêbirina chatê (şêwaza WhatsApp)
@@ -20362,6 +20374,10 @@ class AppStringsManager {
       'network_code_copied': 'Kod kopyalandı ✓!',
       // ─── Yeniden tasarım: Sohbetler + Ağ + Grup sohbeti ─────────────────
       'network_tab_chats': 'Sohbetler',
+      'network_tab_discover': 'Keşfet',
+      'network_tab_matches': 'Eşleşmeler',
+      'network_matches_empty_title': 'Henüz eşleşme yok',
+      'network_matches_empty_body': 'Siz ve başka bir aile „İlgileniyorum“’a dokunduğunuzda eşleşmeniz burada görünür.',
       'network_tab_network': 'Ağ',
       'network_new_chat': 'Yeni sohbet',
       // Sohbeti sil (WhatsApp tarzı)
