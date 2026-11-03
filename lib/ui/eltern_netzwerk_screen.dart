@@ -28,6 +28,11 @@ import 'package:parentpeak/ui/widgets/playmate_publication_dialog.dart';
 import 'package:parentpeak/ui/widgets/playmate_profile_status.dart';
 import 'package:parentpeak/ui/widgets/playmate_discovery_error.dart';
 import 'package:parentpeak/ui/widgets/playmate_discovery_empty_state.dart';
+import 'package:parentpeak/ui/widgets/network/family_avatar.dart';
+import 'package:parentpeak/ui/widgets/network/family_card.dart';
+import 'package:parentpeak/ui/widgets/network/info_chip.dart';
+import 'package:parentpeak/ui/widgets/network/network_actions.dart';
+import 'package:parentpeak/ui/widgets/network/safety_menu.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/ui/match_conversation_screen.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
@@ -494,7 +499,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
           if (_tabs.index != 0) return const SizedBox.shrink();
           return FloatingActionButton.extended(
             onPressed: _showNewChatOptions,
-            backgroundColor: const Color(0xFF7C3AED),
+            backgroundColor: theme.colorScheme.primary,
             icon: const Icon(Icons.add_comment_rounded, color: Colors.white),
             label: Text(
               _t('network_new_chat'),
@@ -1425,10 +1430,10 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: const Color(0xFF8B5CF6).withValues(alpha: 0.06),
+                color: theme.colorScheme.primaryContainer.withValues(alpha: 0.35),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: const Color(0xFF8B5CF6).withValues(alpha: 0.12),
+                  color: theme.colorScheme.primary.withValues(alpha: 0.2),
                 ),
               ),
               child: Row(
@@ -1646,38 +1651,13 @@ class _ScreenState extends State<ElternNetzwerkScreen>
           ),
     ];
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
+    return FamilyCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(11),
-                ),
-                child: const Center(
-                  child: Text('\u{1F46A}', style: TextStyle(fontSize: 18)),
-                ),
-              ),
+              FamilyAvatar(name: p.name, size: FamilyAvatarSize.m),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -1685,7 +1665,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                   children: [
                     Text(
                       p.name,
-                      style: theme.textTheme.bodyMedium?.copyWith(
+                      style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -1699,68 +1679,12 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                   ],
                 ),
               ),
-              if (m.score > 0)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF16A34A).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    _t(
-                      'network_match_score',
-                    ).replaceAll('{score}', '${m.score}'),
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF16A34A),
-                    ),
-                  ),
-                ),
-              PopupMenuButton<String>(
-                icon: Icon(
-                  Icons.more_vert_rounded,
-                  size: 18,
-                  color: theme.colorScheme.outline,
-                ),
-                padding: EdgeInsets.zero,
-                onSelected: (v) {
-                  if (v == 'report') {
-                    showReportSheet(
-                      context,
-                      userId: m.profile.userId ?? m.profile.id,
-                      userName: m.profile.name,
-                      contentType: 'profile',
-                    );
-                  } else if (v == 'block') {
-                    _blockMatch(m);
-                  }
-                },
-                itemBuilder: (_) => [
-                  PopupMenuItem(
-                    value: 'report',
-                    child: Row(
-                      children: [
-                        const Icon(Icons.flag_outlined, size: 18),
-                        const SizedBox(width: 10),
-                        Text(_t('network_report')),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem(
-                    value: 'block',
-                    child: Row(
-                      children: [
-                        const Icon(Icons.block_rounded, size: 18),
-                        const SizedBox(width: 10),
-                        Text(_t('network_block')),
-                      ],
-                    ),
-                  ),
-                ],
+              SafetyMenu(
+                userId: m.profile.userId ?? m.profile.id,
+                userName: m.profile.name,
+                reportLabel: _t('network_report'),
+                blockLabel: _t('network_block'),
+                onBlock: () => _blockMatch(m),
               ),
             ],
           ),
@@ -1790,28 +1714,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             Wrap(
               spacing: 6,
               runSpacing: 6,
-              children: tags
-                  .map(
-                    (t) => Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF8B5CF6).withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        t,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF7C3AED),
-                        ),
-                      ),
-                    ),
-                  )
-                  .toList(),
+              children: tags.map((t) => InfoChip(label: t)).toList(),
             ),
           ],
           if (reasonLabels.isNotEmpty) ...[
@@ -1824,7 +1727,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                     (label) => Text(
                       label,
                       style: theme.textTheme.labelSmall?.copyWith(
-                        color: const Color(0xFF0E7F77),
+                        color: theme.colorScheme.primary,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -1842,21 +1745,10 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             ),
           ],
           const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () => _connectWithMatch(m),
-              icon: const Icon(Icons.waving_hand_rounded, size: 16),
-              label: Text(_t('network_say_hello')),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF7C3AED),
-                side: const BorderSide(color: Color(0xFF8B5CF6)),
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
+          PrimaryAction(
+            label: _t('network_say_hello'),
+            icon: Icons.waving_hand_rounded,
+            onPressed: () => _connectWithMatch(m),
           ),
         ],
       ),
