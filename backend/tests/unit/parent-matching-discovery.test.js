@@ -75,13 +75,27 @@ test('both discovery URLs use the same authenticated handler', () => {
 
 test('discovery loads persistent block and suspension filters before scoring', async () => {
   let scored;
-  const candidates = [{ ownerUserId: 'blocked' }, { ownerUserId: 'allowed' }];
+  const candidates = [
+    { id: 'p-blocked', ownerUserId: 'blocked' },
+    { id: 'p-allowed', ownerUserId: 'allowed' },
+    { id: 'p-rated', ownerUserId: 'rated' },
+  ];
   const context = {
+    process: { env: {} },
+    ownFamilyId: uid => `fam-${uid}`,
     getMyParentMatchingProfile: async () => ({ id: 'own', ownerUserId: 'owner' }),
     prisma: {
       parentMatchingProfile: { findMany: async () => candidates },
+      // L6: blockRows liefert jetzt beide Richtungen; hier blockiert 'blocker-of-me' MICH.
       $queryRawUnsafe: async sql => sql.includes('SafetyBlock')
-        ? [{ blockedUserId: 'blocked' }] : [{ userId: 'suspended' }],
+        ? [{ blockerUserId: 'blocker-of-me', blockedUserId: 'owner' }]
+        : [{ userId: 'suspended' }],
+      // L1: 'p-rated' wurde bereits mit like bewertet -> muss rausfallen.
+      parentMatchingAction: {
+        findMany: async () => [
+          { profileId: 'p-rated', action: 'like', createdAt: new Date() },
+        ],
+      },
     },
     ensureSocialSchemaReady: async () => {},
     scoreParentMatchingCandidates: args => { scored = args; return { matches: [] }; },
@@ -89,9 +103,11 @@ test('discovery loads persistent block and suspension filters before scoring', a
   vm.createContext(context);
   vm.runInContext(extract('discoverParentMatchingProfiles'), context);
   await context.discoverParentMatchingProfiles({ userId: 'owner', limit: '10', maxDistanceKm: '25' });
-  assert.equal(scored.blockedIds.has('blocked'), true);
+  // L6: wer MICH blockiert hat, ist ausgeschlossen.
+  assert.equal(scored.blockedIds.has('blocker-of-me'), true);
   assert.equal(scored.suspendedIds.has('suspended'), true);
-  assert.equal(scored.candidates, candidates);
+  // L1: das bereits gelikte Profil ist aus den Kandidaten gefiltert.
+  assert.deepEqual(scored.candidates.map(c => c.id), ['p-blocked', 'p-allowed']);
 });
 
 test('failed safety-filter query stops discovery instead of using incomplete filters', async () => {
