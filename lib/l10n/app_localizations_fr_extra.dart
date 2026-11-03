@@ -1967,6 +1967,14 @@ const appLocalizationsFrExtra = <String, String>{
       'Votre nom affiché, votre ville, votre localisation grossièrement arrondie (si disponible), l\'âge approximatif des enfants, les langues, la forme de famille, les valeurs, les activités souhaitées et votre bio sont enregistrés sur notre backend et montrés aux autres familles du réseau. Les prénoms des enfants, dates de naissance et particularités restent sur cet appareil. N\'indiquez pas de prénoms d\'enfants, d\'adresse ni de données de santé dans votre bio publique. Le matching n\'utilise pas d\'IA. Vous pouvez supprimer votre profil à tout moment.',
   'network_publish_failed':
       'Impossible de publier le profil. Veuillez réessayer.',
+  'network_publish_unauthenticated': 'Veuillez vous reconnecter.',
+  'network_publish_invalid':
+      'Veuillez vérifier vos informations (nom, lieu).',
+  'network_publish_server_unavailable':
+      'Le serveur est indisponible pour le moment. Veuillez réessayer plus tard.',
+  'network_publish_no_connection':
+      'Pas de connexion. Veuillez vérifier votre connexion internet.',
+  'network_publish_error_code': 'Code d’erreur : {code}',
   'network_publish_title': 'Publier le profil de rencontres entre enfants ?',
   'network_qr_code': 'Code QR',
   'network_qr_create_failed':

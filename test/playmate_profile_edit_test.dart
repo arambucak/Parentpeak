@@ -295,4 +295,158 @@ void main() {
       expect(original.displayName, 'Existing family');
     },
   );
+
+  for (final status in [400, 401, 503]) {
+    testWidgets('all edited fields survive HTTP $status and a retry', (
+      tester,
+    ) async {
+      final original = existingProfile();
+      final snapshots = <Map<String, dynamic>>[];
+      final results = <PlaymatePublicationResult>[];
+      final profiles = PlaymateProfileService(
+        matchingService: ParentMatchingBackendService(
+          apiClient: BackendApiClient(
+            baseUrl: 'https://backend.example',
+            httpClient: MockClient((_) async => http.Response('{}', status)),
+          ),
+        ),
+      );
+      await openForm(
+        tester,
+        original,
+        onSave: (profile) async {
+          snapshots.add(profile.toJson());
+          results.add(await profiles.publishProfile(
+            profile,
+            'owner',
+            confirmPublication: () async => true,
+          ));
+        },
+      );
+      await tester.enterText(find.byType(TextField).first, 'Edited family');
+      await tester.tap(
+        find.widgetWithIcon(FilledButton, Icons.arrow_forward_rounded),
+      );
+      await tester.pumpAndSettle();
+      final childName = find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField &&
+            widget.decoration?.labelText ==
+                AppStringsManager.getString(
+                  languageService.currentLanguage,
+                  'network_child_name_local',
+                ),
+      );
+      await tester.enterText(childName.first, 'Edited local child');
+      for (var step = 0; step < 3; step++) {
+        await tester.tap(
+          find.widgetWithIcon(FilledButton, Icons.arrow_forward_rounded),
+        );
+        await tester.pumpAndSettle();
+      }
+      final bio = find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField &&
+            widget.decoration?.hintText ==
+                AppStringsManager.getString(
+                  languageService.currentLanguage,
+                  'network_copy_bio_hint',
+                ),
+      );
+      await tester.enterText(bio, 'Edited biography');
+      final save = find.widgetWithText(
+        FilledButton,
+        AppStringsManager.getString(languageService.currentLanguage, 'save'),
+      );
+      await tester.tap(save);
+      await tester.pumpAndSettle();
+      expect(results, [PlaymatePublicationResult.failed]);
+      expect(find.byType(PlaymateProfileForm), findsOneWidget);
+      expect(snapshots.single, {
+        ...original.toJson(),
+        'displayName': 'Edited family',
+        'children': [
+          {...original.children.first.toJson(), 'name': 'Edited local child'},
+          original.children.last.toJson(),
+        ],
+        'bio': 'Edited biography',
+      });
+
+      for (var step = 0; step < 4; step++) {
+        await tester.tap(
+          find.widgetWithIcon(TextButton, Icons.arrow_back_rounded),
+        );
+        await tester.pumpAndSettle();
+      }
+      expect(
+        tester.widget<TextField>(find.byType(TextField).first).controller!.text,
+        'Edited family',
+      );
+      await tester.tap(
+        find.widgetWithIcon(FilledButton, Icons.arrow_forward_rounded),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<TextField>(childName.first).controller!.text,
+        'Edited local child',
+      );
+      for (var step = 0; step < 3; step++) {
+        await tester.tap(
+          find.widgetWithIcon(FilledButton, Icons.arrow_forward_rounded),
+        );
+        await tester.pumpAndSettle();
+      }
+      expect(
+          tester.widget<TextField>(bio).controller!.text, 'Edited biography');
+      await tester.tap(save);
+      await tester.pumpAndSettle();
+      expect(results, [
+        PlaymatePublicationResult.failed,
+        PlaymatePublicationResult.failed,
+      ]);
+      expect(snapshots.last, snapshots.first);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('unexpected submit errors show no private exception text', (
+    tester,
+  ) async {
+    final oldDebugPrint = debugPrint;
+    final logs = <String>[];
+    debugPrint = (String? message, {int? wrapWidth}) {
+      if (message != null) logs.add(message);
+    };
+    addTearDown(() => debugPrint = oldDebugPrint);
+    await openForm(
+      tester,
+      existingProfile(),
+      onSave: (_) async => throw StateError('synthetic-private-exception'),
+    );
+    await goToSave(tester);
+    await tester.tap(
+      find.widgetWithText(
+        FilledButton,
+        AppStringsManager.getString(languageService.currentLanguage, 'save'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.text(
+        AppStringsManager.getString(
+          languageService.currentLanguage,
+          'network_publish_failed',
+        ),
+      ),
+      findsOneWidget,
+    );
+    expect(find.textContaining('unknown'), findsOneWidget);
+    expect(find.textContaining('synthetic-private-exception'), findsNothing);
+    expect(logs.any((line) => line.contains('reason=unknown')), isTrue);
+    expect(logs.any((line) => line.contains('synthetic-private-exception')),
+        isFalse);
+    expect(find.byType(PlaymateProfileForm), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    debugPrint = oldDebugPrint;
+  });
 }

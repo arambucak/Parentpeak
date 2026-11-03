@@ -1,11 +1,15 @@
 /// Smart Parent Matching Service with intelligent algorithm
 /// Uses geographic proximity + interests + child compatibility scoring
+import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
-import 'dart:convert';
 import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
+import 'package:parentpeak/logic/playmate_publication_failure.dart';
 
 class ParentMatchActionResult {
   final bool connected;
@@ -151,6 +155,8 @@ class ParentMatchingBackendService {
   final http.Client _httpClient;
   final Future<String?> Function()? _firebaseTokenProvider;
   String? lastSyncError;
+  PlaymatePublicationFailure? lastProfileCreationFailure;
+  BackendApiException? lastProfileCreationApiException;
 
   // Backward compatibility: accept old apiClient parameter
   final dynamic apiClient;
@@ -171,9 +177,27 @@ class ParentMatchingBackendService {
         ? await provider()
         : await FirebaseAuth.instance.currentUser?.getIdToken();
     if (token == null || token.trim().isEmpty) {
-      throw StateError('Firebase-Anmeldung erforderlich');
+      throw BackendAuthenticationRequiredException(
+        'Firebase-Anmeldung erforderlich',
+      );
     }
     return token;
+  }
+
+  ParentMatchingProfile _parseCreatedProfile(Object? decoded) {
+    final data = decoded is Map<String, dynamic>
+        ? (decoded['item'] is Map<String, dynamic>
+            ? decoded['item'] as Map<String, dynamic>
+            : decoded)
+        : <String, dynamic>{};
+    if (data.isEmpty) throw const BackendInvalidResponseException();
+    try {
+      return ParentMatchingProfile.fromJson(data);
+    } on FormatException {
+      throw const BackendInvalidResponseException();
+    } on TypeError {
+      throw const BackendInvalidResponseException();
+    }
   }
 
   Future<Map<String, dynamic>?> requestVerificationOtp({
@@ -292,9 +316,14 @@ class ParentMatchingBackendService {
     String? bio,
   }) async {
     lastSyncError = null;
+    lastProfileCreationFailure = null;
+    lastProfileCreationApiException = null;
 
     if (_typedApiClient == null && _apiUrl == null) {
       lastSyncError = 'Backend-URL nicht konfiguriert';
+      lastProfileCreationFailure = const PlaymatePublicationFailure(
+        PlaymatePublicationFailureReason.unknown,
+      );
       return null;
     }
 
@@ -317,18 +346,12 @@ class ParentMatchingBackendService {
       final myProfilePath = APIConfig.getBackendParentMatchingMyProfilePath();
       final client = _typedApiClient;
       if (client != null) {
-        final decoded = await client.postJsonAny(myProfilePath, payload);
-        final data = decoded is Map<String, dynamic>
-            ? (decoded['item'] is Map<String, dynamic>
-                ? decoded['item'] as Map<String, dynamic>
-                : decoded)
-            : <String, dynamic>{};
-        if (data.isEmpty) {
-          lastSyncError =
-              'Profil-Speicherung fehlgeschlagen: leere Server-Antwort';
-          return null;
-        }
-        return ParentMatchingProfile.fromJson(data);
+        final decoded = await client.postJsonAny(
+          myProfilePath,
+          payload,
+          requireValidJson: true,
+        );
+        return _parseCreatedProfile(decoded);
       }
 
       final fallbackToken = await _firebaseToken();
@@ -343,28 +366,65 @@ class ParentMatchingBackendService {
       );
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        lastSyncError =
-            'Profil-Speicherung fehlgeschlagen: ${response.statusCode}';
-        return null;
+        throw BackendApiException.fromResponse(
+          method: 'POST',
+          path: myProfilePath,
+          response: response,
+        );
       }
 
-      final decoded = jsonDecode(response.body);
-      final data = decoded is Map<String, dynamic>
-          ? (decoded['item'] is Map<String, dynamic>
-              ? decoded['item'] as Map<String, dynamic>
-              : decoded)
-          : <String, dynamic>{};
-      if (data.isEmpty) {
-        lastSyncError =
-            'Profil-Speicherung fehlgeschlagen: leere Server-Antwort';
-        return null;
+      final Object? decoded;
+      try {
+        decoded = jsonDecode(response.body);
+      } on FormatException {
+        throw const BackendInvalidResponseException();
       }
-      return ParentMatchingProfile.fromJson(data);
+      return _parseCreatedProfile(decoded);
     } on SuspendedAccountException {
-      // Gesperrtes Konto: nach oben durchreichen, damit die UI den Hinweis zeigt.
+      lastProfileCreationFailure = PlaymatePublicationFailure.fromStatus(403);
       rethrow;
-    } catch (e) {
-      lastSyncError = 'Fehler beim Erstellen des Profils: $e';
+    } on BackendApiException catch (error) {
+      lastProfileCreationApiException = error;
+      lastProfileCreationFailure =
+          PlaymatePublicationFailure.fromStatus(error.statusCode);
+      lastSyncError =
+          'Profil-Speicherung fehlgeschlagen: HTTP ${error.statusCode}';
+      return null;
+    } on BackendAuthenticationRequiredException catch (error) {
+      lastProfileCreationFailure = const PlaymatePublicationFailure(
+        PlaymatePublicationFailureReason.unauthenticated,
+      );
+      lastSyncError = 'Fehler beim Erstellen des Profils: ${error.message}';
+      return null;
+    } on TimeoutException {
+      lastProfileCreationFailure = const PlaymatePublicationFailure(
+        PlaymatePublicationFailureReason.timeout,
+      );
+      lastSyncError = 'Zeitüberschreitung beim Erstellen des Profils';
+      return null;
+    } on SocketException {
+      lastProfileCreationFailure = const PlaymatePublicationFailure(
+        PlaymatePublicationFailureReason.network,
+      );
+      lastSyncError = 'Keine Verbindung beim Erstellen des Profils';
+      return null;
+    } on http.ClientException {
+      lastProfileCreationFailure = const PlaymatePublicationFailure(
+        PlaymatePublicationFailureReason.network,
+      );
+      lastSyncError = 'Keine Verbindung beim Erstellen des Profils';
+      return null;
+    } on BackendInvalidResponseException {
+      lastProfileCreationFailure = const PlaymatePublicationFailure(
+        PlaymatePublicationFailureReason.invalidResponse,
+      );
+      lastSyncError = 'Ungültige Server-Antwort beim Erstellen des Profils';
+      return null;
+    } catch (_) {
+      lastProfileCreationFailure = const PlaymatePublicationFailure(
+        PlaymatePublicationFailureReason.unknown,
+      );
+      lastSyncError = 'Unbekannter Fehler beim Erstellen des Profils';
       return null;
     }
   }
