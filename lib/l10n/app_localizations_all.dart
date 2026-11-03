@@ -1319,6 +1319,11 @@ class AppStringsManager {
       'network_tab_chats': 'Chats',
       'network_tab_discover': 'Entdecken',
       'network_tab_matches': 'Matches',
+      'network_tab_moments': 'Momente',
+      'network_tab_my_family': 'Meine Familie',
+      'network_moments_soon_title': 'Momente kommen bald',
+      'network_moments_soon_body':
+          'Bald könnt ihr hier Momente aus eurem Familienalltag teilen und sehen, was andere Familien erleben.',
       'network_matches_empty_title': 'Noch keine Matches',
       'network_matches_empty_body':
           'Wenn ihr und eine andere Familie beide auf „Interessiert“ tippt, erscheint euer Match hier.',
@@ -6537,6 +6542,11 @@ class AppStringsManager {
       'network_tab_chats': 'Chats',
       'network_tab_discover': 'Discover',
       'network_tab_matches': 'Matches',
+      'network_tab_moments': 'Moments',
+      'network_tab_my_family': 'My Family',
+      'network_moments_soon_title': 'Moments are coming soon',
+      'network_moments_soon_body':
+          'Soon you can share moments from your family life here and see what other families are up to.',
       'network_matches_empty_title': 'No matches yet',
       'network_matches_empty_body':
           'When you and another family both tap “Interested”, your match shows up here.',
@@ -6858,6 +6868,11 @@ class AppStringsManager {
       'network_interest_sent': 'Votre intérêt a été envoyé.',
       'network_tab_discover': 'Découvrir',
       'network_tab_matches': 'Correspondances',
+      'network_tab_moments': 'Moments',
+      'network_tab_my_family': 'Ma famille',
+      'network_moments_soon_title': 'Les moments arrivent bientôt',
+      'network_moments_soon_body':
+          'Bientôt, tu pourras partager ici des moments de ta vie de famille et voir ceux des autres familles.',
       'network_matches_empty_title': 'Pas encore de correspondances',
       'network_matches_empty_body':
           'Quand vous et une autre famille appuyez tous les deux sur « Intéressé », votre correspondance apparaît ici.',
@@ -7759,6 +7774,11 @@ class AppStringsManager {
       'network_interest_sent': 'Tu interés se ha enviado.',
       'network_tab_discover': 'Descubrir',
       'network_tab_matches': 'Coincidencias',
+      'network_tab_moments': 'Momentos',
+      'network_tab_my_family': 'Mi familia',
+      'network_moments_soon_title': 'Los momentos llegan pronto',
+      'network_moments_soon_body':
+          'Pronto podrás compartir aquí momentos de tu vida familiar y ver los de otras familias.',
       'network_matches_empty_title': 'Aún no hay coincidencias',
       'network_matches_empty_body':
           'Cuando tú y otra familia pulsáis «Me interesa», vuestra coincidencia aparece aquí.',
@@ -8646,6 +8666,11 @@ class AppStringsManager {
       'network_interest_sent': 'Il tuo interesse è stato inviato.',
       'network_tab_discover': 'Scopri',
       'network_tab_matches': 'Corrispondenze',
+      'network_tab_moments': 'Momenti',
+      'network_tab_my_family': 'La mia famiglia',
+      'network_moments_soon_title': 'I momenti arrivano presto',
+      'network_moments_soon_body':
+          'Presto potrai condividere qui i momenti della tua vita familiare e vedere quelli delle altre famiglie.',
       'network_matches_empty_title': 'Ancora nessuna corrispondenza',
       'network_matches_empty_body':
           'Quando tu e un\'altra famiglia toccate entrambi «Mi interessa», la vostra corrispondenza compare qui.',
@@ -11173,6 +11198,11 @@ class AppStringsManager {
       'network_interest_sent': 'تم إرسال اهتمامك.',
       'network_tab_discover': 'اكتشف',
       'network_tab_matches': 'التوافقات',
+      'network_tab_moments': 'اللحظات',
+      'network_tab_my_family': 'عائلتي',
+      'network_moments_soon_title': 'اللحظات قادمة قريباً',
+      'network_moments_soon_body':
+          'قريباً ستتمكن من مشاركة لحظات من حياتك العائلية هنا ورؤية ما تفعله العائلات الأخرى.',
       'network_matches_empty_title': 'لا توجد توافقات بعد',
       'network_matches_empty_body':
           'عندما تضغط أنت وعائلة أخرى على “مهتم”، يظهر توافقكما هنا.',
@@ -14173,6 +14203,11 @@ class AppStringsManager {
       'network_tab_chats': 'Chat',
       'network_tab_discover': 'Nas bike',
       'network_tab_matches': 'Hevgirtin',
+      'network_tab_moments': 'Kêlî',
+      'network_tab_my_family': 'Malbata min',
+      'network_moments_soon_title': 'Kêlî di nêzîk de tên',
+      'network_moments_soon_body':
+          'Di nêzîk de tu dikarî li vir kêlîyên jiyana xwe ya malbatî parve bikî û bibînî malbatên din çi dikin.',
       'network_matches_empty_title': 'Hête tiç hevgirtin',
       'network_matches_empty_body':
           'Dema hemû tû hûn her dû li ser “Bala min heye” bitikinî, hevgirtina we li vir xuya dibe.',
@@ -20754,6 +20789,11 @@ class AppStringsManager {
       'network_tab_chats': 'Sohbetler',
       'network_tab_discover': 'Keşfet',
       'network_tab_matches': 'Eşleşmeler',
+      'network_tab_moments': 'Anlar',
+      'network_tab_my_family': 'Ailem',
+      'network_moments_soon_title': 'Anlar yakında geliyor',
+      'network_moments_soon_body':
+          'Yakında burada aile hayatından anları paylaşabilir ve diğer ailelerin neler yaptığını görebilirsin.',
       'network_matches_empty_title': 'Henüz eşleşme yok',
       'network_matches_empty_body':
           'Siz ve başka bir aile „İlgileniyorum“’a dokunduğunuzda eşleşmeniz burada görünür.',
