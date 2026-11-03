@@ -9665,10 +9665,14 @@ async function hasBlockedMe(otherUid, selfUid, { strict = false } = {}) {
 }
 
 // Freundschaftsanfrage senden (oder direkt bestaetigen, wenn Ziel nicht privat).
+// Mit gesetztem `source` (z.B. 'discovery') immer nur 'pending': Kontakte aus
+// der Entdecken-Ansicht duerfen nie automatisch bestaetigt werden. Ohne
+// `source` bleibt das alte Verhalten (aeltere App-Versionen, Einladungslinks).
 app.post('/api/friendships/request', requireVerifiedUser, async (req, res) => {
   if (!requireActorClaims(req, res, [req.body.fromUid])) return;
   const fromUid = req.firebaseUid;
   const toUid = (req.body.toUid || '').toString().trim();
+  const requestSource = typeof req.body.source === 'string' ? req.body.source.trim() : '';
   if (!fromUid || !toUid) return res.status(400).json({ error: 'fromUid und toUid erforderlich' });
   if (fromUid === toUid) return res.status(400).json({ error: 'Eigene UID nicht erlaubt' });
   const [low, high] = pairKey(fromUid, toUid);
@@ -9683,7 +9687,7 @@ app.post('/api/friendships/request', requireVerifiedUser, async (req, res) => {
       `SELECT "isPrivate" FROM "UserProfile" WHERE "userId" = $1`, toUid
     );
     if (p.length > 0) targetPrivate = p[0].isPrivate !== false;
-    const status = targetPrivate ? 'pending' : 'accepted';
+    const status = targetPrivate || requestSource ? 'pending' : 'accepted';
     await prisma.$executeRawUnsafe(
       `INSERT INTO "Friendship" ("userLow", "userHigh", "status", "requestedBy", "createdAt", "updatedAt")
        VALUES ($1, $2, $3, $4, NOW(), NOW())

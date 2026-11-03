@@ -1347,6 +1347,10 @@ class AppStringsManager {
       'network_qr_create_failed':
           'QR-Code konnte nicht erstellt werden – bitte später erneut.',
       'network_requests_count': 'Anfragen ({count})',
+      'network_field_name_required': 'Bitte gib euren Namen ein.',
+      'network_field_district_required':
+          'Bitte wähle euren Stadtteil oder eure PLZ.',
+      'network_required_fields_note': '* Pflichtfeld',
       'network_validation_name': 'Bitte gib euren Namen ein (Schritt 1)',
       'network_validation_district':
           'Bitte gib euren Stadtteil ein (Schritt 1)',
@@ -2075,6 +2079,7 @@ class AppStringsManager {
       'network_copy_step_4': 'Schritt 4: Was sucht ihr?',
       'network_copy_step_5': 'Schritt 5: Sprachen & Mehr',
       'network_copy_reason_nearby': 'In der Nähe',
+      'network_copy_reason_same_city': 'In deiner Stadt',
       'network_copy_reason_shared_interests': 'Gemeinsame Interessen',
       'network_copy_reason_similar_child_age': 'Kinder in ähnlichem Alter',
       'network_copy_reason_shared_languages': 'Gemeinsame Sprachen',
@@ -4900,6 +4905,7 @@ class AppStringsManager {
       'network_copy_step_4': 'Step 4: What are you looking for?',
       'network_copy_step_5': 'Step 5: Languages and more',
       'network_copy_reason_nearby': 'Nearby',
+      'network_copy_reason_same_city': 'In your city',
       'network_copy_reason_shared_interests': 'Shared interests',
       'network_copy_reason_similar_child_age': 'Children of a similar age',
       'network_copy_reason_shared_languages': 'Shared languages',
@@ -6498,6 +6504,10 @@ class AppStringsManager {
       'network_qr_create_failed':
           'Could not create QR code – please try again later.',
       'network_requests_count': 'Requests ({count})',
+      'network_field_name_required': 'Please enter your name.',
+      'network_field_district_required':
+          'Please choose your district or ZIP code.',
+      'network_required_fields_note': '* Required',
       'network_validation_name': 'Please enter your name (step 1)',
       'network_validation_district': 'Please enter your district (step 1)',
       'network_save_error': 'Error while saving: {error}',
@@ -13905,6 +13915,11 @@ class AppStringsManager {
       'network_qr_create_failed':
           'Koda QR nehat çêkirin – ji kerema xwe paşê dîsa biceribîne.',
       'network_requests_count': 'Daxwaz ({count})',
+      // TODO(i18n): Kurdî (Kurmancî) – Schreibweise von Muttersprachler:in prüfen.
+      'network_field_name_required': 'Ji kerema xwe navê xwe binivîse.',
+      'network_field_district_required':
+          'Ji kerema xwe navçe an koda postê hilbijêre.',
+      'network_required_fields_note': '* Qada mecbûrî',
       'network_validation_name': 'Ji kerema xwe navê xwe binivîse (gav 1)',
       'network_validation_district': 'Ji kerema xwe taxa xwe binivîse (gav 1)',
       'network_save_error': 'Çewtî di tomarkirinê de: {error}',
@@ -14610,6 +14625,7 @@ class AppStringsManager {
       'network_copy_step_4': 'Gav 4: Hûn li çi digerin?',
       'network_copy_step_5': 'Gav 5: Ziman û zêdetir',
       'network_copy_reason_nearby': 'Li nêzîkê',
+      'network_copy_reason_same_city': 'Di bajarê te de',
       'network_copy_reason_shared_interests': 'Berjewendiyên hevpar',
       'network_copy_reason_similar_child_age': 'Zarokên bi temenê nêzîk',
       'network_copy_reason_shared_languages': 'Zimanên hevpar',
@@ -20425,6 +20441,10 @@ class AppStringsManager {
       'network_qr_create_failed':
           'QR kodu oluşturulamadı – lütfen daha sonra tekrar deneyin.',
       'network_requests_count': 'İstekler ({count})',
+      'network_field_name_required': 'Lütfen adınızı girin.',
+      'network_field_district_required':
+          'Lütfen mahallenizi veya posta kodunuzu seçin.',
+      'network_required_fields_note': '* Zorunlu alan',
       'network_validation_name': 'Lütfen adınızı girin (adım 1)',
       'network_validation_district': 'Lütfen semtinizi girin (adım 1)',
       'network_save_error': 'Kaydetme hatası: {error}',
@@ -21145,6 +21165,7 @@ class AppStringsManager {
       'network_copy_step_4': '4. Adım: Ne arıyorsunuz?',
       'network_copy_step_5': '5. Adım: Diller ve daha fazlası',
       'network_copy_reason_nearby': 'Yakınınızda',
+      'network_copy_reason_same_city': 'Şehrinizde',
       'network_copy_reason_shared_interests': 'Ortak ilgi alanları',
       'network_copy_reason_similar_child_age': 'Benzer yaşta çocuklar',
       'network_copy_reason_shared_languages': 'Ortak diller',
