@@ -47,7 +47,7 @@ class PlaymateDiscoveryEmptyState extends StatelessWidget {
               icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
               label: Text(context.tr('network_copy_invite_playmates')),
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF8B5CF6),
+                // Theme-Primärfarbe statt hartem Lila (Designsystem Paket a/b).
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
