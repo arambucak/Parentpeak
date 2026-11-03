@@ -33,6 +33,7 @@ import 'package:parentpeak/ui/widgets/network/family_card.dart';
 import 'package:parentpeak/ui/widgets/network/info_chip.dart';
 import 'package:parentpeak/ui/widgets/network/network_actions.dart';
 import 'package:parentpeak/ui/widgets/network/safety_menu.dart';
+import 'package:parentpeak/ui/widgets/network/network_empty_state.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/ui/match_conversation_screen.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
@@ -486,17 +487,17 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         bottom: TabBar(
           controller: _tabs,
           tabs: [
+            Tab(text: _t('network_tab_discover')),
+            Tab(text: _t('network_tab_matches')),
             Tab(text: _t('network_tab_chats')),
-            Tab(text: _t('network_tab_network')),
-            Tab(text: _t('network_copy_playmates')),
           ],
         ),
       ),
       floatingActionButton: AnimatedBuilder(
         animation: _tabs,
         builder: (context, _) {
-          // FAB nur im Chats-Tab: neuer Chat / neue Gruppe.
-          if (_tabs.index != 0) return const SizedBox.shrink();
+          // FAB nur im Chats-Tab (jetzt Index 2): neuer Chat / neue Gruppe.
+          if (_tabs.index != 2) return const SizedBox.shrink();
           return FloatingActionButton.extended(
             onPressed: _showNewChatOptions,
             backgroundColor: theme.colorScheme.primary,
@@ -511,9 +512,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       body: TabBarView(
         controller: _tabs,
         children: [
-          _chatsTab(theme),
-          _netzwerkTab(theme),
           _spielfreundeTab(theme),
+          _matchesTab(theme),
+          _chatsTab(theme),
         ],
       ),
     );
@@ -931,7 +932,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
               subtitle: Text(_t('network_start_direct_chat_hint')),
               onTap: () {
                 Navigator.pop(sheetCtx);
-                _tabs.animateTo(1); // Zum Netzwerk-Tab (dort Freunde anchatten)
+                _tabs.animateTo(1); // Zum Matches-Tab (dort liegen die Verbindungen/Freunde)
               },
             ),
             ListTile(
@@ -1808,6 +1809,38 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   // ═══════════════════════════════════════════════════════════════════════════
   // TAB 2: NETZWERK (Freunde, Anfragen, Vorschläge, Einladen)
   // ═══════════════════════════════════════════════════════════════════════════
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // TAB 2: MATCHES (gegenseitiges Interesse + bestehende Verbindungen)
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Der eigentliche Match-Fluss (gegenseitiges "Interessiert") folgt in den
+  // Paketen c/d/e. Bis dahin zeigt dieser Tab einen ruhigen Leerzustand und
+  // die bereits vorhandenen Verbindungen (eingehende Anfragen + Freundesliste),
+  // damit keine Funktion aus dem alten Netzwerk-Tab verloren geht.
+  Widget _matchesTab(ThemeData theme) {
+    final hasConnections = FriendshipService.instance.incoming.isNotEmpty ||
+        FriendshipService.instance.friends.isNotEmpty;
+    return Column(
+      children: [
+        if (!hasConnections)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: NetworkEmptyState(
+              emoji: '\u{1F91D}',
+              title: _t('network_matches_empty_title'),
+              description: _t('network_matches_empty_body'),
+              actionLabel: _t('network_copy_invite_playmates'),
+              onAction: () => _tabs.animateTo(0),
+              actionIcon: Icons.explore_rounded,
+            ),
+          ),
+        // Bestehende Verbindungen + Einladen (Link/QR) + Freundes-Karussell.
+        // Erhalten aus dem frueheren Netzwerk-Tab, bis der echte Match-Fluss
+        // (Pakete c/d/e) diese Inhalte ersetzt.
+        Expanded(child: _netzwerkTab(theme)),
+      ],
+    );
+  }
 
   Widget _netzwerkTab(ThemeData theme) {
     return SingleChildScrollView(

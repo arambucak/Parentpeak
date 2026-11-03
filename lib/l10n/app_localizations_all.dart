@@ -1274,6 +1274,10 @@ class AppStringsManager {
       'network_code_copied': 'Code kopiert ✓!',
       // ─── Redesign: Chats-Tab + Netzwerk + Gruppenchat ───────────────────
       'network_tab_chats': 'Chats',
+      'network_tab_discover': 'Entdecken',
+      'network_tab_matches': 'Matches',
+      'network_matches_empty_title': 'Noch keine Matches',
+      'network_matches_empty_body': 'Wenn ihr und eine andere Familie beide auf „Interessiert“ tippt, erscheint euer Match hier.',
       'network_tab_network': 'Netzwerk',
       'network_new_chat': 'Neuer Chat',
       // Chat löschen (WhatsApp-Stil)
@@ -6434,6 +6438,10 @@ class AppStringsManager {
       'network_code_copied': 'Code copied ✓!',
       // ─── Redesign: Chats tab + network + group chat ─────────────────────
       'network_tab_chats': 'Chats',
+      'network_tab_discover': 'Discover',
+      'network_tab_matches': 'Matches',
+      'network_matches_empty_title': 'No matches yet',
+      'network_matches_empty_body': 'When you and another family both tap “Interested”, your match shows up here.',
       'network_tab_network': 'Network',
       'network_new_chat': 'New chat',
       // Delete chat (WhatsApp style)
@@ -6732,6 +6740,10 @@ class AppStringsManager {
     },
     // Français
     'fr': {
+      'network_tab_discover': 'Découvrir',
+      'network_tab_matches': 'Correspondances',
+      'network_matches_empty_title': 'Pas encore de correspondances',
+      'network_matches_empty_body': 'Quand vous et une autre famille appuyez tous les deux sur « Intéressé », votre correspondance apparaît ici.',
       'ads_consent_title': 'Consentement aux publicités et aux sponsors',
       'ads_consent_body': 'Vous pouvez accepter librement des contenus sponsorisés non personnalisés, vérifiés manuellement, dans la découverte publique d’événements. Aucun suivi, identifiant publicitaire ou partage de données d’enfants, de localisation ou de contenus IA à des fins publicitaires. Refuser est aussi simple qu’accepter. Vous pouvez retirer votre accord ici à tout moment ; tout traitement publicitaire futur sera alors bloqué. Le retrait ne récupère pas les données déjà envoyées. L’application reste utilisable sans accord. La publicité est actuellement désactivée.',
       'ads_consent_grant': 'Accepter',
@@ -7587,6 +7599,10 @@ class AppStringsManager {
     },
     // Español
     'es': {
+      'network_tab_discover': 'Descubrir',
+      'network_tab_matches': 'Coincidencias',
+      'network_matches_empty_title': 'Aún no hay coincidencias',
+      'network_matches_empty_body': 'Cuando tú y otra familia pulsáis «Me interesa», vuestra coincidencia aparece aquí.',
       'ads_consent_title': 'Consentimiento para publicidad y patrocinadores',
       'ads_consent_body': 'Puedes aceptar voluntariamente contenido patrocinado no personalizado y revisado manualmente en la sección pública para descubrir eventos. Sin rastreo, identificador publicitario ni uso de datos de menores, ubicación o contenido de IA con fines publicitarios. Rechazar es tan fácil como aceptar. Puedes retirar tu consentimiento aquí en cualquier momento; se bloqueará todo tratamiento publicitario futuro. Retirarlo no recupera los datos ya enviados. La aplicación sigue disponible sin consentimiento. La publicidad está desactivada actualmente.',
       'ads_consent_grant': 'Aceptar',
@@ -8429,6 +8445,10 @@ class AppStringsManager {
     },
     // Italiano
     'it': {
+      'network_tab_discover': 'Scopri',
+      'network_tab_matches': 'Corrispondenze',
+      'network_matches_empty_title': 'Ancora nessuna corrispondenza',
+      'network_matches_empty_body': 'Quando tu e un\'altra famiglia toccate entrambi «Mi interessa», la vostra corrispondenza compare qui.',
       'ads_consent_title': 'Consenso per pubblicità e sponsor',
       'ads_consent_body': 'Puoi acconsentire liberamente a contenuti sponsorizzati non personalizzati, verificati manualmente, nella ricerca pubblica di eventi. Nessun tracciamento, identificativo pubblicitario o condivisione di dati dei bambini, posizione o contenuti IA per scopi pubblicitari. Rifiutare è semplice quanto accettare. Puoi revocare il consenso qui in qualsiasi momento; ogni trattamento pubblicitario futuro verrà bloccato. La revoca non recupera i dati già inviati. L’app resta utilizzabile senza consenso. La pubblicità è attualmente disattivata.',
       'ads_consent_grant': 'Acconsenti',
@@ -10900,6 +10920,10 @@ class AppStringsManager {
     },
     // العربية (Arabic)
     'ar': {
+      'network_tab_discover': 'اكتشف',
+      'network_tab_matches': 'التوافقات',
+      'network_matches_empty_title': 'لا توجد توافقات بعد',
+      'network_matches_empty_body': 'عندما تضغط أنت وعائلة أخرى على “مهتم”، يظهر توافقكما هنا.',
       'ads_consent_title': 'الموافقة على الإعلانات والرعاية',
       'ads_consent_body': 'يمكنك الموافقة طوعًا على محتوى رعاية غير مخصص تتم مراجعته يدويًا ضمن اكتشاف الفعاليات العامة. لا تتبع ولا معرّف إعلاني ولا مشاركة لبيانات الأطفال أو الموقع أو محتوى الذكاء الاصطناعي لأغراض إعلانية. الرفض سهل مثل الموافقة. يمكنك سحب موافقتك هنا في أي وقت، فتُحظر كل معالجة إعلانية مستقبلية. السحب لا يسترجع البيانات المرسلة سابقًا. يبقى التطبيق قابلًا للاستخدام دون موافقة. الإعلانات معطّلة حاليًا.',
       'ads_consent_grant': 'أوافق',
@@ -13835,6 +13859,10 @@ class AppStringsManager {
       'network_code_copied': 'Kod hat kopîkirin ✓!',
       // ─── Redesign: Chats + Tor + Chata komê ─────────────────────────────
       'network_tab_chats': 'Chat',
+      'network_tab_discover': 'Nas bike',
+      'network_tab_matches': 'Hevgirtin',
+      'network_matches_empty_title': 'Hête tiç hevgirtin',
+      'network_matches_empty_body': 'Dema hemû tû hûn her dû li ser “Bala min heye” bitikinî, hevgirtina we li vir xuya dibe.',
       'network_tab_network': 'Tor',
       'network_new_chat': 'Chata nû',
       // Jêbirina chatê (şêwaza WhatsApp)
@@ -20362,6 +20390,10 @@ class AppStringsManager {
       'network_code_copied': 'Kod kopyalandı ✓!',
       // ─── Yeniden tasarım: Sohbetler + Ağ + Grup sohbeti ─────────────────
       'network_tab_chats': 'Sohbetler',
+      'network_tab_discover': 'Keşfet',
+      'network_tab_matches': 'Eşleşmeler',
+      'network_matches_empty_title': 'Henüz eşleşme yok',
+      'network_matches_empty_body': 'Siz ve başka bir aile „İlgileniyorum“’a dokunduğunuzda eşleşmeniz burada görünür.',
       'network_tab_network': 'Ağ',
       'network_new_chat': 'Yeni sohbet',
       // Sohbeti sil (WhatsApp tarzı)
