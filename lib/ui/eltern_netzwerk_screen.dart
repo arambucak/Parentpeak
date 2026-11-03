@@ -34,6 +34,7 @@ import 'package:parentpeak/ui/widgets/network/info_chip.dart';
 import 'package:parentpeak/ui/widgets/network/network_actions.dart';
 import 'package:parentpeak/ui/widgets/network/safety_menu.dart';
 import 'package:parentpeak/ui/widgets/network/family_swipe_stack.dart';
+import 'package:parentpeak/ui/widgets/network/moments_feed.dart';
 import 'package:parentpeak/ui/widgets/network/match_celebration_sheet.dart';
 import 'package:parentpeak/ui/widgets/network/network_empty_state.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
@@ -549,41 +550,11 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // TAB: MOMENTE (Platzhalter — Eltern teilen bald ihre Familien-Momente)
+  // TAB: MOMENTE (Eltern teilen Familien-Momente — Feed)
   // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _momentsTab(ThemeData theme) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 36),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.auto_awesome_rounded,
-              size: 56,
-              color: theme.colorScheme.primary.withValues(alpha: 0.6),
-            ),
-            const SizedBox(height: 18),
-            Text(
-              _t('network_moments_soon_title'),
-              textAlign: TextAlign.center,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _t('network_moments_soon_body'),
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    return const MomentsFeed();
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
