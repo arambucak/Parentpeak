@@ -18,7 +18,8 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:crypto/crypto.dart';
-import 'package:http/http.dart' as http;
+// Auth emails (password reset, verification) are sent via the Firebase client
+// SDK, so the direct 'package:http' call to the backend is no longer needed.
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/firebase_options.dart';
 import 'package:parentpeak/logic/notification_service.dart';
@@ -678,48 +679,23 @@ class AuthService with ChangeNotifier {
     return recoverableCodes.contains(normalizedCode);
   }
 
-  Future<bool> _sendBrandedVerificationEmail(User user) async {
-    final backendUrl = APIConfig.getBackendBaseUrl();
-    if (backendUrl == null || backendUrl.isEmpty) return false;
-
-    try {
-      final idToken = await user.getIdToken();
-      if (idToken == null || idToken.isEmpty) return false;
-      final response = await http
-          .post(
-            Uri.parse('$backendUrl/auth/send-verification-email'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $idToken',
-            },
-            body: jsonEncode({}),
-          )
-          .timeout(const Duration(seconds: 10));
-      if (response.statusCode == 200) return true;
-      debugPrint(
-        'AuthService: branded verification email returned ${response.statusCode}.',
-      );
-    } catch (error) {
-      _logIgnoredError(
-        'AuthService: branded verification email unavailable',
-        error,
-      );
-    }
-    return false;
-  }
-
+  /// Sends the email-verification message via the Firebase client SDK.
+  ///
+  /// Firebase generates the action link, sends the email using the project's
+  /// configured template, and manages expiry and single-use. This is the
+  /// Google-supported path and does not depend on the deprecated Admin-SDK
+  /// link generation (Firebase Dynamic Links), which is no longer available.
   Future<bool> _sendVerificationEmail(User user) async {
-    if (await _sendBrandedVerificationEmail(user)) return true;
     try {
       await user.sendEmailVerification();
       return true;
     } on FirebaseAuthException catch (error) {
       debugPrint(
-        'AuthService: verification email fallback failed. code=${error.code}',
+        'AuthService: verification email failed. code=${error.code}',
       );
     } catch (error) {
       _logIgnoredError(
-        'AuthService: verification email fallback failed',
+        'AuthService: verification email failed',
         error,
       );
     }
@@ -747,35 +723,10 @@ class AuthService with ChangeNotifier {
     }
 
     try {
-      // ── Modern path: send branded German email via backend ─────────────────
-      // The backend uses Firebase Admin SDK to generate the action link and
-      // nodemailer to send a fully custom HTML email pointing to our
-      // branded auth-action page (https://parentpeak.onrender.com/auth/action).
-      final backendUrl = APIConfig.getBackendBaseUrl();
-      if (backendUrl != null && backendUrl.isNotEmpty) {
-        try {
-          final response = await http
-              .post(
-                Uri.parse('$backendUrl/auth/send-password-reset'),
-                headers: {'Content-Type': 'application/json'},
-                body: jsonEncode({'email': cleanEmail}),
-              )
-              .timeout(const Duration(seconds: 10));
-
-          if (response.statusCode == 200) {
-            return null; // success — branded email sent
-          }
-          debugPrint(
-            'AuthService.sendPasswordReset(): backend returned ${response.statusCode}, falling back to Firebase',
-          );
-        } catch (e) {
-          debugPrint(
-            'AuthService.sendPasswordReset(): backend unreachable ($e), falling back to Firebase',
-          );
-        }
-      }
-
-      // ── Fallback: Firebase built-in email (now sent in German) ────────────
+      // Firebase client SDK sends the reset email using the project's
+      // configured template and manages the action link, expiry and
+      // single-use. This is the Google-supported path and avoids the
+      // deprecated Admin-SDK link generation (Firebase Dynamic Links).
       await _firebaseAuth!.sendPasswordResetEmail(email: cleanEmail);
       return null;
     } on FirebaseAuthException catch (e) {
