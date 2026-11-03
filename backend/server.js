@@ -5828,6 +5828,40 @@ async function getMutualConnectionProfileIds(familyId, userId) {
     .map(item => item.id);
 }
 
+// Liefert fuer den Matches-Tab zwei Mengen von Profil-IDs:
+//   matched  = gegenseitiges Interesse (beide zuletzt 'like')
+//   outgoing = mein 'like' ohne (bisherige) Gegenseite ("Deine Anfragen")
+// Eingehendes Interesse (fremdes like auf mich ohne mein Gegen-like) wird
+// bewusst NICHT zurueckgegeben (Entscheidung 9.5: erst beim Match sichtbar).
+async function getParentMatchingInterestIds(familyId, userId) {
+  await ensureParentMatchingSchemaReady();
+
+  const myOwnedProfiles = await prisma.parentMatchingProfile.findMany({
+    where: { ownerUserId: userId, isActive: true },
+    select: { id: true },
+  });
+  const myOwnedProfileIds = myOwnedProfiles.map(item => item.id);
+  if (myOwnedProfileIds.length === 0) {
+    return { matched: [], outgoing: [] };
+  }
+
+  const myActions = await prisma.parentMatchingAction.findMany({
+    where: { familyId, actorUserId: userId },
+    orderBy: { createdAt: 'desc' },
+  });
+  const latestMine = latestActionByProfile(myActions);
+  const myLikedProfileIds = Array.from(latestMine.entries())
+    .filter(([, action]) => action === 'like')
+    .map(([profileId]) => profileId);
+  if (myLikedProfileIds.length === 0) {
+    return { matched: [], outgoing: [] };
+  }
+
+  const matched = new Set(await getMutualConnectionProfileIds(familyId, userId));
+  const outgoing = myLikedProfileIds.filter(id => !matched.has(id));
+  return { matched: Array.from(matched), outgoing };
+}
+
 function getMutualConnectionProfileIdsInMemory(familyId, userId) {
   const myOwnedProfileIds = parentProfiles
     .filter(item => item.ownerUserId === userId)
@@ -8826,6 +8860,32 @@ app.get('/parent-matching/connections', requireVerifiedUser, requireOwnFamily, a
     }
     const connectedProfileIds = getMutualConnectionProfileIdsInMemory(familyId, userId);
     return res.json({ profileIds: connectedProfileIds });
+  }
+});
+
+// Matches-Tab: matched (gegenseitig) + outgoing (eigene offene Anfragen).
+app.get('/parent-matching/interest', requireVerifiedUser, requireOwnFamily, async (req, res) => {
+  const familyId = req.ownFamily.id;
+  const userId = req.firebaseUid;
+  try {
+    const ownProfile = await getMyParentMatchingProfile(userId);
+    if (!ownProfile) {
+      return res.status(409).json({ error: 'Bitte zuerst eigenes Matching-Profil anlegen' });
+    }
+    const interest = await getParentMatchingInterestIds(familyId, userId);
+    return res.json(interest);
+  } catch (error) {
+    if (respondWithStrictPersistenceError(res, 'GET /parent-matching/interest', error)) {
+      return;
+    }
+    // In-Memory-Fallback: matched aus der vorhandenen Funktion, outgoing leer
+    // (die In-Memory-Pfade werden in Produktion nicht erreicht).
+    const ownProfile = getMyParentMatchingProfileInMemory(userId);
+    if (!ownProfile) {
+      return res.status(409).json({ error: 'Bitte zuerst eigenes Matching-Profil anlegen' });
+    }
+    const matched = getMutualConnectionProfileIdsInMemory(familyId, userId);
+    return res.json({ matched, outgoing: [] });
   }
 });
 
