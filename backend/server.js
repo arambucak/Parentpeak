@@ -13534,13 +13534,46 @@ async function discoverParentMatchingProfiles({ userId, limit, maxDistanceKm }) 
     take: 100,
   });
   await ensureSocialSchemaReady();
+  // L6: beidseitiges Blocken — wer mich blockiert hat, wird genauso
+  // ausgeschlossen wie wen ich blockiert habe.
   const blockRows = await prisma.$queryRawUnsafe(
-    `SELECT "blockedUserId" FROM "SafetyBlock" WHERE "blockerUserId" = $1`, userId);
-  const blockedIds = new Set(blockRows.map(row => row.blockedUserId));
+    `SELECT "blockerUserId", "blockedUserId" FROM "SafetyBlock"
+     WHERE "blockerUserId" = $1 OR "blockedUserId" = $1`, userId);
+  const blockedIds = new Set();
+  for (const row of blockRows) {
+    const other = row.blockerUserId === userId ? row.blockedUserId : row.blockerUserId;
+    if (other) blockedIds.add(other);
+  }
   const suspensionRows = await prisma.$queryRawUnsafe(`SELECT "userId" FROM "SafetySuspension"`);
   const suspendedIds = new Set(suspensionRows.map(row => row.userId));
+
+  // L1: bereits bewertete Profile ausschliessen. 'like' dauerhaft (das
+  // Interesse steht), 'pass' nur fuer eine Abkuehlzeit (Entscheidung 9.10:
+  // nach 30 Tagen wieder zeigen). Neueste Aktion je Profil zaehlt.
+  const passCooldownMs = Number.parseInt(
+    process.env.PARENT_MATCHING_PASS_COOLDOWN_MS || `${30 * 24 * 60 * 60 * 1000}`, 10);
+  const myActions = await prisma.parentMatchingAction.findMany({
+    where: { familyId: ownFamilyId(userId), actorUserId: userId },
+    orderBy: { createdAt: 'desc' },
+    select: { profileId: true, action: true, createdAt: true },
+  });
+  const ratedProfileIds = new Set();
+  const seenProfile = new Set();
+  const now = Date.now();
+  for (const act of myActions) {
+    if (seenProfile.has(act.profileId)) continue; // nur neueste je Profil
+    seenProfile.add(act.profileId);
+    if (act.action === 'like' || act.action === 'favorite' || act.action === 'contact') {
+      ratedProfileIds.add(act.profileId);
+    } else if (act.action === 'pass') {
+      const age = now - new Date(act.createdAt).getTime();
+      if (age < passCooldownMs) ratedProfileIds.add(act.profileId);
+    }
+  }
+  const freshCandidates = candidates.filter(c => !ratedProfileIds.has(c.id));
+
   return scoreParentMatchingCandidates({
-    userProfile, candidates, blockedIds, suspendedIds, limit, maxDistanceKm,
+    userProfile, candidates: freshCandidates, blockedIds, suspendedIds, limit, maxDistanceKm,
   });
 }
 
