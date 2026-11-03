@@ -17,6 +17,19 @@ class ParentMatchActionResult {
   });
 }
 
+/// Ergebnis von [ParentMatchingBackendService.fetchInterest]: die Profile mit
+/// gegenseitigem Interesse (matched, "Neu") und die eigenen offenen Anfragen
+/// (outgoing, "Deine Anfragen").
+class ParentMatchingInterest {
+  final List<ParentMatchingProfile> matched;
+  final List<ParentMatchingProfile> outgoing;
+
+  const ParentMatchingInterest({
+    this.matched = const [],
+    this.outgoing = const [],
+  });
+}
+
 class ParentMatchingProfile {
   final String id;
   final String? userId;
@@ -561,6 +574,39 @@ class ParentMatchingBackendService {
         connected: false,
         matchState: 'error',
       );
+    }
+  }
+
+  /// Laedt die Matches-Uebersicht vom Server: matched (gegenseitiges
+  /// Interesse) und outgoing (eigene offene Anfragen). Gibt bei Fehler eine
+  /// leere Uebersicht zurueck und setzt [lastSyncError].
+  Future<ParentMatchingInterest> fetchInterest() async {
+    lastSyncError = null;
+    final client = _typedApiClient;
+    if (client == null) {
+      lastSyncError = 'Authenticated backend missing';
+      return const ParentMatchingInterest();
+    }
+    try {
+      final data = await client.getJson('/parent-matching/interest');
+      if (data is! Map<String, dynamic>) {
+        throw const FormatException('Invalid interest response');
+      }
+      List<ParentMatchingProfile> parse(String key) {
+        final list = data[key];
+        if (list is! List) return const [];
+        return list
+            .whereType<Map<String, dynamic>>()
+            .map(ParentMatchingProfile.fromJson)
+            .toList();
+      }
+      return ParentMatchingInterest(
+        matched: parse('matched'),
+        outgoing: parse('outgoing'),
+      );
+    } catch (e) {
+      lastSyncError = 'Matches konnten nicht geladen werden: $e';
+      return const ParentMatchingInterest();
     }
   }
 
