@@ -10351,7 +10351,7 @@ app.post('/api/safety/report', requireVerifiedUser, async (req, res) => {
       id, reporterUserId || 'anonymous', reportedUserId, contentType, content, reason
     );
     const countRows = await prisma.$queryRawUnsafe(
-      `SELECT COUNT(*)::int AS n FROM "SafetyReport" WHERE "reportedUserId" = $1`,
+      `SELECT COUNT(DISTINCT "reporterUserId")::int AS n FROM "SafetyReport" WHERE "reportedUserId" = $1`,
       reportedUserId
     );
     const reportCount = countRows?.[0]?.n ?? 1;
@@ -10359,7 +10359,9 @@ app.post('/api/safety/report', requireVerifiedUser, async (req, res) => {
   } catch (error) {
     if (respondWithStrictPersistenceError(res, 'POST /api/safety/report', error)) return;
     safetyReports.push({ id, reporterUserId, reportedUserId, contentType, content, reason, createdAt: new Date().toISOString() });
-    const reportCount = safetyReports.filter(r => r.reportedUserId === reportedUserId).length;
+    const reportCount = new Set(
+      safetyReports.filter(r => r.reportedUserId === reportedUserId).map(r => r.reporterUserId)
+    ).size;
     return res.json({ ok: true, id, reportCount });
   }
 });
@@ -13562,7 +13564,7 @@ function normalizeParentMatchingCity(value) {
     .replace(/[^a-z0-9äöüß]/g, '');
 }
 
-function scoreParentMatchingCandidates({ userProfile, candidates, blockedIds, suspendedIds, limit, maxDistanceKm }) {
+function scoreParentMatchingCandidates({ userProfile, candidates, blockedIds, suspendedIds, hiddenOwnerIds = new Set(), limit, maxDistanceKm }) {
   const maxDistance = Number.parseFloat(maxDistanceKm) || 25;
   const ownCity = normalizeParentMatchingCity(userProfile.city);
   const hasCoordinates = profile =>
@@ -13570,7 +13572,7 @@ function scoreParentMatchingCandidates({ userProfile, candidates, blockedIds, su
   const hasOwnCoordinates = hasCoordinates(userProfile);
 
   const matches = candidates
-    .filter(profile => !blockedIds.has(profile.ownerUserId) && !suspendedIds.has(profile.ownerUserId))
+    .filter(profile => !blockedIds.has(profile.ownerUserId) && !suspendedIds.has(profile.ownerUserId) && !hiddenOwnerIds.has(profile.ownerUserId))
     .map(candidate => {
       const reasons = [];
       const breakdown = {};
@@ -13647,6 +13649,22 @@ async function discoverParentMatchingProfiles({ userId, limit, maxDistanceKm }) 
   const suspensionRows = await prisma.$queryRawUnsafe(`SELECT "userId" FROM "SafetySuspension"`);
   const suspendedIds = new Set(suspensionRows.map(row => row.userId));
 
+  // m3: Profile ausblenden, die von >= 3 VERSCHIEDENEN Meldern (pending)
+  // gemeldet wurden (vorlaeufig fuer alle, bis der Admin entscheidet), sowie
+  // Profile, die ICH selbst gemeldet habe (einseitig).
+  const hideThreshold = Number.parseInt(
+    process.env.PARENT_MATCHING_REPORT_HIDE_THRESHOLD || '3', 10);
+  const hiddenRows = await prisma.$queryRawUnsafe(
+    `SELECT "reportedUserId"
+     FROM "SafetyReport"
+     WHERE "status" = 'pending'
+     GROUP BY "reportedUserId"
+     HAVING COUNT(DISTINCT "reporterUserId") >= $1`, hideThreshold);
+  const hiddenOwnerIds = new Set(hiddenRows.map(row => row.reportedUserId));
+  const reportedByMeRows = await prisma.$queryRawUnsafe(
+    `SELECT DISTINCT "reportedUserId" FROM "SafetyReport" WHERE "reporterUserId" = $1`, userId);
+  for (const row of reportedByMeRows) hiddenOwnerIds.add(row.reportedUserId);
+
   // L1: bereits bewertete Profile ausschliessen. 'like' dauerhaft (das
   // Interesse steht), 'pass' nur fuer eine Abkuehlzeit (Entscheidung 9.10:
   // nach 30 Tagen wieder zeigen). Neueste Aktion je Profil zaehlt.
@@ -13673,7 +13691,7 @@ async function discoverParentMatchingProfiles({ userId, limit, maxDistanceKm }) 
   const freshCandidates = candidates.filter(c => !ratedProfileIds.has(c.id));
 
   return scoreParentMatchingCandidates({
-    userProfile, candidates: freshCandidates, blockedIds, suspendedIds, limit, maxDistanceKm,
+    userProfile, candidates: freshCandidates, blockedIds, suspendedIds, hiddenOwnerIds, limit, maxDistanceKm,
   });
 }
 
