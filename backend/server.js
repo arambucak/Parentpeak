@@ -8873,7 +8873,17 @@ app.get('/parent-matching/interest', requireVerifiedUser, requireOwnFamily, asyn
       return res.status(409).json({ error: 'Bitte zuerst eigenes Matching-Profil anlegen' });
     }
     const interest = await getParentMatchingInterestIds(familyId, userId);
-    return res.json(interest);
+    // IDs -> gemappte Profildetails. Gematchte/gelikte Profile sind durch den
+    // Discovery-L1-Filter ausgeblendet, daher hier direkt nachladen.
+    const allIds = [...interest.matched, ...interest.outgoing];
+    const profiles = allIds.length === 0 ? [] : await prisma.parentMatchingProfile.findMany({
+      where: { id: { in: allIds } },
+    });
+    const byId = new Map(profiles.map(p => [p.id, mapParentMatchingProfileForClient(p)]));
+    return res.json({
+      matched: interest.matched.map(id => byId.get(id)).filter(Boolean),
+      outgoing: interest.outgoing.map(id => byId.get(id)).filter(Boolean),
+    });
   } catch (error) {
     if (respondWithStrictPersistenceError(res, 'GET /parent-matching/interest', error)) {
       return;
@@ -8884,7 +8894,10 @@ app.get('/parent-matching/interest', requireVerifiedUser, requireOwnFamily, asyn
     if (!ownProfile) {
       return res.status(409).json({ error: 'Bitte zuerst eigenes Matching-Profil anlegen' });
     }
-    const matched = getMutualConnectionProfileIdsInMemory(familyId, userId);
+    const matchedIds = getMutualConnectionProfileIdsInMemory(familyId, userId);
+    const matched = parentProfiles
+      .filter(p => matchedIds.includes(p.id))
+      .map(mapParentMatchingProfileForClient);
     return res.json({ matched, outgoing: [] });
   }
 });

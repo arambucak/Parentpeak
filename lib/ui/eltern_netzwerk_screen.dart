@@ -33,6 +33,7 @@ import 'package:parentpeak/ui/widgets/network/family_card.dart';
 import 'package:parentpeak/ui/widgets/network/info_chip.dart';
 import 'package:parentpeak/ui/widgets/network/network_actions.dart';
 import 'package:parentpeak/ui/widgets/network/safety_menu.dart';
+import 'package:parentpeak/ui/widgets/network/match_celebration_sheet.dart';
 import 'package:parentpeak/ui/widgets/network/network_empty_state.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/ui/match_conversation_screen.dart';
@@ -127,6 +128,10 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   String? _matchesErrorKey;
   int _matchRequest = 0;
   String _matchScope = '10km';
+
+  // Matches-Tab: gegenseitige Matches + eigene offene Anfragen (/interest).
+  ParentMatchingInterest _interest = const ParentMatchingInterest();
+  bool _loadingInterest = false;
 
   // Chats-Tab: Messenger-Übersicht
   List<ConversationSummary> _conversations = [];
@@ -230,6 +235,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
       if (state.status == PlaymateProfileStatus.active &&
           state.profile != null) {
         unawaited(_loadMatches());
+        unawaited(_loadInterest());
       }
     } catch (e) {
       debugPrint('ElternNetzwerkScreen profile verification failed: $e');
@@ -1804,15 +1810,29 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     }
     // 'pass' = Nicht jetzt: leise, keine Rueckmeldung noetig.
     if (action != 'like') return;
-    // 'like': bei beidseitigem Interesse Match-Hinweis, sonst Bestaetigung.
-    final matched = result.matchState == 'matched';
+    if (result.matchState == 'matched') {
+      // Beidseitiges Interesse: ruhiger Es-passt-Screen mit Eisbrechern.
+      await MatchCelebrationSheet.show(
+        context,
+        ownName: _profile?.displayName ?? '',
+        otherName: m.profile.name,
+        onWrite: (icebreaker) {
+          Navigator.of(context).pop();
+          // Chat-Anbindung folgt in Paket e; bis dahin in den Matches-Tab.
+          _loadInterest();
+          _tabs.animateTo(1);
+        },
+        onLater: () {
+          Navigator.of(context).pop();
+          _loadInterest();
+        },
+      );
+      return;
+    }
+    // Einseitiges 'like': ruhige Bestaetigung.
     messenger.showSnackBar(
       SnackBar(
-        content: Text(
-          matched
-              ? _t('network_match_mutual')
-              : _t('network_interest_sent'),
-        ),
+        content: Text(_t('network_interest_sent')),
         behavior: SnackBarBehavior.floating,
         backgroundColor: theme.colorScheme.primary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -1853,15 +1873,52 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   // Paketen c/d/e. Bis dahin zeigt dieser Tab einen ruhigen Leerzustand und
   // die bereits vorhandenen Verbindungen (eingehende Anfragen + Freundesliste),
   // damit keine Funktion aus dem alten Netzwerk-Tab verloren geht.
+  /// Laedt matched + outgoing vom Server (/parent-matching/interest).
+  Future<void> _loadInterest() async {
+    if (_profileStatus != PlaymateProfileStatus.active) return;
+    if (mounted) setState(() => _loadingInterest = true);
+    final interest = await _matching.fetchInterest();
+    if (!mounted) return;
+    setState(() {
+      _interest = interest;
+      _loadingInterest = false;
+    });
+  }
+
   Widget _matchesTab(ThemeData theme) {
+    final matched = _interest.matched;
+    final outgoing = _interest.outgoing;
+    final hasInterest = matched.isNotEmpty || outgoing.isNotEmpty;
     final hasConnections = FriendshipService.instance.incoming.isNotEmpty ||
         FriendshipService.instance.friends.isNotEmpty;
-    return Column(
-      children: [
-        if (!hasConnections)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            child: NetworkEmptyState(
+    return RefreshIndicator(
+      onRefresh: () async {
+        await _loadInterest();
+        await FriendshipService.instance.load();
+      },
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
+        children: [
+          if (_loadingInterest && !hasInterest)
+            const Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          if (matched.isNotEmpty) ...[
+            _matchesSectionTitle(theme, _t('network_matches_new')),
+            const SizedBox(height: 10),
+            ...matched.map((p) => _interestCard(theme, p, matched: true)),
+            const SizedBox(height: 20),
+          ],
+          if (outgoing.isNotEmpty) ...[
+            _matchesSectionTitle(theme, _t('network_matches_outgoing')),
+            const SizedBox(height: 10),
+            ...outgoing.map((p) => _interestCard(theme, p, matched: false)),
+            const SizedBox(height: 20),
+          ],
+          if (!hasInterest && !hasConnections && !_loadingInterest)
+            NetworkEmptyState(
               emoji: '\u{1F91D}',
               title: _t('network_matches_empty_title'),
               description: _t('network_matches_empty_body'),
@@ -1869,13 +1926,107 @@ class _ScreenState extends State<ElternNetzwerkScreen>
               onAction: () => _tabs.animateTo(0),
               actionIcon: Icons.explore_rounded,
             ),
-          ),
-        // Bestehende Verbindungen + Einladen (Link/QR) + Freundes-Karussell.
-        // Erhalten aus dem frueheren Netzwerk-Tab, bis der echte Match-Fluss
-        // (Pakete c/d/e) diese Inhalte ersetzt.
-        Expanded(child: _netzwerkTab(theme)),
-      ],
+          // Bestehende Verbindungen + Einladen (Link/QR) bleiben erhalten.
+          _netzwerkTab(theme),
+        ],
+      ),
     );
+  }
+
+  Widget _matchesSectionTitle(ThemeData theme, String title) {
+    return Text(
+      title,
+      style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+    );
+  }
+
+  /// Karte in der Matches-Liste: matched (Chat oeffnen) oder outgoing
+  /// (Anfrage, Zuruckziehen).
+  Widget _interestCard(ThemeData theme, ParentMatchingProfile p,
+      {required bool matched}) {
+    final kids = p.childAges.isEmpty
+        ? ''
+        : p.childAges
+            .map((t) => networkChildAgeLabel(languageService.currentLanguage, t))
+            .join(' \u{2022} ');
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: FamilyCard(
+        child: Row(
+          children: [
+            FamilyAvatar(name: p.name, size: FamilyAvatarSize.m),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    p.name,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  if (p.city.isNotEmpty || kids.isNotEmpty)
+                    Text(
+                      [if (p.city.isNotEmpty) p.city, if (kids.isNotEmpty) kids]
+                          .join('  \u{2022}  '),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            matched
+                ? FilledButton(
+                    onPressed: () {
+                      // Chat-Anbindung folgt in Paket e. Bis dahin Hinweis.
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(_t('network_match_mutual')),
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      );
+                    },
+                    style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(_t('network_match_open_chat')),
+                  )
+                : OutlinedButton(
+                    onPressed: () => _withdrawInterest(p),
+                    style: OutlinedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(_t('network_withdraw')),
+                  ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Eigene offene Anfrage zuruckziehen: 'pass' ueberschreibt das 'like'.
+  Future<void> _withdrawInterest(ParentMatchingProfile p) async {
+    final uid = AuthService.instance.currentUser?.uid;
+    setState(() {
+      _interest = ParentMatchingInterest(
+        matched: _interest.matched,
+        outgoing:
+            _interest.outgoing.where((x) => x.id != p.id).toList(),
+      );
+    });
+    await _matching.sendAction(profileId: p.id, action: 'pass', userId: uid);
   }
 
   Widget _netzwerkTab(ThemeData theme) {
