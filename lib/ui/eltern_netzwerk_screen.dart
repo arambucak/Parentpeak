@@ -695,6 +695,66 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
   // TAB 1: CHATS (Messenger-Übersicht)
   // ═══════════════════════════════════════════════════════════════════════════
 
+  /// Horizontale Reihe der gegenseitig verbundenen Familien (oben im Chats-
+  /// Tab, Bumble-Stil). Tippen oeffnet den Chat. Leer -> nichts anzeigen.
+  Widget _connectedRow(ThemeData theme) {
+    final matched = _interest.matched;
+    if (matched.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          child: Text(
+            _t('network_connected_new'),
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        SizedBox(
+          height: 96,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: matched.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 14),
+            itemBuilder: (_, i) {
+              final p = matched[i];
+              return GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => _openMatchChat(p),
+                child: SizedBox(
+                  width: 64,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      FamilyAvatar(name: p.name, size: FamilyAvatarSize.l),
+                      const SizedBox(height: 6),
+                      Text(
+                        p.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.labelSmall,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        Divider(
+          height: 20,
+          indent: 16,
+          endIndent: 16,
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+        ),
+      ],
+    );
+  }
+
   Widget _chatsTab(ThemeData theme) {
     final filtered = _conversations.where((c) {
       if (_chatQuery.isEmpty) return true;
@@ -705,6 +765,8 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
 
     return Column(
       children: [
+        // ── 'Neu verbunden'-Reihe (gegenseitige Verbindungen) ──────────────
+        _connectedRow(theme),
         // Suchleiste
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),

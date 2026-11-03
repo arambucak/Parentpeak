@@ -29,7 +29,7 @@ void main() {
     expect(find.text('A'), findsOneWidget);
     expect(find.text('B'), findsOneWidget);
     // Titel (DE).
-    expect(find.text('Es passt!'), findsOneWidget);
+    expect(find.text('Ihr seid verbunden!'), findsOneWidget);
     // Drei Eisbrecher-Vorschläge sind sichtbar.
     expect(find.textContaining('Spielplatz'), findsOneWidget);
     // Aktionen.
