@@ -24,6 +24,7 @@ function fixture({
   suspended = [],
   reactions = [], // {momentId, userId}
   comments = [], // {id, momentId, authorUserId}
+  reports = [], // {momentId, reporterUserId} contentType 'moment'
 } = {}) {
   const routes = new Map();
   const store = new Map(moments.map(m => [m.id, { ...m }]));
@@ -56,6 +57,24 @@ function fixture({
       if (sql.includes('FROM "Friendship"')) {
         return [...friendUidsOf(args[0])].map(u =>
           args[0] < u ? { userLow: args[0], userHigh: u } : { userLow: u, userHigh: args[0] });
+      }
+      // M-B3: stark gemeldete Momente (GROUP BY content, HAVING >= threshold).
+      if (sql.includes('FROM "SafetyReport"') && sql.includes('HAVING COUNT')) {
+        const threshold = args[0];
+        const byMoment = new Map();
+        for (const r of reports) {
+          if (!byMoment.has(r.momentId)) byMoment.set(r.momentId, new Set());
+          byMoment.get(r.momentId).add(r.reporterUserId);
+        }
+        return [...byMoment.entries()]
+          .filter(([, set]) => set.size >= threshold)
+          .map(([momentId]) => ({ content: momentId }));
+      }
+      // M-B3: von mir selbst gemeldete Momente (einseitig).
+      if (sql.includes('FROM "SafetyReport"') && sql.includes('reporterUserId')) {
+        return [...new Set(reports
+          .filter(r => r.reporterUserId === args[0])
+          .map(r => r.momentId))].map(momentId => ({ content: momentId }));
       }
       if (sql.includes('FROM "SafetyBlock"') && sql.includes('OR "blockedUserId"')) {
         return blocks
@@ -415,4 +434,47 @@ test('DELETE comment: comment author or moment author may delete, others cannot'
   });
   assert.equal(byMomentAuthor.status, 200);
   assert.equal(f3.commentStore.length, 0);
+});
+
+// ── M-B3: Moderation (Auto-Ausblenden gemeldeter Momente) ───────────────────
+
+test('GET /api/moments hides a moment reported by >=3 distinct parents (for everyone)', async () => {
+  const { call } = fixture({
+    moments: [
+      moment('m1', 'stranger', 'public'),
+      moment('m2', 'stranger', 'public'),
+    ],
+    reports: [
+      { momentId: 'm2', reporterUserId: 'a' },
+      { momentId: 'm2', reporterUserId: 'b' },
+      { momentId: 'm2', reporterUserId: 'c' },
+    ],
+  });
+  const r = await call('GET /api/moments', 'me', {});
+  // m2 überschreitet die Schwelle (3 verschiedene Melder) -> ausgeblendet.
+  assert.deepEqual(JSON.parse(JSON.stringify(r.body.moments.map(m => m.id))), ['m1']);
+});
+
+test('GET /api/moments keeps a moment below the report threshold', async () => {
+  const { call } = fixture({
+    moments: [moment('m1', 'stranger', 'public')],
+    reports: [
+      { momentId: 'm1', reporterUserId: 'a' },
+      { momentId: 'm1', reporterUserId: 'b' }, // nur 2 -> bleibt sichtbar
+    ],
+  });
+  const r = await call('GET /api/moments', 'me', {});
+  assert.deepEqual(JSON.parse(JSON.stringify(r.body.moments.map(m => m.id))), ['m1']);
+});
+
+test('GET /api/moments hides a moment the requester reported themselves (one-sided)', async () => {
+  const { call } = fixture({
+    moments: [
+      moment('m1', 'stranger', 'public'),
+      moment('m2', 'stranger', 'public'),
+    ],
+    reports: [{ momentId: 'm2', reporterUserId: 'me' }], // nur ich gemeldet
+  });
+  const r = await call('GET /api/moments', 'me', {});
+  assert.deepEqual(JSON.parse(JSON.stringify(r.body.moments.map(m => m.id))), ['m1']);
 });
