@@ -10358,7 +10358,30 @@ app.get('/api/moments', requireVerifiedUser, async (req, res) => {
         }
       } catch (_) {}
     }
+    // Moderation (M-B3): einzelne Momente ausblenden, die von genug
+    // verschiedenen Eltern gemeldet wurden (vorlaeufig fuer alle, bis der Admin
+    // entscheidet), sowie Momente, die ICH selbst gemeldet habe (einseitig).
+    // Meldungen tragen contentType 'moment' und die Moment-ID im content-Feld.
+    const hiddenMomentIds = new Set();
+    try {
+      const hideThreshold = Number.parseInt(
+        process.env.MOMENTS_REPORT_HIDE_THRESHOLD || '3', 10);
+      const hiddenRows = await prisma.$queryRawUnsafe(
+        `SELECT "content" FROM "SafetyReport"
+         WHERE "contentType" = 'moment' AND "status" = 'pending' AND "content" <> ''
+         GROUP BY "content"
+         HAVING COUNT(DISTINCT "reporterUserId") >= $1`, hideThreshold);
+      for (const row of hiddenRows) hiddenMomentIds.add(row.content);
+      if (uid) {
+        const mine = await prisma.$queryRawUnsafe(
+          `SELECT DISTINCT "content" FROM "SafetyReport"
+           WHERE "contentType" = 'moment' AND "reporterUserId" = $1 AND "content" <> ''`,
+          uid);
+        for (const row of mine) hiddenMomentIds.add(row.content);
+      }
+    } catch (_) {}
     const visible = rows.filter(r => {
+      if (hiddenMomentIds.has(r.id)) return false;           // gemeldet: aus
       if (blockedUids.has(r.authorUserId)) return false;     // geblockt: nie
       if (r.authorUserId === uid) return true;               // eigene immer
       if (r.visibility === 'public') return true;            // fuer alle
