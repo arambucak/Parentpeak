@@ -87,6 +87,9 @@ function fixture({ persistenceFails = false, missingOwnProfile = false } = {}) {
       ...profile, latitude: 52.5, longitude: 13.4, approximateLocation: true,
     }),
     respondWithStrictPersistenceError: () => false,
+    // Match -> Freundschaft (Paket e) ist ein Seiteneffekt mit eigener Logik;
+    // hier als No-op gemockt, damit der Action-Handler ihn aufrufen kann.
+    ensureMatchFriendship: async () => {},
     parentMatchingAllowedActions: new Set(['like', 'report', 'block', 'contact', 'pass', 'favorite']),
     parentProfiles: profiles, parentMatchingActions: actions,
     generateId: () => 'fallback-action',

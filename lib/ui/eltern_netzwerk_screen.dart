@@ -1818,9 +1818,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         otherName: m.profile.name,
         onWrite: (icebreaker) {
           Navigator.of(context).pop();
-          // Chat-Anbindung folgt in Paket e; bis dahin in den Matches-Tab.
+          // Matches-Liste aktualisieren und direkt in den Freundes-Chat.
           _loadInterest();
-          _tabs.animateTo(1);
+          _openMatchChat(m.profile, draft: icebreaker);
         },
         onLater: () {
           Navigator.of(context).pop();
@@ -1982,18 +1982,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             const SizedBox(width: 8),
             matched
                 ? FilledButton(
-                    onPressed: () {
-                      // Chat-Anbindung folgt in Paket e. Bis dahin Hinweis.
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(_t('network_match_mutual')),
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      );
-                    },
+                    onPressed: () => _openMatchChat(p),
                     style: FilledButton.styleFrom(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -2014,6 +2003,18 @@ class _ScreenState extends State<ElternNetzwerkScreen>
         ),
       ),
     );
+  }
+
+  /// Oeffnet den Freundes-Chat zu einem gematchten Profil. Bei einem Match
+  /// hat der Server bereits eine bestaetigte Freundschaft angelegt (Paket e),
+  /// daher entspricht die roomId der deterministischen friendRoomId
+  /// (sortierte UIDs, mit '__' verbunden).
+  Future<void> _openMatchChat(ParentMatchingProfile p, {String? draft}) async {
+    final me = AuthService.instance.currentUser?.uid ?? '';
+    final other = p.userId ?? '';
+    if (me.isEmpty || other.isEmpty) return;
+    final roomId = (<String>[me, other]..sort()).join('__');
+    await _openConversation(roomId: roomId, title: p.name, isGroup: false);
   }
 
   /// Eigene offene Anfrage zuruckziehen: 'pass' ueberschreibt das 'like'.
