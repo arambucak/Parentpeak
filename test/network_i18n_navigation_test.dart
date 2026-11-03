@@ -70,7 +70,9 @@ void main() {
                       const Text('Chat target'),
                       const Text('Invitation link and QR target'),
                       SingleChildScrollView(
-                        child: PlaymateDiscoveryEmptyState(tabs: tabs),
+                        child: PlaymateDiscoveryEmptyState(
+                          onInvite: () => tabs.animateTo(1),
+                        ),
                       ),
                     ],
                   ),

@@ -26,9 +26,8 @@ void main() {
       'hi',
     };
 
-    final configuredCodes = AppLanguages.supported
-        .map((language) => language.code)
-        .toSet();
+    final configuredCodes =
+        AppLanguages.supported.map((language) => language.code).toSet();
     final localeCodes = AppLocalizations.supportedLocales
         .map((locale) => locale.languageCode)
         .toSet();
@@ -60,15 +59,13 @@ void main() {
       'tr',
     };
 
-    final launchCodes = AppLanguages.launchReady
-        .map((language) => language.code)
-        .toSet();
+    final launchCodes =
+        AppLanguages.launchReady.map((language) => language.code).toSet();
 
     expect(launchCodes, expectedLaunchCodes);
     // launchReady must be a subset of the full supported list.
-    final supportedCodes = AppLanguages.supported
-        .map((language) => language.code)
-        .toSet();
+    final supportedCodes =
+        AppLanguages.supported.map((language) => language.code).toSet();
     expect(launchCodes.difference(supportedCodes), isEmpty);
     // Every supported language flagged complete must appear in the picker.
     final completeCodes = AppLanguages.supported
@@ -82,14 +79,13 @@ void main() {
     final sourceKeys = AppStringsManager.allStrings['de']!.keys.toSet();
 
     for (final language in AppLanguages.launchReady) {
-      final translatedKeys = AppStringsManager.allStrings[language.code]!.keys
-          .toSet();
+      final translatedKeys =
+          AppStringsManager.allStrings[language.code]!.keys.toSet();
       final missing = sourceKeys.difference(translatedKeys);
       expect(
         missing,
         isEmpty,
-        reason:
-            '${language.code} is offered in the picker but is missing '
+        reason: '${language.code} is offered in the picker but is missing '
             '${missing.length} keys and would fall back to English',
       );
     }
@@ -110,18 +106,16 @@ void main() {
     ]) {
       final translated = AppStringsManager.allStrings[languageCode]!;
       for (final entry in source.entries) {
-        final sourcePlaceholders =
-            placeholderPattern
-                .allMatches(entry.value)
-                .map((match) => match.group(0))
-                .toList()
-              ..sort();
-        final translatedPlaceholders =
-            placeholderPattern
-                .allMatches(translated[entry.key]!)
-                .map((match) => match.group(0))
-                .toList()
-              ..sort();
+        final sourcePlaceholders = placeholderPattern
+            .allMatches(entry.value)
+            .map((match) => match.group(0))
+            .toList()
+          ..sort();
+        final translatedPlaceholders = placeholderPattern
+            .allMatches(translated[entry.key]!)
+            .map((match) => match.group(0))
+            .toList()
+          ..sort();
 
         expect(
           translatedPlaceholders,
@@ -195,6 +189,7 @@ void main() {
           'market_contact',
           'network_owner_label',
           'network_suggestions_count',
+          'network_tab_moments',
           'notifications',
           'organisation_title',
           'parent_role',
@@ -332,7 +327,8 @@ void main() {
     expect(localized, 'Do you really want to delete “Soup”?');
   });
 
-  testWidgets('MaterialApp locale changes propagate to text and directionality', (
+  testWidgets('MaterialApp locale changes propagate to text and directionality',
+      (
     tester,
   ) async {
     final locale = ValueNotifier(const Locale('de'));

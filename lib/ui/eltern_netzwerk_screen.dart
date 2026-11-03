@@ -105,9 +105,9 @@ class ElternNetzwerkScreen extends StatefulWidget {
   State<ElternNetzwerkScreen> createState() => _ScreenState();
 }
 
-class _ScreenState extends State<ElternNetzwerkScreen>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabs;
+class _ScreenState extends State<ElternNetzwerkScreen> {
+  // 0 = Entdecken, 1 = Momente, 2 = Chats, 3 = Meine Familie
+  int _index = 0;
   final _matching = ParentMatchingBackendService(
     apiClient: BackendServiceFactory.createApiClient(),
   );
@@ -142,11 +142,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(
-      length: 3,
-      vsync: this,
-      initialIndex: widget.initialTab.clamp(0, 2),
-    );
+    _index = widget.initialTab.clamp(0, 3);
     FriendshipService.instance.addListener(_rebuild);
     _profileAccount = AuthService.instance.currentUser?.uid;
     AuthService.instance.addListener(_onAccountChanged);
@@ -172,7 +168,6 @@ class _ScreenState extends State<ElternNetzwerkScreen>
 
   @override
   void dispose() {
-    _tabs.dispose();
     _chatSearchCtrl.dispose();
     FriendshipService.instance.removeListener(_rebuild);
     AuthService.instance.removeListener(_onAccountChanged);
@@ -481,6 +476,8 @@ class _ScreenState extends State<ElternNetzwerkScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // FAB nur im Chats-Tab (Index 2): neuer Chat / neue Gruppe.
+    final showFab = _index == 2;
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -490,37 +487,204 @@ class _ScreenState extends State<ElternNetzwerkScreen>
           ),
         ),
         elevation: 0,
-        bottom: TabBar(
-          controller: _tabs,
-          tabs: [
-            Tab(text: _t('network_tab_discover')),
-            Tab(text: _t('network_tab_matches')),
-            Tab(text: _t('network_tab_chats')),
+      ),
+      floatingActionButton: showFab
+          ? FloatingActionButton.extended(
+              onPressed: _showNewChatOptions,
+              backgroundColor: theme.colorScheme.primary,
+              icon: const Icon(Icons.add_comment_rounded, color: Colors.white),
+              label: Text(
+                _t('network_new_chat'),
+                style: const TextStyle(color: Colors.white),
+              ),
+            )
+          : null,
+      body: IndexedStack(
+        index: _index,
+        children: [
+          _spielfreundeTab(theme),
+          _momentsTab(theme),
+          _chatsTab(theme),
+          _myFamilyTab(theme),
+        ],
+      ),
+      bottomNavigationBar: NavigationBarTheme(
+        data: NavigationBarThemeData(
+          indicatorColor: theme.colorScheme.primaryContainer,
+          labelTextStyle: WidgetStateProperty.all(
+            theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w600),
+          ),
+        ),
+        child: NavigationBar(
+          selectedIndex: _index,
+          onDestinationSelected: (i) => setState(() => _index = i),
+          height: 76,
+          backgroundColor: theme.colorScheme.surface,
+          destinations: [
+            NavigationDestination(
+              icon: const Icon(Icons.explore_outlined),
+              selectedIcon: const Icon(Icons.explore_rounded),
+              label: _t('network_tab_discover'),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.auto_awesome_outlined),
+              selectedIcon: const Icon(Icons.auto_awesome_rounded),
+              label: _t('network_tab_moments'),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.forum_outlined),
+              selectedIcon: const Icon(Icons.forum_rounded),
+              label: _t('network_tab_chats'),
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.family_restroom_outlined),
+              selectedIcon: const Icon(Icons.family_restroom_rounded),
+              label: _t('network_tab_my_family'),
+            ),
           ],
         ),
       ),
-      floatingActionButton: AnimatedBuilder(
-        animation: _tabs,
-        builder: (context, _) {
-          // FAB nur im Chats-Tab (jetzt Index 2): neuer Chat / neue Gruppe.
-          if (_tabs.index != 2) return const SizedBox.shrink();
-          return FloatingActionButton.extended(
-            onPressed: _showNewChatOptions,
-            backgroundColor: theme.colorScheme.primary,
-            icon: const Icon(Icons.add_comment_rounded, color: Colors.white),
-            label: Text(
-              _t('network_new_chat'),
-              style: const TextStyle(color: Colors.white),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // TAB: MOMENTE (Platzhalter — Eltern teilen bald ihre Familien-Momente)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  Widget _momentsTab(ThemeData theme) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 36),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.auto_awesome_rounded,
+              size: 56,
+              color: theme.colorScheme.primary.withValues(alpha: 0.6),
             ),
-          );
-        },
+            const SizedBox(height: 18),
+            Text(
+              _t('network_moments_soon_title'),
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _t('network_moments_soon_body'),
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
       ),
-      body: TabBarView(
-        controller: _tabs,
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // TAB: MEINE FAMILIE (eigenes Profil anlegen/bearbeiten/verwalten)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  Widget _myFamilyTab(ThemeData theme) {
+    if (_profileLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_profileAccount == null) {
+      return Center(child: Text(_t('network_copy_login_required')));
+    }
+    if (_profile != null &&
+        !_editingProfile &&
+        _profileStatus != PlaymateProfileStatus.active) {
+      return Column(
         children: [
-          _spielfreundeTab(theme),
-          _matchesTab(theme),
-          _chatsTab(theme),
+          _profileStatusPanel(),
+          TextButton(
+            onPressed: () => setState(() => _editingProfile = true),
+            child: Text(_t('edit_btn')),
+          ),
+          TextButton(
+            onPressed: _deletingProfile
+                ? null
+                : () => _confirmDeleteProfile(theme),
+            child: Text(_t('delete')),
+          ),
+        ],
+      );
+    }
+    if (_profile == null || _editingProfile) return _profileSetup(theme);
+    // Aktives Profil: kompakte Verwaltung (Profilkarte + Bearbeiten/Löschen).
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _profileStatusPanel(),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primaryContainer.withValues(alpha: 0.35),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: theme.colorScheme.primary.withValues(alpha: 0.2),
+              ),
+            ),
+            child: Row(
+              children: [
+                const Text('\u{1F46A}', style: TextStyle(fontSize: 28)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _t(
+                          'network_family_name',
+                        ).replaceAll('{name}', _profile!.displayName),
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _profile!.bio.isNotEmpty
+                            ? _profile!.bio
+                            : _t('network_profile_active'),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          OutlinedButton.icon(
+            onPressed: () => setState(() => _editingProfile = true),
+            icon: const Icon(Icons.edit_rounded, size: 18),
+            label: Text(_t('edit_btn')),
+          ),
+          const SizedBox(height: 8),
+          TextButton.icon(
+            onPressed: _deletingProfile
+                ? null
+                : () => _confirmDeleteProfile(theme),
+            icon: Icon(
+              Icons.delete_outline_rounded,
+              size: 18,
+              color: theme.colorScheme.error,
+            ),
+            label: Text(
+              _t('delete'),
+              style: TextStyle(color: theme.colorScheme.error),
+            ),
+          ),
         ],
       ),
     );
@@ -938,7 +1102,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
               subtitle: Text(_t('network_start_direct_chat_hint')),
               onTap: () {
                 Navigator.pop(sheetCtx);
-                _tabs.animateTo(1); // Zum Matches-Tab (dort liegen die Verbindungen/Freunde)
+                setState(() => _index = 3); // Zu 'Meine Familie' (Verbindungen/Freunde)
               },
             ),
             ListTile(
@@ -1573,7 +1737,9 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                 onRetry: _loadMatches,
               )
             else if (_matches.isEmpty)
-              PlaymateDiscoveryEmptyState(tabs: _tabs)
+              PlaymateDiscoveryEmptyState(
+                onInvite: () => setState(() => _index = 3),
+              )
             else
               ..._matches.map(
                 (m) => Padding(
@@ -1885,6 +2051,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     });
   }
 
+  // ignore: unused_element
   Widget _matchesTab(ThemeData theme) {
     final matched = _interest.matched;
     final outgoing = _interest.outgoing;
@@ -1923,7 +2090,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
               title: _t('network_matches_empty_title'),
               description: _t('network_matches_empty_body'),
               actionLabel: _t('network_copy_invite_playmates'),
-              onAction: () => _tabs.animateTo(0),
+              onAction: () => setState(() => _index = 0),
               actionIcon: Icons.explore_rounded,
             ),
           // Bestehende Verbindungen + Einladen (Link/QR) bleiben erhalten.

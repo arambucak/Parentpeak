@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:parentpeak/l10n/localization_extension.dart';
 
 class PlaymateDiscoveryEmptyState extends StatelessWidget {
-  const PlaymateDiscoveryEmptyState({super.key, required this.tabs});
+  const PlaymateDiscoveryEmptyState({super.key, required this.onInvite});
 
-  final TabController tabs;
+  /// Wird ausgelöst, wenn die Familie andere Eltern einladen/finden möchte.
+  final VoidCallback onInvite;
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +44,7 @@ class PlaymateDiscoveryEmptyState extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
-              onPressed: () => tabs.animateTo(1),
+              onPressed: onInvite,
               icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
               label: Text(context.tr('network_copy_invite_playmates')),
               style: FilledButton.styleFrom(
