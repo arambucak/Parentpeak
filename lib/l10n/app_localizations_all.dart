@@ -13,11 +13,15 @@ class AppStringsManager {
     // Deutsch
     'de': {
       'network_match_title': 'Es passt!',
-      'network_match_subtitle': 'Ihr seid beide interessiert. Sagt Hallo, wann es für euch passt.',
-      'network_match_icebreaker_1': 'Hallo! Wir sind oft auf dem Spielplatz unterwegs.',
-      'network_match_icebreaker_2': 'Habt ihr Lust auf ein Treffen mit den Kindern?',
+      'network_match_subtitle':
+          'Ihr seid beide interessiert. Sagt Hallo, wann es für euch passt.',
+      'network_match_icebreaker_1':
+          'Hallo! Wir sind oft auf dem Spielplatz unterwegs.',
+      'network_match_icebreaker_2':
+          'Habt ihr Lust auf ein Treffen mit den Kindern?',
       'network_match_icebreaker_3': 'Schön, dass wir uns gefunden haben!',
-      'network_match_safety': 'Tipp: Trefft euch beim ersten Mal an einem öffentlichen Ort.',
+      'network_match_safety':
+          'Tipp: Trefft euch beim ersten Mal an einem öffentlichen Ort.',
       'network_match_write': 'Nachricht schreiben',
       'network_match_later': 'Später',
       'network_matches_new': 'Neue Matches',
@@ -28,26 +32,37 @@ class AppStringsManager {
       'network_match_mutual': 'Ihr seid beide interessiert!',
       'network_interest_sent': 'Dein Interesse ist angekommen.',
       'ads_consent_title': 'Werbe- und Sponsor-Einwilligung',
-      'ads_consent_body': 'Du kannst freiwillig nicht personalisierten, manuell geprüften Sponsor-Platzierungen in der öffentlichen Event-Entdeckung zustimmen. Kein Tracking, keine Werbe-ID und keine Weitergabe von Kinder-, Standort- oder KI-Inhalten für Werbung. Ablehnen ist genauso einfach wie Zustimmen. Du kannst hier jederzeit widerrufen; danach wird jede künftige Werbeverarbeitung gesperrt. Bereits übertragene Daten werden dadurch nicht zurückgeholt. Die App bleibt ohne Zustimmung nutzbar. Werbung ist derzeit deaktiviert.',
+      'ads_consent_body':
+          'Du kannst freiwillig nicht personalisierten, manuell geprüften Sponsor-Platzierungen in der öffentlichen Event-Entdeckung zustimmen. Kein Tracking, keine Werbe-ID und keine Weitergabe von Kinder-, Standort- oder KI-Inhalten für Werbung. Ablehnen ist genauso einfach wie Zustimmen. Du kannst hier jederzeit widerrufen; danach wird jede künftige Werbeverarbeitung gesperrt. Bereits übertragene Daten werden dadurch nicht zurückgeholt. Die App bleibt ohne Zustimmung nutzbar. Werbung ist derzeit deaktiviert.',
       'ads_consent_grant': 'Zustimmen',
       'ads_consent_deny': 'Ablehnen',
       'ads_consent_revoke': 'Einwilligung widerrufen',
       'ads_consent_status_unknown': 'Keine Einwilligung erteilt.',
-      'ads_consent_status_denied': 'Abgelehnt oder widerrufen. Keine Werbeverarbeitung erlaubt.',
-      'ads_consent_status_granted': 'Einwilligung erteilt. Dies aktiviert keine Werbung.',
-      'ads_consent_status_unavailable': 'Einwilligung nicht bestätigt. Werbeverarbeitung gesperrt.',
+      'ads_consent_status_denied':
+          'Abgelehnt oder widerrufen. Keine Werbeverarbeitung erlaubt.',
+      'ads_consent_status_granted':
+          'Einwilligung erteilt. Dies aktiviert keine Werbung.',
+      'ads_consent_status_unavailable':
+          'Einwilligung nicht bestätigt. Werbeverarbeitung gesperrt.',
       'ads_consent_version': 'Hinweisversion: {version}',
-      'ads_consent_failed': 'Deine Auswahl konnte nicht bestätigt werden. Werbeverarbeitung bleibt gesperrt. Bitte erneut versuchen; ein ausstehender Widerruf wird beim nächsten Abgleich gesendet.',
-      'ads_consent_legal_draft': 'Vorbereitender Einwilligungstext: Die endgültige juristische Formulierung und Aufbewahrung sind vor Livegang zu bestätigen.',
+      'ads_consent_failed':
+          'Deine Auswahl konnte nicht bestätigt werden. Werbeverarbeitung bleibt gesperrt. Bitte erneut versuchen; ein ausstehender Widerruf wird beim nächsten Abgleich gesendet.',
+      'ads_consent_legal_draft':
+          'Vorbereitender Einwilligungstext: Die endgültige juristische Formulierung und Aufbewahrung sind vor Livegang zu bestätigen.',
       'ritual_ai_consent_title': 'KI für Rituale und Geschichten?',
-      'ritual_ai_consent_body': 'Für optionale Ritualvorschläge und Gute-Nacht-Geschichten werden das Alter in ganzen Jahren, die gewählte Tageszeit und die App-Sprache über unser Backend an Google Gemini gesendet. Namen, Geburtsdatum und deine lokalen Einträge werden nicht mitgesendet. Die Zustimmung gilt nur für dieses Konto und diese Ritual-KI-Funktionen. Die lokalen Rituale bleiben auch ohne KI nutzbar.',
+      'ritual_ai_consent_body':
+          'Für optionale Ritualvorschläge und Gute-Nacht-Geschichten werden das Alter in ganzen Jahren, die gewählte Tageszeit und die App-Sprache über unser Backend an Google Gemini gesendet. Namen, Geburtsdatum und deine lokalen Einträge werden nicht mitgesendet. Die Zustimmung gilt nur für dieses Konto und diese Ritual-KI-Funktionen. Die lokalen Rituale bleiben auch ohne KI nutzbar.',
       'ritual_ai_consent_accept': 'Zustimmen und KI nutzen',
-      'ritual_ai_consent_declined': 'Ohne Zustimmung wird keine KI-Anfrage gestartet. Deine lokalen Rituale bleiben verfügbar.',
-      'ritual_ai_consent_failed': 'Die KI-Funktion konnte nicht freigegeben werden. Bitte versuche es erneut.',
-      'treasureReportLocalOnly': 'Die Meldung konnte nicht gesendet werden. Bitte versuche es später erneut.',
+      'ritual_ai_consent_declined':
+          'Ohne Zustimmung wird keine KI-Anfrage gestartet. Deine lokalen Rituale bleiben verfügbar.',
+      'ritual_ai_consent_failed':
+          'Die KI-Funktion konnte nicht freigegeben werden. Bitte versuche es erneut.',
+      'treasureReportLocalOnly':
+          'Die Meldung konnte nicht gesendet werden. Bitte versuche es später erneut.',
       'treasureBlockAction': 'Ausblenden',
       'treasureBlockSuccess': 'Angebot wurde aus deinem Feed ausgeblendet.',
-      'treasureBlockText': 'Dieses Angebot wird lokal ausgeblendet und nicht mehr im Feed angezeigt.',
+      'treasureBlockText':
+          'Dieses Angebot wird lokal ausgeblendet und nicht mehr im Feed angezeigt.',
       'treasureBlockTitle': 'Angebot ausblenden?',
       'treasureCategoryLabel': 'Kategorie',
       'treasureConditionLabel': 'Zustand',
@@ -55,10 +70,13 @@ class AppStringsManager {
       'treasureContactlessHint': 'Kontaktlos möglich',
       'treasureDiscard': 'Verwerfen',
       'treasureFamilyNoteTitle': 'Hinweis von der Familie',
-      'treasureImageUploadFailed': 'Bild-Upload fehlgeschlagen. Bitte versuch es erneut.',
-      'treasureLoadingHint': 'Wir laden gerade passende Angebote aus deiner Umgebung.',
+      'treasureImageUploadFailed':
+          'Bild-Upload fehlgeschlagen. Bitte versuch es erneut.',
+      'treasureLoadingHint':
+          'Wir laden gerade passende Angebote aus deiner Umgebung.',
       'treasurePickupAreaLine': 'Abholbereich: {area}',
-      'treasurePickupLocationHint': 'Dein Standort bestimmt, welche Familien dein Angebot sehen.',
+      'treasurePickupLocationHint':
+          'Dein Standort bestimmt, welche Familien dein Angebot sehen.',
       'treasurePickupLocationTitle': 'Abholbereich',
       'treasureRatingLine': 'Bewertung: {rating} ({count})',
       'treasureReportAction': 'Melden',
@@ -69,26 +87,37 @@ class AppStringsManager {
       'treasureReportedFlag': 'Gemeldet',
       'treasureSizeAgeLabel': 'Größe oder Alter',
       'treasureSizeAgeLine': 'Größe/Alter: {sizeAge}',
-      'treasureSyncHintFallback': 'Live-Sync ist gerade eingeschränkt. Zieh nach unten zum Aktualisieren.',
+      'treasureSyncHintFallback':
+          'Live-Sync ist gerade eingeschränkt. Zieh nach unten zum Aktualisieren.',
       'treasureUploadHeadline': 'Teile, was bei euch nicht mehr gebraucht wird',
       'treasureViewsLine': '{count} Aufrufe',
       'no_items': 'Keine Artikel',
       'retry': 'Erneut versuchen',
-      'report_delivery_success': 'Danke für deine Meldung. Wir prüfen den Inhalt.',
+      'report_delivery_success':
+          'Danke für deine Meldung. Wir prüfen den Inhalt.',
       'weekly_ai_consent_title': 'KI-Feedback zum Wochenrückblick?',
-      'weekly_ai_consent_body': 'Nur wenn du zustimmst, werden Stimmung und Antworten dieses Rückblicks über unser Backend an Google Gemini gesendet. Bitte keine Namen oder sensiblen Details eingeben. Die Zustimmung gilt nur für Wochenrückblicke dieses Kontos und kann hier widerrufen werden. Bereits gesendete Daten lassen sich dadurch nicht zurückholen. Dein Rückblick bleibt auch ohne KI lokal nutzbar.',
+      'weekly_ai_consent_body':
+          'Nur wenn du zustimmst, werden Stimmung und Antworten dieses Rückblicks über unser Backend an Google Gemini gesendet. Bitte keine Namen oder sensiblen Details eingeben. Die Zustimmung gilt nur für Wochenrückblicke dieses Kontos und kann hier widerrufen werden. Bereits gesendete Daten lassen sich dadurch nicht zurückholen. Dein Rückblick bleibt auch ohne KI lokal nutzbar.',
       'weekly_ai_consent_accept': 'Zustimmen und Feedback erstellen',
       'weekly_ai_generate': 'KI-Feedback anfordern',
       'weekly_ai_revoke': 'KI-Zustimmung für Wochenrückblicke widerrufen',
-      'weekly_ai_failed': 'Das KI-Feedback konnte nicht erstellt werden. Dein lokaler Rückblick bleibt erhalten. Bitte versuche es erneut.',
-      'weekly_local_saved': 'Dein Rückblick ist lokal gespeichert. KI-Feedback ist freiwillig.',
-      'weekly_legacy_unassigned': 'Ältere Rückblicke sind lokal erhalten, aber noch keinem Konto zugeordnet.',
+      'weekly_ai_failed':
+          'Das KI-Feedback konnte nicht erstellt werden. Dein lokaler Rückblick bleibt erhalten. Bitte versuche es erneut.',
+      'weekly_local_saved':
+          'Dein Rückblick ist lokal gespeichert. KI-Feedback ist freiwillig.',
+      'weekly_legacy_unassigned':
+          'Ältere Rückblicke sind lokal erhalten, aber noch keinem Konto zugeordnet.',
       'weekly_legacy_import': 'Alte Rückblicke übernehmen',
-      'weekly_legacy_confirm': 'Bestätige, dass die alten Rückblicke auf diesem Gerät dir gehören. Sie werden nur diesem Konto zugeordnet und nicht an die KI gesendet. Bereits vorhandene Einträge bleiben erhalten.',
-      'report_delivery_failed': 'Die Meldung konnte nicht gesendet werden. Bitte versuche es erneut.',
-      'request_failed_retry': 'Die Aktion konnte nicht abgeschlossen werden. Bitte versuche es erneut.',
-      'events_location_unconfirmed': 'Adresse nicht auf der Karte bestätigt — bitte vor dem Hinfahren prüfen',
-      'events_ai_unverified_hint': 'KI-Vorschlag — bitte beim Veranstalter bestätigen',
+      'weekly_legacy_confirm':
+          'Bestätige, dass die alten Rückblicke auf diesem Gerät dir gehören. Sie werden nur diesem Konto zugeordnet und nicht an die KI gesendet. Bereits vorhandene Einträge bleiben erhalten.',
+      'report_delivery_failed':
+          'Die Meldung konnte nicht gesendet werden. Bitte versuche es erneut.',
+      'request_failed_retry':
+          'Die Aktion konnte nicht abgeschlossen werden. Bitte versuche es erneut.',
+      'events_location_unconfirmed':
+          'Adresse nicht auf der Karte bestätigt — bitte vor dem Hinfahren prüfen',
+      'events_ai_unverified_hint':
+          'KI-Vorschlag — bitte beim Veranstalter bestätigen',
       ...profileAccountDe,
       'events_attendees_count': '{count} dabei',
       'events_attendees_none': 'Noch niemand dabei',
@@ -445,8 +474,7 @@ class AppStringsManager {
       'ritualRuheTitle': 'Ritual & Ruhe',
       'ritualRuheTileSubtitle': 'Ein ruhiger Moment für euren Familienalltag',
       'tile_network': 'Familien-Community',
-      'tile_network_desc':
-          'Lerne Familien kennen und teilt eure Momente.',
+      'tile_network_desc': 'Lerne Familien kennen und teilt eure Momente.',
       'tile_chat': 'KI Elternberatung',
       'tile_chat_desc': 'Schnelle Hilfe und Tipps rund um Erziehung',
       'tile_zentrale': 'Familien-Zentrale',
@@ -1292,7 +1320,8 @@ class AppStringsManager {
       'network_tab_discover': 'Entdecken',
       'network_tab_matches': 'Matches',
       'network_matches_empty_title': 'Noch keine Matches',
-      'network_matches_empty_body': 'Wenn ihr und eine andere Familie beide auf „Interessiert“ tippt, erscheint euer Match hier.',
+      'network_matches_empty_body':
+          'Wenn ihr und eine andere Familie beide auf „Interessiert“ tippt, erscheint euer Match hier.',
       'network_tab_network': 'Netzwerk',
       'network_new_chat': 'Neuer Chat',
       // Chat löschen (WhatsApp-Stil)
@@ -1740,6 +1769,13 @@ class AppStringsManager {
           'Der Account wird aus dem Netzwerk und der Discovery ausgeblendet. Die Sperre ist umkehrbar – es werden keine Daten gelöscht.\n\nUser-ID: {userId}',
       'admin_suspend_action': 'Sperren',
       'admin_suspended': 'Account gesperrt.',
+      'admin_distinct_reporters': '{count} Melder',
+      'admin_profile_hidden': 'ausgeblendet',
+      'admin_deactivate_title': 'Profil ausblenden?',
+      'admin_deactivate_message':
+          'Das Profil von {name} wird aus der Entdecken-Liste ausgeblendet. Der Account bleibt bestehen und kann es selbst wieder aktivieren.',
+      'admin_deactivate_action': 'Profil ausblenden',
+      'admin_deactivated': 'Profil ausgeblendet.',
       'admin_suspend_failed': 'Sperren fehlgeschlagen.',
       'admin_unsuspended': 'Sperre aufgehoben.',
       'admin_action_failed': 'Aktion fehlgeschlagen.',
@@ -3426,7 +3462,8 @@ class AppStringsManager {
     // English
     'en': {
       'network_match_title': 'It\'s a match!',
-      'network_match_subtitle': 'You\'re both interested. Say hello whenever it suits you.',
+      'network_match_subtitle':
+          'You\'re both interested. Say hello whenever it suits you.',
       'network_match_icebreaker_1': 'Hi! We\'re often out at the playground.',
       'network_match_icebreaker_2': 'Would you like to meet up with the kids?',
       'network_match_icebreaker_3': 'Glad we found each other!',
@@ -3441,26 +3478,37 @@ class AppStringsManager {
       'network_match_mutual': 'You\'re both interested!',
       'network_interest_sent': 'Your interest has been sent.',
       'ads_consent_title': 'Advertising and sponsor consent',
-      'ads_consent_body': 'You may voluntarily agree to non-personalised, manually reviewed sponsor placements in public event discovery. No tracking, advertising ID or sharing of children’s data, location or AI content for advertising. Declining is as easy as agreeing. You can withdraw here at any time; all future advertising processing will then be blocked. Withdrawal cannot retrieve data already sent. The app remains usable without consent. Advertising is currently disabled.',
+      'ads_consent_body':
+          'You may voluntarily agree to non-personalised, manually reviewed sponsor placements in public event discovery. No tracking, advertising ID or sharing of children’s data, location or AI content for advertising. Declining is as easy as agreeing. You can withdraw here at any time; all future advertising processing will then be blocked. Withdrawal cannot retrieve data already sent. The app remains usable without consent. Advertising is currently disabled.',
       'ads_consent_grant': 'Agree',
       'ads_consent_deny': 'Decline',
       'ads_consent_revoke': 'Withdraw consent',
       'ads_consent_status_unknown': 'No consent given.',
-      'ads_consent_status_denied': 'Declined or withdrawn. Advertising processing is not allowed.',
-      'ads_consent_status_granted': 'Consent given. This does not enable advertising.',
-      'ads_consent_status_unavailable': 'Consent not confirmed. Advertising processing is blocked.',
+      'ads_consent_status_denied':
+          'Declined or withdrawn. Advertising processing is not allowed.',
+      'ads_consent_status_granted':
+          'Consent given. This does not enable advertising.',
+      'ads_consent_status_unavailable':
+          'Consent not confirmed. Advertising processing is blocked.',
       'ads_consent_version': 'Notice version: {version}',
-      'ads_consent_failed': 'Your choice could not be confirmed. Advertising processing remains blocked. Please retry; a pending withdrawal will be sent at the next sync.',
-      'ads_consent_legal_draft': 'Draft consent notice: final legal wording and retention must be confirmed before launch.',
+      'ads_consent_failed':
+          'Your choice could not be confirmed. Advertising processing remains blocked. Please retry; a pending withdrawal will be sent at the next sync.',
+      'ads_consent_legal_draft':
+          'Draft consent notice: final legal wording and retention must be confirmed before launch.',
       'ritual_ai_consent_title': 'AI for rituals and stories?',
-      'ritual_ai_consent_body': 'For optional ritual suggestions and bedtime stories, age in completed years, the selected time of day and the app language are sent through our backend to Google Gemini. Names, birth dates and your local entries are not included. Approval applies only to this account and these ritual AI features. Local rituals remain available without AI.',
+      'ritual_ai_consent_body':
+          'For optional ritual suggestions and bedtime stories, age in completed years, the selected time of day and the app language are sent through our backend to Google Gemini. Names, birth dates and your local entries are not included. Approval applies only to this account and these ritual AI features. Local rituals remain available without AI.',
       'ritual_ai_consent_accept': 'Agree and use AI',
-      'ritual_ai_consent_declined': 'Without approval, no AI request is started. Your local rituals remain available.',
-      'ritual_ai_consent_failed': 'The AI feature could not be authorized. Please try again.',
-      'treasureReportLocalOnly': 'The report could not be sent. Please try again later.',
+      'ritual_ai_consent_declined':
+          'Without approval, no AI request is started. Your local rituals remain available.',
+      'ritual_ai_consent_failed':
+          'The AI feature could not be authorized. Please try again.',
+      'treasureReportLocalOnly':
+          'The report could not be sent. Please try again later.',
       'treasureBlockAction': 'Hide',
       'treasureBlockSuccess': 'Listing hidden from your feed.',
-      'treasureBlockText': 'This listing will be hidden locally and will no longer appear in the feed.',
+      'treasureBlockText':
+          'This listing will be hidden locally and will no longer appear in the feed.',
       'treasureBlockTitle': 'Hide listing?',
       'treasureCategoryLabel': 'Category',
       'treasureConditionLabel': 'Condition',
@@ -3471,7 +3519,8 @@ class AppStringsManager {
       'treasureImageUploadFailed': 'Image upload failed. Please try again.',
       'treasureLoadingHint': 'Loading suitable listings from your area.',
       'treasurePickupAreaLine': 'Pickup area: {area}',
-      'treasurePickupLocationHint': 'Your location determines which families see your listing.',
+      'treasurePickupLocationHint':
+          'Your location determines which families see your listing.',
       'treasurePickupLocationTitle': 'Pickup area',
       'treasureRatingLine': 'Rating: {rating} ({count})',
       'treasureReportAction': 'Report',
@@ -3482,26 +3531,37 @@ class AppStringsManager {
       'treasureReportedFlag': 'Reported',
       'treasureSizeAgeLabel': 'Size or age',
       'treasureSizeAgeLine': 'Size/age: {sizeAge}',
-      'treasureSyncHintFallback': 'Live sync is currently limited. Pull down to refresh.',
+      'treasureSyncHintFallback':
+          'Live sync is currently limited. Pull down to refresh.',
       'treasureUploadHeadline': 'Share what your family no longer needs',
       'treasureViewsLine': '{count} views',
       'no_items': 'No items',
       'retry': 'Retry',
-      'report_delivery_success': 'Thank you for your report. We will review the content.',
+      'report_delivery_success':
+          'Thank you for your report. We will review the content.',
       'weekly_ai_consent_title': 'AI feedback on your weekly reflection?',
-      'weekly_ai_consent_body': 'Only with your consent will the mood and answers in this reflection be sent through our backend to Google Gemini. Please do not enter names or sensitive details. Consent applies only to weekly reflections for this account and can be withdrawn here. Withdrawal cannot retrieve data already sent. Your reflection remains available locally without AI.',
+      'weekly_ai_consent_body':
+          'Only with your consent will the mood and answers in this reflection be sent through our backend to Google Gemini. Please do not enter names or sensitive details. Consent applies only to weekly reflections for this account and can be withdrawn here. Withdrawal cannot retrieve data already sent. Your reflection remains available locally without AI.',
       'weekly_ai_consent_accept': 'Agree and create feedback',
       'weekly_ai_generate': 'Request AI feedback',
       'weekly_ai_revoke': 'Withdraw AI consent for weekly reflections',
-      'weekly_ai_failed': 'AI feedback could not be created. Your local reflection is preserved. Please try again.',
-      'weekly_local_saved': 'Your reflection is saved locally. AI feedback is optional.',
-      'weekly_legacy_unassigned': 'Older reflections are preserved locally but have not been assigned to an account.',
+      'weekly_ai_failed':
+          'AI feedback could not be created. Your local reflection is preserved. Please try again.',
+      'weekly_local_saved':
+          'Your reflection is saved locally. AI feedback is optional.',
+      'weekly_legacy_unassigned':
+          'Older reflections are preserved locally but have not been assigned to an account.',
       'weekly_legacy_import': 'Import older reflections',
-      'weekly_legacy_confirm': 'Confirm that the older reflections on this device belong to you. They will be assigned only to this account and will not be sent to AI. Existing entries will be kept.',
-      'report_delivery_failed': 'The report could not be sent. Please try again.',
-      'request_failed_retry': 'The action could not be completed. Please try again.',
-      'events_location_unconfirmed': 'Address not confirmed on the map — please check before you go',
-      'events_ai_unverified_hint': 'AI suggestion — please confirm with the organizer',
+      'weekly_legacy_confirm':
+          'Confirm that the older reflections on this device belong to you. They will be assigned only to this account and will not be sent to AI. Existing entries will be kept.',
+      'report_delivery_failed':
+          'The report could not be sent. Please try again.',
+      'request_failed_retry':
+          'The action could not be completed. Please try again.',
+      'events_location_unconfirmed':
+          'Address not confirmed on the map — please check before you go',
+      'events_ai_unverified_hint':
+          'AI suggestion — please confirm with the organizer',
       ...profileAccountEn,
       'events_attendees_count': '{count} going',
       'events_attendees_none': 'No one yet',
@@ -4593,6 +4653,13 @@ class AppStringsManager {
           'The account will be hidden from the network and discovery. The suspension can be reversed and no data will be deleted.\n\nUser ID: {userId}',
       'admin_suspend_action': 'Suspend',
       'admin_suspended': 'Account suspended.',
+      'admin_distinct_reporters': '{count} reporters',
+      'admin_profile_hidden': 'hidden',
+      'admin_deactivate_title': 'Hide profile?',
+      'admin_deactivate_message':
+          'The profile of {name} will be hidden from discovery. The account stays active and can re-enable it.',
+      'admin_deactivate_action': 'Hide profile',
+      'admin_deactivated': 'Profile hidden.',
       'admin_suspend_failed': 'Suspension failed.',
       'admin_unsuspended': 'Suspension removed.',
       'admin_action_failed': 'Action failed.',
@@ -6471,7 +6538,8 @@ class AppStringsManager {
       'network_tab_discover': 'Discover',
       'network_tab_matches': 'Matches',
       'network_matches_empty_title': 'No matches yet',
-      'network_matches_empty_body': 'When you and another family both tap “Interested”, your match shows up here.',
+      'network_matches_empty_body':
+          'When you and another family both tap “Interested”, your match shows up here.',
       'network_tab_network': 'Network',
       'network_new_chat': 'New chat',
       // Delete chat (WhatsApp style)
@@ -6771,11 +6839,14 @@ class AppStringsManager {
     // Français
     'fr': {
       'network_match_title': 'Ça matche !',
-      'network_match_subtitle': 'Vous êtes tous les deux intéressés. Dites bonjour quand ça vous convient.',
-      'network_match_icebreaker_1': 'Bonjour ! Nous sommes souvent au parc de jeux.',
+      'network_match_subtitle':
+          'Vous êtes tous les deux intéressés. Dites bonjour quand ça vous convient.',
+      'network_match_icebreaker_1':
+          'Bonjour ! Nous sommes souvent au parc de jeux.',
       'network_match_icebreaker_2': 'Envie d\'une rencontre avec les enfants ?',
       'network_match_icebreaker_3': 'Contents de nous être trouvés !',
-      'network_match_safety': 'Conseil : pour la première fois, retrouvez-vous dans un lieu public.',
+      'network_match_safety':
+          'Conseil : pour la première fois, retrouvez-vous dans un lieu public.',
       'network_match_write': 'Écrire un message',
       'network_match_later': 'Plus tard',
       'network_matches_new': 'Nouvelles correspondances',
@@ -6788,39 +6859,59 @@ class AppStringsManager {
       'network_tab_discover': 'Découvrir',
       'network_tab_matches': 'Correspondances',
       'network_matches_empty_title': 'Pas encore de correspondances',
-      'network_matches_empty_body': 'Quand vous et une autre famille appuyez tous les deux sur « Intéressé », votre correspondance apparaît ici.',
+      'network_matches_empty_body':
+          'Quand vous et une autre famille appuyez tous les deux sur « Intéressé », votre correspondance apparaît ici.',
       'ads_consent_title': 'Consentement aux publicités et aux sponsors',
-      'ads_consent_body': 'Vous pouvez accepter librement des contenus sponsorisés non personnalisés, vérifiés manuellement, dans la découverte publique d’événements. Aucun suivi, identifiant publicitaire ou partage de données d’enfants, de localisation ou de contenus IA à des fins publicitaires. Refuser est aussi simple qu’accepter. Vous pouvez retirer votre accord ici à tout moment ; tout traitement publicitaire futur sera alors bloqué. Le retrait ne récupère pas les données déjà envoyées. L’application reste utilisable sans accord. La publicité est actuellement désactivée.',
+      'ads_consent_body':
+          'Vous pouvez accepter librement des contenus sponsorisés non personnalisés, vérifiés manuellement, dans la découverte publique d’événements. Aucun suivi, identifiant publicitaire ou partage de données d’enfants, de localisation ou de contenus IA à des fins publicitaires. Refuser est aussi simple qu’accepter. Vous pouvez retirer votre accord ici à tout moment ; tout traitement publicitaire futur sera alors bloqué. Le retrait ne récupère pas les données déjà envoyées. L’application reste utilisable sans accord. La publicité est actuellement désactivée.',
       'ads_consent_grant': 'Accepter',
       'ads_consent_deny': 'Refuser',
       'ads_consent_revoke': 'Retirer mon consentement',
       'ads_consent_status_unknown': 'Aucun consentement donné.',
-      'ads_consent_status_denied': 'Refusé ou retiré. Aucun traitement publicitaire autorisé.',
-      'ads_consent_status_granted': 'Consentement donné. Cela n’active pas la publicité.',
-      'ads_consent_status_unavailable': 'Consentement non confirmé. Traitement publicitaire bloqué.',
+      'ads_consent_status_denied':
+          'Refusé ou retiré. Aucun traitement publicitaire autorisé.',
+      'ads_consent_status_granted':
+          'Consentement donné. Cela n’active pas la publicité.',
+      'ads_consent_status_unavailable':
+          'Consentement non confirmé. Traitement publicitaire bloqué.',
       'ads_consent_version': 'Version de la notice : {version}',
-      'ads_consent_failed': 'Votre choix n’a pas pu être confirmé. Le traitement publicitaire reste bloqué. Réessayez ; un retrait en attente sera envoyé à la prochaine synchronisation.',
-      'ads_consent_legal_draft': 'Notice provisoire : la formulation juridique définitive et la durée de conservation doivent être confirmées avant le lancement.',
+      'ads_consent_failed':
+          'Votre choix n’a pas pu être confirmé. Le traitement publicitaire reste bloqué. Réessayez ; un retrait en attente sera envoyé à la prochaine synchronisation.',
+      'ads_consent_legal_draft':
+          'Notice provisoire : la formulation juridique définitive et la durée de conservation doivent être confirmées avant le lancement.',
       'ritual_ai_consent_title': 'L’IA pour les rituels et les histoires ?',
-      'ritual_ai_consent_body': 'Pour les suggestions facultatives de rituels et les histoires du soir, l’âge en années révolues, le moment de la journée choisi et la langue de l’application sont transmis via notre serveur à Google Gemini. Les noms, dates de naissance et vos notes locales ne sont pas inclus. Votre accord vaut uniquement pour ce compte et ces fonctions IA des rituels. Les rituels locaux restent disponibles sans IA.',
+      'ritual_ai_consent_body':
+          'Pour les suggestions facultatives de rituels et les histoires du soir, l’âge en années révolues, le moment de la journée choisi et la langue de l’application sont transmis via notre serveur à Google Gemini. Les noms, dates de naissance et vos notes locales ne sont pas inclus. Votre accord vaut uniquement pour ce compte et ces fonctions IA des rituels. Les rituels locaux restent disponibles sans IA.',
       'ritual_ai_consent_accept': 'Accepter et utiliser l’IA',
-      'ritual_ai_consent_declined': 'Sans votre accord, aucune requête IA n’est lancée. Vos rituels locaux restent disponibles.',
-      'ritual_ai_consent_failed': 'Impossible d’autoriser cette fonction IA. Veuillez réessayer.',
-      'report_delivery_success': 'Merci pour votre signalement. Nous examinerons le contenu.',
+      'ritual_ai_consent_declined':
+          'Sans votre accord, aucune requête IA n’est lancée. Vos rituels locaux restent disponibles.',
+      'ritual_ai_consent_failed':
+          'Impossible d’autoriser cette fonction IA. Veuillez réessayer.',
+      'report_delivery_success':
+          'Merci pour votre signalement. Nous examinerons le contenu.',
       'weekly_ai_consent_title': 'Un retour IA sur votre bilan de la semaine ?',
-      'weekly_ai_consent_body': 'Uniquement avec votre accord, votre humeur et les réponses de ce bilan seront envoyées via notre serveur à Google Gemini. Ne saisissez pas de noms ni de détails sensibles. Cet accord ne concerne que les bilans de ce compte et peut être retiré ici. Le retrait ne permet pas de récupérer les données déjà envoyées. Votre bilan reste disponible localement sans IA.',
+      'weekly_ai_consent_body':
+          'Uniquement avec votre accord, votre humeur et les réponses de ce bilan seront envoyées via notre serveur à Google Gemini. Ne saisissez pas de noms ni de détails sensibles. Cet accord ne concerne que les bilans de ce compte et peut être retiré ici. Le retrait ne permet pas de récupérer les données déjà envoyées. Votre bilan reste disponible localement sans IA.',
       'weekly_ai_consent_accept': 'Accepter et créer le retour',
       'weekly_ai_generate': 'Demander un retour IA',
       'weekly_ai_revoke': 'Retirer mon accord IA pour les bilans',
-      'weekly_ai_failed': 'Le retour IA n’a pas pu être créé. Votre bilan local est conservé. Veuillez réessayer.',
-      'weekly_local_saved': 'Votre bilan est enregistré localement. Le retour IA est facultatif.',
-      'weekly_legacy_unassigned': 'Les anciens bilans sont conservés localement, mais ne sont associés à aucun compte.',
+      'weekly_ai_failed':
+          'Le retour IA n’a pas pu être créé. Votre bilan local est conservé. Veuillez réessayer.',
+      'weekly_local_saved':
+          'Votre bilan est enregistré localement. Le retour IA est facultatif.',
+      'weekly_legacy_unassigned':
+          'Les anciens bilans sont conservés localement, mais ne sont associés à aucun compte.',
       'weekly_legacy_import': 'Importer les anciens bilans',
-      'weekly_legacy_confirm': 'Confirmez que les anciens bilans de cet appareil vous appartiennent. Ils seront associés uniquement à ce compte, sans envoi à l’IA. Les entrées existantes seront conservées.',
-      'report_delivery_failed': 'Le signalement n’a pas pu être envoyé. Veuillez réessayer.',
-      'request_failed_retry': 'L’action n’a pas pu être effectuée. Veuillez réessayer.',
-      'events_location_unconfirmed': 'Adresse non confirmée sur la carte — à vérifier avant de vous déplacer',
-      'events_ai_unverified_hint': 'Suggestion IA — à confirmer auprès de l\'organisateur',
+      'weekly_legacy_confirm':
+          'Confirmez que les anciens bilans de cet appareil vous appartiennent. Ils seront associés uniquement à ce compte, sans envoi à l’IA. Les entrées existantes seront conservées.',
+      'report_delivery_failed':
+          'Le signalement n’a pas pu être envoyé. Veuillez réessayer.',
+      'request_failed_retry':
+          'L’action n’a pas pu être effectuée. Veuillez réessayer.',
+      'events_location_unconfirmed':
+          'Adresse non confirmée sur la carte — à vérifier avant de vous déplacer',
+      'events_ai_unverified_hint':
+          'Suggestion IA — à confirmer auprès de l\'organisateur',
       ...appLocalizationsFrExtra,
       'events_attendees_count': '{count} participants',
       'events_attendees_none': 'Personne pour le moment',
@@ -6832,11 +6923,13 @@ class AppStringsManager {
       'events_badge_network': 'Réseau',
       'events_join_title': 'Je participe !',
       'events_join_privacy': 'Les autres familles voient votre prénom.',
-      'events_join_message_hint': 'Facultatif : un petit mot (ex. « Nous arrivons à 10 h ! »)',
+      'events_join_message_hint':
+          'Facultatif : un petit mot (ex. « Nous arrivons à 10 h ! »)',
       'events_join_confirm': 'Confirmer',
       'events_loc_choose': 'Choisir un lieu',
       'events_loc_confirm': 'Confirmer',
-      'events_loc_search_hint': 'Rechercher une ville, un quartier ou un code postal…',
+      'events_loc_search_hint':
+          'Rechercher une ville, un quartier ou un code postal…',
       'events_loc_tap_hint': 'Touchez la carte ou déplacez le repère',
       'events_loc_gps_error': 'Erreur de localisation. Veuillez réessayer.',
       'events_loc_pick_hint': 'Choisir le lieu',
@@ -7268,8 +7361,7 @@ class AppStringsManager {
       'tile_events': 'Événements & Activités',
       'tile_events_desc': 'Trouver des événements et en proposer',
       'tile_network': 'Communauté de familles',
-      'tile_network_desc':
-          'Rencontrez des familles et partagez vos moments.',
+      'tile_network_desc': 'Rencontrez des familles et partagez vos moments.',
       'tile_chat': 'Conseil parental IA',
       'tile_chat_desc': 'Aide rapide et conseils sur l\'éducation',
       'tile_zentrale': 'Centre familial',
@@ -7583,14 +7675,17 @@ class AppStringsManager {
       'calendar_end_never': 'Sans fin',
       'calendar_end_count': '{n} occurrences',
       'calendar_end_pick_date': 'Choisir une date',
-      'calendar_reminder_smart': 'Intelligent (1 semaine, 1 jour avant et le jour même)',
-      'calendar_reminder_smart_short': 'Intelligent : 1 sem. • 1 j • le jour même',
+      'calendar_reminder_smart':
+          'Intelligent (1 semaine, 1 jour avant et le jour même)',
+      'calendar_reminder_smart_short':
+          'Intelligent : 1 sem. • 1 j • le jour même',
       'calendar_reminder_none': 'Aucun',
       'calendar_reminder_before': '{n} min avant',
       'calendar_pick_end_date': 'Choisir la date de fin',
       'calendar_ends_on': 'Se termine le',
       'calendar_ends_after_count': 'Se termine après {n} occurrences',
-      'calendar_offline_mode': 'Mode hors ligne — rendez-vous enregistrés sur cet appareil',
+      'calendar_offline_mode':
+          'Mode hors ligne — rendez-vous enregistrés sur cet appareil',
       'calendar_no_events_count': 'Aucun rendez-vous',
       'calendar_events_count': '{n} rendez-vous',
       'calendar_tap_to_add': 'Touchez ici pour ajouter un rendez-vous',
@@ -7608,7 +7703,8 @@ class AppStringsManager {
       'calendar_add_person': 'Ajouter une personne',
       'calendar_add': 'Ajouter',
       'calendar_delete_event': 'Supprimer le rendez-vous ?',
-      'calendar_delete_event_confirm': '« {title} » sera définitivement supprimé.',
+      'calendar_delete_event_confirm':
+          '« {title} » sera définitivement supprimé.',
       'calendar_event_deleted': 'Rendez-vous supprimé.',
       'calendar_new_person': 'Nouvelle personne…',
       'calendar_person': 'Personne',
@@ -7645,11 +7741,13 @@ class AppStringsManager {
     // Español
     'es': {
       'network_match_title': '¡Hay match!',
-      'network_match_subtitle': 'Los dos tenéis interés. Saludad cuando os venga bien.',
+      'network_match_subtitle':
+          'Los dos tenéis interés. Saludad cuando os venga bien.',
       'network_match_icebreaker_1': '¡Hola! Solemos ir al parque infantil.',
       'network_match_icebreaker_2': '¿Os apetece quedar con los niños?',
       'network_match_icebreaker_3': '¡Qué bien habernos encontrado!',
-      'network_match_safety': 'Consejo: la primera vez, quedad en un lugar público.',
+      'network_match_safety':
+          'Consejo: la primera vez, quedad en un lugar público.',
       'network_match_write': 'Escribir un mensaje',
       'network_match_later': 'Más tarde',
       'network_matches_new': 'Nuevas coincidencias',
@@ -7662,39 +7760,59 @@ class AppStringsManager {
       'network_tab_discover': 'Descubrir',
       'network_tab_matches': 'Coincidencias',
       'network_matches_empty_title': 'Aún no hay coincidencias',
-      'network_matches_empty_body': 'Cuando tú y otra familia pulsáis «Me interesa», vuestra coincidencia aparece aquí.',
+      'network_matches_empty_body':
+          'Cuando tú y otra familia pulsáis «Me interesa», vuestra coincidencia aparece aquí.',
       'ads_consent_title': 'Consentimiento para publicidad y patrocinadores',
-      'ads_consent_body': 'Puedes aceptar voluntariamente contenido patrocinado no personalizado y revisado manualmente en la sección pública para descubrir eventos. Sin rastreo, identificador publicitario ni uso de datos de menores, ubicación o contenido de IA con fines publicitarios. Rechazar es tan fácil como aceptar. Puedes retirar tu consentimiento aquí en cualquier momento; se bloqueará todo tratamiento publicitario futuro. Retirarlo no recupera los datos ya enviados. La aplicación sigue disponible sin consentimiento. La publicidad está desactivada actualmente.',
+      'ads_consent_body':
+          'Puedes aceptar voluntariamente contenido patrocinado no personalizado y revisado manualmente en la sección pública para descubrir eventos. Sin rastreo, identificador publicitario ni uso de datos de menores, ubicación o contenido de IA con fines publicitarios. Rechazar es tan fácil como aceptar. Puedes retirar tu consentimiento aquí en cualquier momento; se bloqueará todo tratamiento publicitario futuro. Retirarlo no recupera los datos ya enviados. La aplicación sigue disponible sin consentimiento. La publicidad está desactivada actualmente.',
       'ads_consent_grant': 'Aceptar',
       'ads_consent_deny': 'Rechazar',
       'ads_consent_revoke': 'Retirar consentimiento',
       'ads_consent_status_unknown': 'No has dado tu consentimiento.',
-      'ads_consent_status_denied': 'Rechazado o retirado. No se permite el tratamiento publicitario.',
-      'ads_consent_status_granted': 'Consentimiento otorgado. Esto no activa la publicidad.',
-      'ads_consent_status_unavailable': 'Consentimiento sin confirmar. Tratamiento publicitario bloqueado.',
+      'ads_consent_status_denied':
+          'Rechazado o retirado. No se permite el tratamiento publicitario.',
+      'ads_consent_status_granted':
+          'Consentimiento otorgado. Esto no activa la publicidad.',
+      'ads_consent_status_unavailable':
+          'Consentimiento sin confirmar. Tratamiento publicitario bloqueado.',
       'ads_consent_version': 'Versión del aviso: {version}',
-      'ads_consent_failed': 'No se pudo confirmar tu elección. El tratamiento publicitario sigue bloqueado. Inténtalo de nuevo; la retirada pendiente se enviará en la próxima sincronización.',
-      'ads_consent_legal_draft': 'Aviso provisional: la redacción jurídica definitiva y el plazo de conservación deben confirmarse antes del lanzamiento.',
+      'ads_consent_failed':
+          'No se pudo confirmar tu elección. El tratamiento publicitario sigue bloqueado. Inténtalo de nuevo; la retirada pendiente se enviará en la próxima sincronización.',
+      'ads_consent_legal_draft':
+          'Aviso provisional: la redacción jurídica definitiva y el plazo de conservación deben confirmarse antes del lanzamiento.',
       'ritual_ai_consent_title': '¿IA para rutinas e historias?',
-      'ritual_ai_consent_body': 'Para las sugerencias opcionales de rutinas y los cuentos para dormir, se envían la edad en años cumplidos, el momento del día elegido y el idioma de la aplicación a Google Gemini a través de nuestro servidor. No se incluyen nombres, fechas de nacimiento ni tus notas locales. La autorización solo se aplica a esta cuenta y a estas funciones de IA de rutinas. Las rutinas locales siguen disponibles sin IA.',
+      'ritual_ai_consent_body':
+          'Para las sugerencias opcionales de rutinas y los cuentos para dormir, se envían la edad en años cumplidos, el momento del día elegido y el idioma de la aplicación a Google Gemini a través de nuestro servidor. No se incluyen nombres, fechas de nacimiento ni tus notas locales. La autorización solo se aplica a esta cuenta y a estas funciones de IA de rutinas. Las rutinas locales siguen disponibles sin IA.',
       'ritual_ai_consent_accept': 'Aceptar y usar la IA',
-      'ritual_ai_consent_declined': 'Sin tu autorización no se inicia ninguna solicitud de IA. Tus rutinas locales siguen disponibles.',
-      'ritual_ai_consent_failed': 'No se pudo autorizar la función de IA. Inténtalo de nuevo.',
-      'report_delivery_success': 'Gracias por tu denuncia. Revisaremos el contenido.',
+      'ritual_ai_consent_declined':
+          'Sin tu autorización no se inicia ninguna solicitud de IA. Tus rutinas locales siguen disponibles.',
+      'ritual_ai_consent_failed':
+          'No se pudo autorizar la función de IA. Inténtalo de nuevo.',
+      'report_delivery_success':
+          'Gracias por tu denuncia. Revisaremos el contenido.',
       'weekly_ai_consent_title': '¿Comentarios de IA sobre tu semana?',
-      'weekly_ai_consent_body': 'Solo con tu consentimiento se enviarán el estado de ánimo y las respuestas de este resumen a Google Gemini a través de nuestro servidor. No introduzcas nombres ni detalles sensibles. El consentimiento solo se aplica a los resúmenes de esta cuenta y puedes retirarlo aquí. Retirarlo no permite recuperar datos ya enviados. Tu resumen sigue disponible localmente sin IA.',
+      'weekly_ai_consent_body':
+          'Solo con tu consentimiento se enviarán el estado de ánimo y las respuestas de este resumen a Google Gemini a través de nuestro servidor. No introduzcas nombres ni detalles sensibles. El consentimiento solo se aplica a los resúmenes de esta cuenta y puedes retirarlo aquí. Retirarlo no permite recuperar datos ya enviados. Tu resumen sigue disponible localmente sin IA.',
       'weekly_ai_consent_accept': 'Aceptar y crear comentarios',
       'weekly_ai_generate': 'Solicitar comentarios de IA',
       'weekly_ai_revoke': 'Retirar el consentimiento de IA para los resúmenes',
-      'weekly_ai_failed': 'No se pudieron crear los comentarios de IA. Tu resumen local se conserva. Inténtalo de nuevo.',
-      'weekly_local_saved': 'Tu resumen está guardado localmente. Los comentarios de IA son opcionales.',
-      'weekly_legacy_unassigned': 'Los resúmenes anteriores se conservan localmente, pero no están asignados a ninguna cuenta.',
+      'weekly_ai_failed':
+          'No se pudieron crear los comentarios de IA. Tu resumen local se conserva. Inténtalo de nuevo.',
+      'weekly_local_saved':
+          'Tu resumen está guardado localmente. Los comentarios de IA son opcionales.',
+      'weekly_legacy_unassigned':
+          'Los resúmenes anteriores se conservan localmente, pero no están asignados a ninguna cuenta.',
       'weekly_legacy_import': 'Importar resúmenes anteriores',
-      'weekly_legacy_confirm': 'Confirma que los resúmenes anteriores de este dispositivo te pertenecen. Se asignarán solo a esta cuenta y no se enviarán a la IA. Se conservarán las entradas existentes.',
-      'report_delivery_failed': 'No se pudo enviar la denuncia. Inténtalo de nuevo.',
-      'request_failed_retry': 'No se pudo completar la acción. Inténtalo de nuevo.',
-      'events_location_unconfirmed': 'Dirección no confirmada en el mapa — compruébala antes de ir',
-      'events_ai_unverified_hint': 'Sugerencia IA — confirma con el organizador',
+      'weekly_legacy_confirm':
+          'Confirma que los resúmenes anteriores de este dispositivo te pertenecen. Se asignarán solo a esta cuenta y no se enviarán a la IA. Se conservarán las entradas existentes.',
+      'report_delivery_failed':
+          'No se pudo enviar la denuncia. Inténtalo de nuevo.',
+      'request_failed_retry':
+          'No se pudo completar la acción. Inténtalo de nuevo.',
+      'events_location_unconfirmed':
+          'Dirección no confirmada en el mapa — compruébala antes de ir',
+      'events_ai_unverified_hint':
+          'Sugerencia IA — confirma con el organizador',
       ...appLocalizationsEsExtra,
       'events_attendees_count': '{count} asistentes',
       'events_attendees_none': 'Aún no hay asistentes',
@@ -7706,7 +7824,8 @@ class AppStringsManager {
       'events_badge_network': 'Red',
       'events_join_title': '¡Me apunto!',
       'events_join_privacy': 'Las demás familias ven tu nombre de pila.',
-      'events_join_message_hint': 'Opcional: una nota breve (p. ej., «¡Llegaremos a las 10!»)',
+      'events_join_message_hint':
+          'Opcional: una nota breve (p. ej., «¡Llegaremos a las 10!»)',
       'events_join_confirm': 'Confirmar',
       'events_loc_choose': 'Elegir una ubicación',
       'events_loc_confirm': 'Confirmar',
@@ -8444,14 +8563,16 @@ class AppStringsManager {
       'calendar_end_never': 'Sin fin',
       'calendar_end_count': '{n} repeticiones',
       'calendar_end_pick_date': 'Elegir fecha',
-      'calendar_reminder_smart': 'Inteligente (1 semana, 1 día antes y el mismo día)',
+      'calendar_reminder_smart':
+          'Inteligente (1 semana, 1 día antes y el mismo día)',
       'calendar_reminder_smart_short': 'Inteligente: 1 sem. • 1 día • hoy',
       'calendar_reminder_none': 'Ninguno',
       'calendar_reminder_before': '{n} min antes',
       'calendar_pick_end_date': 'Elegir fecha de finalización',
       'calendar_ends_on': 'Finaliza el',
       'calendar_ends_after_count': 'Finaliza tras {n} repeticiones',
-      'calendar_offline_mode': 'Sin conexión: las citas se guardan en este dispositivo',
+      'calendar_offline_mode':
+          'Sin conexión: las citas se guardan en este dispositivo',
       'calendar_no_events_count': 'No hay citas',
       'calendar_events_count': '{n} citas',
       'calendar_tap_to_add': 'Toca aquí para añadir una cita',
@@ -8469,7 +8590,8 @@ class AppStringsManager {
       'calendar_add_person': 'Añadir persona',
       'calendar_add': 'Añadir',
       'calendar_delete_event': '¿Eliminar cita?',
-      'calendar_delete_event_confirm': '«{title}» se eliminará definitivamente.',
+      'calendar_delete_event_confirm':
+          '«{title}» se eliminará definitivamente.',
       'calendar_event_deleted': 'Cita eliminada.',
       'calendar_new_person': 'Nueva persona…',
       'calendar_person': 'Persona',
@@ -8506,11 +8628,13 @@ class AppStringsManager {
     // Italiano
     'it': {
       'network_match_title': 'È un match!',
-      'network_match_subtitle': 'Siete entrambi interessati. Salutatevi quando vi fa comodo.',
+      'network_match_subtitle':
+          'Siete entrambi interessati. Salutatevi quando vi fa comodo.',
       'network_match_icebreaker_1': 'Ciao! Siamo spesso al parco giochi.',
       'network_match_icebreaker_2': 'Vi va di vederci con i bambini?',
       'network_match_icebreaker_3': 'Che bello esserci trovati!',
-      'network_match_safety': 'Consiglio: la prima volta vedetevi in un luogo pubblico.',
+      'network_match_safety':
+          'Consiglio: la prima volta vedetevi in un luogo pubblico.',
       'network_match_write': 'Scrivi un messaggio',
       'network_match_later': 'Più tardi',
       'network_matches_new': 'Nuove corrispondenze',
@@ -8523,39 +8647,59 @@ class AppStringsManager {
       'network_tab_discover': 'Scopri',
       'network_tab_matches': 'Corrispondenze',
       'network_matches_empty_title': 'Ancora nessuna corrispondenza',
-      'network_matches_empty_body': 'Quando tu e un\'altra famiglia toccate entrambi «Mi interessa», la vostra corrispondenza compare qui.',
+      'network_matches_empty_body':
+          'Quando tu e un\'altra famiglia toccate entrambi «Mi interessa», la vostra corrispondenza compare qui.',
       'ads_consent_title': 'Consenso per pubblicità e sponsor',
-      'ads_consent_body': 'Puoi acconsentire liberamente a contenuti sponsorizzati non personalizzati, verificati manualmente, nella ricerca pubblica di eventi. Nessun tracciamento, identificativo pubblicitario o condivisione di dati dei bambini, posizione o contenuti IA per scopi pubblicitari. Rifiutare è semplice quanto accettare. Puoi revocare il consenso qui in qualsiasi momento; ogni trattamento pubblicitario futuro verrà bloccato. La revoca non recupera i dati già inviati. L’app resta utilizzabile senza consenso. La pubblicità è attualmente disattivata.',
+      'ads_consent_body':
+          'Puoi acconsentire liberamente a contenuti sponsorizzati non personalizzati, verificati manualmente, nella ricerca pubblica di eventi. Nessun tracciamento, identificativo pubblicitario o condivisione di dati dei bambini, posizione o contenuti IA per scopi pubblicitari. Rifiutare è semplice quanto accettare. Puoi revocare il consenso qui in qualsiasi momento; ogni trattamento pubblicitario futuro verrà bloccato. La revoca non recupera i dati già inviati. L’app resta utilizzabile senza consenso. La pubblicità è attualmente disattivata.',
       'ads_consent_grant': 'Acconsenti',
       'ads_consent_deny': 'Rifiuta',
       'ads_consent_revoke': 'Revoca il consenso',
       'ads_consent_status_unknown': 'Nessun consenso fornito.',
-      'ads_consent_status_denied': 'Rifiutato o revocato. Trattamento pubblicitario non consentito.',
-      'ads_consent_status_granted': 'Consenso fornito. Questo non attiva la pubblicità.',
-      'ads_consent_status_unavailable': 'Consenso non confermato. Trattamento pubblicitario bloccato.',
+      'ads_consent_status_denied':
+          'Rifiutato o revocato. Trattamento pubblicitario non consentito.',
+      'ads_consent_status_granted':
+          'Consenso fornito. Questo non attiva la pubblicità.',
+      'ads_consent_status_unavailable':
+          'Consenso non confermato. Trattamento pubblicitario bloccato.',
       'ads_consent_version': 'Versione dell’informativa: {version}',
-      'ads_consent_failed': 'Non è stato possibile confermare la tua scelta. Il trattamento pubblicitario resta bloccato. Riprova; una revoca in sospeso verrà inviata alla prossima sincronizzazione.',
-      'ads_consent_legal_draft': 'Informativa provvisoria: il testo giuridico definitivo e i tempi di conservazione devono essere confermati prima del lancio.',
+      'ads_consent_failed':
+          'Non è stato possibile confermare la tua scelta. Il trattamento pubblicitario resta bloccato. Riprova; una revoca in sospeso verrà inviata alla prossima sincronizzazione.',
+      'ads_consent_legal_draft':
+          'Informativa provvisoria: il testo giuridico definitivo e i tempi di conservazione devono essere confermati prima del lancio.',
       'ritual_ai_consent_title': 'IA per rituali e storie?',
-      'ritual_ai_consent_body': 'Per i suggerimenti facoltativi sui rituali e le storie della buonanotte, l’età in anni compiuti, il momento della giornata scelto e la lingua dell’app vengono inviati a Google Gemini tramite il nostro server. Nomi, date di nascita e annotazioni locali non vengono inclusi. Il consenso vale solo per questo account e per queste funzioni IA dei rituali. I rituali locali restano disponibili senza IA.',
+      'ritual_ai_consent_body':
+          'Per i suggerimenti facoltativi sui rituali e le storie della buonanotte, l’età in anni compiuti, il momento della giornata scelto e la lingua dell’app vengono inviati a Google Gemini tramite il nostro server. Nomi, date di nascita e annotazioni locali non vengono inclusi. Il consenso vale solo per questo account e per queste funzioni IA dei rituali. I rituali locali restano disponibili senza IA.',
       'ritual_ai_consent_accept': 'Acconsenti e usa l’IA',
-      'ritual_ai_consent_declined': 'Senza consenso non viene avviata alcuna richiesta IA. I tuoi rituali locali restano disponibili.',
-      'ritual_ai_consent_failed': 'Impossibile autorizzare la funzione IA. Riprova.',
-      'report_delivery_success': 'Grazie per la segnalazione. Esamineremo il contenuto.',
+      'ritual_ai_consent_declined':
+          'Senza consenso non viene avviata alcuna richiesta IA. I tuoi rituali locali restano disponibili.',
+      'ritual_ai_consent_failed':
+          'Impossibile autorizzare la funzione IA. Riprova.',
+      'report_delivery_success':
+          'Grazie per la segnalazione. Esamineremo il contenuto.',
       'weekly_ai_consent_title': 'Un riscontro IA sulla tua settimana?',
-      'weekly_ai_consent_body': 'Solo con il tuo consenso, l’umore e le risposte di questo riepilogo verranno inviati tramite il nostro server a Google Gemini. Non inserire nomi o dettagli sensibili. Il consenso vale solo per i riepiloghi di questo account e può essere revocato qui. La revoca non recupera i dati già inviati. Il riepilogo resta disponibile localmente senza IA.',
+      'weekly_ai_consent_body':
+          'Solo con il tuo consenso, l’umore e le risposte di questo riepilogo verranno inviati tramite il nostro server a Google Gemini. Non inserire nomi o dettagli sensibili. Il consenso vale solo per i riepiloghi di questo account e può essere revocato qui. La revoca non recupera i dati già inviati. Il riepilogo resta disponibile localmente senza IA.',
       'weekly_ai_consent_accept': 'Acconsenti e crea il riscontro',
       'weekly_ai_generate': 'Richiedi un riscontro IA',
       'weekly_ai_revoke': 'Revoca il consenso IA per i riepiloghi',
-      'weekly_ai_failed': 'Impossibile creare il riscontro IA. Il riepilogo locale è conservato. Riprova.',
-      'weekly_local_saved': 'Il riepilogo è salvato localmente. Il riscontro IA è facoltativo.',
-      'weekly_legacy_unassigned': 'I vecchi riepiloghi sono conservati localmente, ma non sono assegnati a un account.',
+      'weekly_ai_failed':
+          'Impossibile creare il riscontro IA. Il riepilogo locale è conservato. Riprova.',
+      'weekly_local_saved':
+          'Il riepilogo è salvato localmente. Il riscontro IA è facoltativo.',
+      'weekly_legacy_unassigned':
+          'I vecchi riepiloghi sono conservati localmente, ma non sono assegnati a un account.',
       'weekly_legacy_import': 'Importa i vecchi riepiloghi',
-      'weekly_legacy_confirm': 'Conferma che i vecchi riepiloghi su questo dispositivo ti appartengono. Verranno assegnati solo a questo account e non inviati all’IA. Le voci esistenti saranno conservate.',
-      'report_delivery_failed': 'Non è stato possibile inviare la segnalazione. Riprova.',
-      'request_failed_retry': 'Non è stato possibile completare l’azione. Riprova.',
-      'events_location_unconfirmed': 'Indirizzo non confermato sulla mappa — verifica prima di andarci',
-      'events_ai_unverified_hint': 'Suggerimento IA — conferma con l\'organizzatore',
+      'weekly_legacy_confirm':
+          'Conferma che i vecchi riepiloghi su questo dispositivo ti appartengono. Verranno assegnati solo a questo account e non inviati all’IA. Le voci esistenti saranno conservate.',
+      'report_delivery_failed':
+          'Non è stato possibile inviare la segnalazione. Riprova.',
+      'request_failed_retry':
+          'Non è stato possibile completare l’azione. Riprova.',
+      'events_location_unconfirmed':
+          'Indirizzo non confermato sulla mappa — verifica prima di andarci',
+      'events_ai_unverified_hint':
+          'Suggerimento IA — conferma con l\'organizzatore',
       ...appLocalizationsItExtra,
       'events_attendees_count': '{count} partecipanti',
       'events_attendees_none': 'Ancora nessun partecipante',
@@ -8567,7 +8711,8 @@ class AppStringsManager {
       'events_badge_network': 'Rete',
       'events_join_title': 'Partecipo!',
       'events_join_privacy': 'Le altre famiglie vedono il tuo nome.',
-      'events_join_message_hint': 'Facoltativo: un breve messaggio (es. «Arriviamo alle 10!»)',
+      'events_join_message_hint':
+          'Facoltativo: un breve messaggio (es. «Arriviamo alle 10!»)',
       'events_join_confirm': 'Conferma',
       'events_loc_choose': 'Scegli un luogo',
       'events_loc_confirm': 'Conferma',
@@ -8993,7 +9138,8 @@ class AppStringsManager {
       'tile_events': 'Eventi & Attività',
       'tile_events_desc': 'Trova eventi e proponi i tuoi',
       'tile_network': 'Community di famiglie',
-      'tile_network_desc': 'Conosci altre famiglie e condividete i vostri momenti.',
+      'tile_network_desc':
+          'Conosci altre famiglie e condividete i vostri momenti.',
       'tile_chat': 'Consulenza genitoriale IA',
       'tile_chat_desc': 'Aiuto rapido e consigli sulla genitorialità',
       'tile_zentrale': 'Centro familiare',
@@ -9074,17 +9220,20 @@ class AppStringsManager {
       'my_friends': 'I miei amici',
       'connected_count': 'connessi',
       'no_friends_yet': 'Ancora nessun amico',
-      'share_code_hint': 'Condividi il tuo codice: basta un tocco per entrare in contatto!',
+      'share_code_hint':
+          'Condividi il tuo codice: basta un tocco per entrare in contatto!',
       'maybe_you_know': 'Forse li conosci',
       'real_parents_nearby': 'Genitori reali della tua zona',
       'suggestions_count': 'suggerimenti',
       'connect_btn': 'Collegati',
       'show_this_code': 'Mostra questo codice',
-      'scan_to_connect': 'Basta scansionarlo quando vi incontrate per collegarvi subito!',
+      'scan_to_connect':
+          'Basta scansionarlo quando vi incontrate per collegarvi subito!',
       'done_btn': 'Fatto',
       'chat_btn': 'Chat',
       'connect_by_code': 'Collegati a un amico tramite codice',
-      'enter_friend_code': 'Inserisci il codice che ti ha inviato l’altra famiglia.',
+      'enter_friend_code':
+          'Inserisci il codice che ti ha inviato l’altra famiglia.',
       'found_checkmark': 'Trovato ✓',
       'remove_friend_title': 'Rimuovere l’amico?',
       'remove_btn': 'Rimuovi',
@@ -9094,10 +9243,12 @@ class AppStringsManager {
       'app_invitation': 'Invito all’app',
       'invite_parents': 'Invita altri genitori',
       'scan_download_earn': 'Scansiona → Scarica l’app → Guadagni 1 moneta',
-      'just_scan_no_code': 'Basta far scansionare il codice: non serve inserirlo',
+      'just_scan_no_code':
+          'Basta far scansionare il codice: non serve inserirlo',
       'back_btn': 'Indietro',
       'next_btn_wizard': 'Avanti',
-      'choose_best_fit': 'Scegli ciò che ti rappresenta meglio, oppure scrivi la tua risposta:',
+      'choose_best_fit':
+          'Scegli ciò che ti rappresenta meglio, oppure scrivi la tua risposta:',
       'looking_for_playmates': 'Per chi cerchi compagni di gioco?',
       'add_child_btn': 'Aggiungi un bambino',
       'child_label': 'Bambino',
@@ -9118,7 +9269,8 @@ class AppStringsManager {
       'familien_zentrale_title': 'Centro famiglia',
       'done_count': 'Completato',
       'list_empty': 'Lista vuota',
-      'type_hint_shopping': 'Scrivi qualcosa qui sopra, ad esempio «3 confezioni di latte»',
+      'type_hint_shopping':
+          'Scrivi qualcosa qui sopra, ad esempio «3 confezioni di latte»',
       'all_shopping_done': 'Spesa completata.',
       'list_complete': 'La lista è completa.',
       'no_children_data': 'Ancora nessun dato sui bambini',
@@ -9186,7 +9338,8 @@ class AppStringsManager {
       'day_fr': 'Ven',
       'day_sa': 'Sab',
       'day_so': 'Dom',
-      'gps_unavailable': 'GPS non disponibile: inserisci la posizione qui sopra.',
+      'gps_unavailable':
+          'GPS non disponibile: inserisci la posizione qui sopra.',
       'action_save_error': 'Impossibile salvare l’azione.',
       'events_title': 'Eventi e attività',
       'reload_btn': 'Ricarica',
@@ -9205,7 +9358,8 @@ class AppStringsManager {
       'decline_btn': 'Rifiuta',
       'daily_done_mark': 'Fatto per oggi ✓',
       'daily_done_message': 'Lo spunto di oggi è stato completato.',
-      'ai_explains_personal': 'L’IA ti spiega questo argomento in modo personalizzato',
+      'ai_explains_personal':
+          'L’IA ti spiega questo argomento in modo personalizzato',
       'fits_age': 'Per adattare domande e resoconto all’età.',
       'tip_label': 'Consiglio:',
       'pedagogical_assessment': 'Valutazione pedagogica',
@@ -9230,7 +9384,8 @@ class AppStringsManager {
       'wissen_what_to_say': 'Che cosa puoi dire (CNV)',
       'choose_location': 'Scegli posizione',
       'use_my_location': 'Usa la mia posizione',
-      'location_denied': 'Il permesso di accesso alla posizione è stato negato.',
+      'location_denied':
+          'Il permesso di accesso alla posizione è stato negato.',
       'gps_error': 'Errore GPS',
       'event_published': '✅ Evento pubblicato!',
       'create_event_title': 'Crea evento',
@@ -9276,7 +9431,8 @@ class AppStringsManager {
           'Ora non valida: usa da 0 a 23 h e da 0 a 59 min.',
       'calendar_quick_add_bad_date':
           'Data non valida: controlla giorno e mese.',
-      'calendar_quick_add_failed': 'Impossibile interpretare il testo inserito.',
+      'calendar_quick_add_failed':
+          'Impossibile interpretare il testo inserito.',
       'calendar_edit_event': 'Modifica appuntamento',
       'calendar_field_title': 'Titolo',
       'calendar_field_title_hint': 'Es. riunione dei genitori',
@@ -9305,14 +9461,16 @@ class AppStringsManager {
       'calendar_end_never': 'Senza fine',
       'calendar_end_count': '{n} occorrenze',
       'calendar_end_pick_date': 'Scegli una data',
-      'calendar_reminder_smart': 'Intelligente (1 settimana, 1 giorno prima e il giorno stesso)',
+      'calendar_reminder_smart':
+          'Intelligente (1 settimana, 1 giorno prima e il giorno stesso)',
       'calendar_reminder_smart_short': 'Intelligente: 1 sett. • 1 g • oggi',
       'calendar_reminder_none': 'Nessuno',
       'calendar_reminder_before': '{n} min prima',
       'calendar_pick_end_date': 'Scegli la data di fine',
       'calendar_ends_on': 'Termina il',
       'calendar_ends_after_count': 'Termina dopo {n} occorrenze',
-      'calendar_offline_mode': 'Modalità offline: gli appuntamenti vengono salvati su questo dispositivo',
+      'calendar_offline_mode':
+          'Modalità offline: gli appuntamenti vengono salvati su questo dispositivo',
       'calendar_no_events_count': 'Nessun appuntamento',
       'calendar_events_count': '{n} appuntamenti',
       'calendar_tap_to_add': 'Tocca qui per aggiungere un appuntamento',
@@ -9330,7 +9488,8 @@ class AppStringsManager {
       'calendar_add_person': 'Aggiungi persona',
       'calendar_add': 'Aggiungi',
       'calendar_delete_event': 'Eliminare l’appuntamento?',
-      'calendar_delete_event_confirm': '«{title}» verrà eliminato definitivamente.',
+      'calendar_delete_event_confirm':
+          '«{title}» verrà eliminato definitivamente.',
       'calendar_event_deleted': 'Appuntamento eliminato.',
       'calendar_new_person': 'Nuova persona…',
       'calendar_person': 'Persona',
@@ -9366,7 +9525,8 @@ class AppStringsManager {
     },
     // Português
     'pt': {
-      'events_location_unconfirmed': 'Morada não confirmada no mapa — verifique antes de ir',
+      'events_location_unconfirmed':
+          'Morada não confirmada no mapa — verifique antes de ir',
       'events_ai_unverified_hint': 'Sugestão IA — confirme com o organizador',
       'events_attendees_count': '{count} going',
       'events_attendees_none': 'No one yet',
@@ -10180,7 +10340,8 @@ class AppStringsManager {
     },
     // Nederlands
     'nl': {
-      'events_location_unconfirmed': 'Adres niet bevestigd op de kaart — controleer dit voordat je gaat',
+      'events_location_unconfirmed':
+          'Adres niet bevestigd op de kaart — controleer dit voordat je gaat',
       'events_ai_unverified_hint': 'AI-suggestie — bevestig bij de organisator',
       'events_attendees_count': '{count} going',
       'events_attendees_none': 'No one yet',
@@ -11013,38 +11174,53 @@ class AppStringsManager {
       'network_tab_discover': 'اكتشف',
       'network_tab_matches': 'التوافقات',
       'network_matches_empty_title': 'لا توجد توافقات بعد',
-      'network_matches_empty_body': 'عندما تضغط أنت وعائلة أخرى على “مهتم”، يظهر توافقكما هنا.',
+      'network_matches_empty_body':
+          'عندما تضغط أنت وعائلة أخرى على “مهتم”، يظهر توافقكما هنا.',
       'ads_consent_title': 'الموافقة على الإعلانات والرعاية',
-      'ads_consent_body': 'يمكنك الموافقة طوعًا على محتوى رعاية غير مخصص تتم مراجعته يدويًا ضمن اكتشاف الفعاليات العامة. لا تتبع ولا معرّف إعلاني ولا مشاركة لبيانات الأطفال أو الموقع أو محتوى الذكاء الاصطناعي لأغراض إعلانية. الرفض سهل مثل الموافقة. يمكنك سحب موافقتك هنا في أي وقت، فتُحظر كل معالجة إعلانية مستقبلية. السحب لا يسترجع البيانات المرسلة سابقًا. يبقى التطبيق قابلًا للاستخدام دون موافقة. الإعلانات معطّلة حاليًا.',
+      'ads_consent_body':
+          'يمكنك الموافقة طوعًا على محتوى رعاية غير مخصص تتم مراجعته يدويًا ضمن اكتشاف الفعاليات العامة. لا تتبع ولا معرّف إعلاني ولا مشاركة لبيانات الأطفال أو الموقع أو محتوى الذكاء الاصطناعي لأغراض إعلانية. الرفض سهل مثل الموافقة. يمكنك سحب موافقتك هنا في أي وقت، فتُحظر كل معالجة إعلانية مستقبلية. السحب لا يسترجع البيانات المرسلة سابقًا. يبقى التطبيق قابلًا للاستخدام دون موافقة. الإعلانات معطّلة حاليًا.',
       'ads_consent_grant': 'أوافق',
       'ads_consent_deny': 'أرفض',
       'ads_consent_revoke': 'سحب الموافقة',
       'ads_consent_status_unknown': 'لم تُمنح الموافقة.',
-      'ads_consent_status_denied': 'مرفوضة أو مسحوبة. لا يُسمح بالمعالجة الإعلانية.',
+      'ads_consent_status_denied':
+          'مرفوضة أو مسحوبة. لا يُسمح بالمعالجة الإعلانية.',
       'ads_consent_status_granted': 'مُنحت الموافقة. هذا لا يفعّل الإعلانات.',
-      'ads_consent_status_unavailable': 'الموافقة غير مؤكدة. المعالجة الإعلانية محظورة.',
+      'ads_consent_status_unavailable':
+          'الموافقة غير مؤكدة. المعالجة الإعلانية محظورة.',
       'ads_consent_version': 'إصدار الإشعار: {version}',
-      'ads_consent_failed': 'تعذّر تأكيد اختيارك. تبقى المعالجة الإعلانية محظورة. يُرجى إعادة المحاولة؛ سيُرسل طلب السحب المعلّق عند المزامنة التالية.',
-      'ads_consent_legal_draft': 'إشعار موافقة أولي: يجب تأكيد الصياغة القانونية النهائية ومدة الاحتفاظ قبل الإطلاق.',
+      'ads_consent_failed':
+          'تعذّر تأكيد اختيارك. تبقى المعالجة الإعلانية محظورة. يُرجى إعادة المحاولة؛ سيُرسل طلب السحب المعلّق عند المزامنة التالية.',
+      'ads_consent_legal_draft':
+          'إشعار موافقة أولي: يجب تأكيد الصياغة القانونية النهائية ومدة الاحتفاظ قبل الإطلاق.',
       'ritual_ai_consent_title': 'استخدام الذكاء الاصطناعي للروتين والقصص؟',
-      'ritual_ai_consent_body': 'للحصول على اقتراحات اختيارية للروتين وقصص ما قبل النوم، يُرسل العمر بالسنوات المكتملة ووقت اليوم المختار ولغة التطبيق عبر خادمنا إلى Google Gemini. لا تُرسل الأسماء أو تواريخ الميلاد أو ملاحظاتك المحلية. تسري الموافقة على هذا الحساب وهذه الميزات فقط. يظل الروتين المحلي متاحًا دون الذكاء الاصطناعي.',
+      'ritual_ai_consent_body':
+          'للحصول على اقتراحات اختيارية للروتين وقصص ما قبل النوم، يُرسل العمر بالسنوات المكتملة ووقت اليوم المختار ولغة التطبيق عبر خادمنا إلى Google Gemini. لا تُرسل الأسماء أو تواريخ الميلاد أو ملاحظاتك المحلية. تسري الموافقة على هذا الحساب وهذه الميزات فقط. يظل الروتين المحلي متاحًا دون الذكاء الاصطناعي.',
       'ritual_ai_consent_accept': 'الموافقة واستخدام الذكاء الاصطناعي',
-      'ritual_ai_consent_declined': 'لن يبدأ أي طلب للذكاء الاصطناعي دون موافقتك. يظل الروتين المحلي متاحًا.',
-      'ritual_ai_consent_failed': 'تعذّر السماح باستخدام ميزة الذكاء الاصطناعي. يُرجى المحاولة مجددًا.',
+      'ritual_ai_consent_declined':
+          'لن يبدأ أي طلب للذكاء الاصطناعي دون موافقتك. يظل الروتين المحلي متاحًا.',
+      'ritual_ai_consent_failed':
+          'تعذّر السماح باستخدام ميزة الذكاء الاصطناعي. يُرجى المحاولة مجددًا.',
       'report_delivery_success': 'شكرًا على بلاغك. سنراجع المحتوى.',
       'weekly_ai_consent_title': 'هل تريد ملاحظات الذكاء الاصطناعي عن أسبوعك؟',
-      'weekly_ai_consent_body': 'بموافقتك فقط، تُرسل حالتك المزاجية وإجابات هذه المراجعة عبر خادمنا إلى Google Gemini. يُرجى عدم إدخال أسماء أو تفاصيل حساسة. تقتصر الموافقة على مراجعات هذا الحساب ويمكن سحبها هنا. السحب لا يسترجع البيانات المرسلة سابقًا. تبقى مراجعتك متاحة محليًا دون ذكاء اصطناعي.',
+      'weekly_ai_consent_body':
+          'بموافقتك فقط، تُرسل حالتك المزاجية وإجابات هذه المراجعة عبر خادمنا إلى Google Gemini. يُرجى عدم إدخال أسماء أو تفاصيل حساسة. تقتصر الموافقة على مراجعات هذا الحساب ويمكن سحبها هنا. السحب لا يسترجع البيانات المرسلة سابقًا. تبقى مراجعتك متاحة محليًا دون ذكاء اصطناعي.',
       'weekly_ai_consent_accept': 'أوافق على إنشاء الملاحظات',
       'weekly_ai_generate': 'طلب ملاحظات الذكاء الاصطناعي',
       'weekly_ai_revoke': 'سحب موافقة الذكاء الاصطناعي للمراجعات',
-      'weekly_ai_failed': 'تعذّر إنشاء الملاحظات. تبقى مراجعتك المحلية محفوظة. يُرجى المحاولة مجددًا.',
-      'weekly_local_saved': 'مراجعتك محفوظة محليًا. ملاحظات الذكاء الاصطناعي اختيارية.',
-      'weekly_legacy_unassigned': 'المراجعات السابقة محفوظة محليًا لكنها غير مرتبطة بحساب.',
+      'weekly_ai_failed':
+          'تعذّر إنشاء الملاحظات. تبقى مراجعتك المحلية محفوظة. يُرجى المحاولة مجددًا.',
+      'weekly_local_saved':
+          'مراجعتك محفوظة محليًا. ملاحظات الذكاء الاصطناعي اختيارية.',
+      'weekly_legacy_unassigned':
+          'المراجعات السابقة محفوظة محليًا لكنها غير مرتبطة بحساب.',
       'weekly_legacy_import': 'استيراد المراجعات السابقة',
-      'weekly_legacy_confirm': 'أكّد أن المراجعات السابقة على هذا الجهاز تخصك. ستُربط بهذا الحساب فقط ولن تُرسل إلى الذكاء الاصطناعي. ستبقى الإدخالات الموجودة محفوظة.',
+      'weekly_legacy_confirm':
+          'أكّد أن المراجعات السابقة على هذا الجهاز تخصك. ستُربط بهذا الحساب فقط ولن تُرسل إلى الذكاء الاصطناعي. ستبقى الإدخالات الموجودة محفوظة.',
       'report_delivery_failed': 'تعذر إرسال البلاغ. يرجى المحاولة مرة أخرى.',
       'request_failed_retry': 'تعذر إكمال الإجراء. يرجى المحاولة مرة أخرى.',
-      'events_location_unconfirmed': 'العنوان غير مؤكد على الخريطة — تحقّق منه قبل الذهاب',
+      'events_location_unconfirmed':
+          'العنوان غير مؤكد على الخريطة — تحقّق منه قبل الذهاب',
       'events_ai_unverified_hint': 'اقتراح بالذكاء الاصطناعي — أكّده مع المنظم',
       ...appLocalizationsArExtra,
       'events_attendees_count': 'عدد المشاركين: {count}',
@@ -11057,7 +11233,8 @@ class AppStringsManager {
       'events_badge_network': 'الشبكة',
       'events_join_title': 'سأشارك!',
       'events_join_privacy': 'ترى العائلات الأخرى اسمك الأول.',
-      'events_join_message_hint': 'اختياري: رسالة قصيرة (مثل «سنصل الساعة 10!»)',
+      'events_join_message_hint':
+          'اختياري: رسالة قصيرة (مثل «سنصل الساعة 10!»)',
       'events_join_confirm': 'تأكيد',
       'events_loc_choose': 'اختيار موقع',
       'events_loc_confirm': 'تأكيد',
@@ -11783,7 +11960,8 @@ class AppStringsManager {
       'calendar_pick_end_date': 'اختيار تاريخ الانتهاء',
       'calendar_ends_on': 'ينتهي في',
       'calendar_ends_after_count': 'ينتهي بعد {n} مرات',
-      'calendar_offline_mode': 'وضع عدم الاتصال — تُحفظ المواعيد على هذا الجهاز',
+      'calendar_offline_mode':
+          'وضع عدم الاتصال — تُحفظ المواعيد على هذا الجهاز',
       'calendar_no_events_count': 'لا توجد مواعيد',
       'calendar_events_count': 'عدد المواعيد: {n}',
       'calendar_tap_to_add': 'اضغط هنا لإضافة موعد',
@@ -11837,8 +12015,10 @@ class AppStringsManager {
     },
     // فارسی (Persian/Farsi)
     'fa': {
-      'events_location_unconfirmed': 'نشانی روی نقشه تأیید نشده است — پیش از رفتن بررسی کنید',
-      'events_ai_unverified_hint': 'پیشنهاد هوش مصنوعی — با برگزارکننده تأیید کنید',
+      'events_location_unconfirmed':
+          'نشانی روی نقشه تأیید نشده است — پیش از رفتن بررسی کنید',
+      'events_ai_unverified_hint':
+          'پیشنهاد هوش مصنوعی — با برگزارکننده تأیید کنید',
       'events_attendees_count': '{count} going',
       'events_attendees_none': 'No one yet',
       'events_attendees_one_family': '1 family going',
@@ -12647,11 +12827,14 @@ class AppStringsManager {
     // کوردی Kurmancî (ku)
     'ku': {
       'network_match_title': 'Lihevhatin!',
-      'network_match_subtitle': 'Herdu jî bala we heye. Kengî ji we re guncan e silav bikin.',
+      'network_match_subtitle':
+          'Herdu jî bala we heye. Kengî ji we re guncan e silav bikin.',
       'network_match_icebreaker_1': 'Silav! Em pir diçin cihê lîstikê.',
-      'network_match_icebreaker_2': 'Hûn dixwazin bi zarokan re hevdîtinê bikin?',
+      'network_match_icebreaker_2':
+          'Hûn dixwazin bi zarokan re hevdîtinê bikin?',
       'network_match_icebreaker_3': 'Xweş e ku me hev dît!',
-      'network_match_safety': 'Serşîret: Cara yekem li cihekî giştî hev bibînin.',
+      'network_match_safety':
+          'Serşîret: Cara yekem li cihekî giştî hev bibînin.',
       'network_match_write': 'Peyamê binivîse',
       'network_match_later': 'Paşê',
       'network_matches_new': 'Lihevhatinên nû',
@@ -12662,26 +12845,37 @@ class AppStringsManager {
       'network_match_mutual': 'Herdu jî bala we heye!',
       'network_interest_sent': 'Bala te hat şandin.',
       'ads_consent_title': 'Razîbûna reklam û sponsoriyê',
-      'ads_consent_body': 'Tu dikarî bi dilê xwe razî bibî ku di keşfkirina çalakiyên giştî de naveroka sponsorî ya ne kesanekirî û bi destan kontrolkirî were nîşandan. Ne şopandin, ne nasnameya reklamê û ne parvekirina daneyên zarokan, cih an naveroka AI ji bo reklamê heye. Redkirin bi qasî razîbûnê hêsan e. Tu dikarî li vir her dem razîbûna xwe paşde bikêşî; wê demê hemû pêvajokirina reklamê ya pêşerojê tê astengkirin. Paşvekişandin daneyên berê şandî venagerîne. Sepan bê razîbûn jî tê bikaranîn. Reklam niha neçalakin.',
+      'ads_consent_body':
+          'Tu dikarî bi dilê xwe razî bibî ku di keşfkirina çalakiyên giştî de naveroka sponsorî ya ne kesanekirî û bi destan kontrolkirî were nîşandan. Ne şopandin, ne nasnameya reklamê û ne parvekirina daneyên zarokan, cih an naveroka AI ji bo reklamê heye. Redkirin bi qasî razîbûnê hêsan e. Tu dikarî li vir her dem razîbûna xwe paşde bikêşî; wê demê hemû pêvajokirina reklamê ya pêşerojê tê astengkirin. Paşvekişandin daneyên berê şandî venagerîne. Sepan bê razîbûn jî tê bikaranîn. Reklam niha neçalakin.',
       'ads_consent_grant': 'Razî me',
       'ads_consent_deny': 'Red bike',
       'ads_consent_revoke': 'Razîbûnê paşde bikişîne',
       'ads_consent_status_unknown': 'Razîbûn nehatiye dayîn.',
-      'ads_consent_status_denied': 'Hatiye redkirin an paşvekişandin. Pêvajokirina reklamê nayê destûrkirin.',
-      'ads_consent_status_granted': 'Razîbûn hatiye dayîn. Ev reklaman çalak nake.',
-      'ads_consent_status_unavailable': 'Razîbûn nehatiye piştrastkirin. Pêvajokirina reklamê hatiye astengkirin.',
+      'ads_consent_status_denied':
+          'Hatiye redkirin an paşvekişandin. Pêvajokirina reklamê nayê destûrkirin.',
+      'ads_consent_status_granted':
+          'Razîbûn hatiye dayîn. Ev reklaman çalak nake.',
+      'ads_consent_status_unavailable':
+          'Razîbûn nehatiye piştrastkirin. Pêvajokirina reklamê hatiye astengkirin.',
       'ads_consent_version': 'Guhertoya agahdariyê: {version}',
-      'ads_consent_failed': 'Hilbijartina te nehat piştrastkirin. Pêvajokirina reklamê astengkirî dimîne. Dîsa biceribîne; daxwaza paşvekişandinê ya li bendê di hevdemkirina din de tê şandin.',
-      'ads_consent_legal_draft': 'Agahdariya pêşnûme: nivîsa qanûnî ya dawî û dema hilanînê divê berî destpêkê werin piştrastkirin.',
+      'ads_consent_failed':
+          'Hilbijartina te nehat piştrastkirin. Pêvajokirina reklamê astengkirî dimîne. Dîsa biceribîne; daxwaza paşvekişandinê ya li bendê di hevdemkirina din de tê şandin.',
+      'ads_consent_legal_draft':
+          'Agahdariya pêşnûme: nivîsa qanûnî ya dawî û dema hilanînê divê berî destpêkê werin piştrastkirin.',
       'ritual_ai_consent_title': 'Zîrekiya çêkirî ji bo rîtuel û çîrokan?',
-      'ritual_ai_consent_body': 'Ji bo pêşniyarên bijartî yên rîtuelan û çîrokên berî xewê, temen bi salên temam, dema rojê ya hilbijartî û zimanê sepanê bi rêya servera me ji Google Gemini re tên şandin. Nav, dîroka jidayikbûnê û nivîsên te yên herêmî nayên şandin. Erêkirin tenê ji bo vê hesabê û van taybetmendiyên rîtuelê ye. Rîtuelên herêmî bê zîrekiya çêkirî jî berdest in.',
+      'ritual_ai_consent_body':
+          'Ji bo pêşniyarên bijartî yên rîtuelan û çîrokên berî xewê, temen bi salên temam, dema rojê ya hilbijartî û zimanê sepanê bi rêya servera me ji Google Gemini re tên şandin. Nav, dîroka jidayikbûnê û nivîsên te yên herêmî nayên şandin. Erêkirin tenê ji bo vê hesabê û van taybetmendiyên rîtuelê ye. Rîtuelên herêmî bê zîrekiya çêkirî jî berdest in.',
       'ritual_ai_consent_accept': 'Erê bike û zîrekiya çêkirî bi kar bîne',
-      'ritual_ai_consent_declined': 'Bê erêkirina te daxwazek ji zîrekiya çêkirî re nayê şandin. Rîtuelên te yên herêmî berdest dimînin.',
-      'ritual_ai_consent_failed': 'Destûra taybetmendiya zîrekiya çêkirî nehat dayîn. Ji kerema xwe dîsa biceribîne.',
-      'treasureReportLocalOnly': 'Rapor nehat şandin. Ji kerema xwe paşê dîsa biceribîne.',
+      'ritual_ai_consent_declined':
+          'Bê erêkirina te daxwazek ji zîrekiya çêkirî re nayê şandin. Rîtuelên te yên herêmî berdest dimînin.',
+      'ritual_ai_consent_failed':
+          'Destûra taybetmendiya zîrekiya çêkirî nehat dayîn. Ji kerema xwe dîsa biceribîne.',
+      'treasureReportLocalOnly':
+          'Rapor nehat şandin. Ji kerema xwe paşê dîsa biceribîne.',
       'treasureBlockAction': 'Veşêre',
       'treasureBlockSuccess': 'Pêşniyar ji lîsteya te hat veşartin.',
-      'treasureBlockText': 'Ev pêşniyar li ser vê amûrê tê veşartin û êdî di lîsteyê de nayê xuyakirin.',
+      'treasureBlockText':
+          'Ev pêşniyar li ser vê amûrê tê veşartin û êdî di lîsteyê de nayê xuyakirin.',
       'treasureBlockTitle': 'Pêşniyarê veşêrî?',
       'treasureCategoryLabel': 'Kategorî',
       'treasureConditionLabel': 'Rewş',
@@ -12689,10 +12883,12 @@ class AppStringsManager {
       'treasureContactlessHint': 'Wergirtina bê têkilî mimkun e',
       'treasureDiscard': 'Bavêje',
       'treasureFamilyNoteTitle': 'Nîşe ji malbatê',
-      'treasureImageUploadFailed': 'Barkirina wêneyê bi ser neket. Ji kerema xwe dîsa biceribîne.',
+      'treasureImageUploadFailed':
+          'Barkirina wêneyê bi ser neket. Ji kerema xwe dîsa biceribîne.',
       'treasureLoadingHint': 'Em pêşniyarên guncaw ên li derdora te bar dikin.',
       'treasurePickupAreaLine': 'Herêma wergirtinê: {area}',
-      'treasurePickupLocationHint': 'Cihê te diyar dike ka kîjan malbat pêşniyara te dibînin.',
+      'treasurePickupLocationHint':
+          'Cihê te diyar dike ka kîjan malbat pêşniyara te dibînin.',
       'treasurePickupLocationTitle': 'Herêma wergirtinê',
       'treasureRatingLine': 'Nirxandin: {rating} ({count})',
       'treasureReportAction': 'Rapor bike',
@@ -12703,26 +12899,38 @@ class AppStringsManager {
       'treasureReportedFlag': 'Hat raporkirin',
       'treasureSizeAgeLabel': 'Mezinahî an temen',
       'treasureSizeAgeLine': 'Mezinahî/temen: {sizeAge}',
-      'treasureSyncHintFallback': 'Hevdemkirina zindî niha sînordar e. Ji bo nûkirinê ber bi jêr bikişîne.',
-      'treasureUploadHeadline': 'Tiştên ku malbata te êdî bi kar nayîne parve bike',
+      'treasureSyncHintFallback':
+          'Hevdemkirina zindî niha sînordar e. Ji bo nûkirinê ber bi jêr bikişîne.',
+      'treasureUploadHeadline':
+          'Tiştên ku malbata te êdî bi kar nayîne parve bike',
       'treasureViewsLine': '{count} caran hate dîtin',
       'no_items': 'Tiştek tune',
       'retry': 'Dîsa biceribîne',
-      'report_delivery_success': 'Spas ji bo ragihandina te. Em ê naverokê kontrol bikin.',
+      'report_delivery_success':
+          'Spas ji bo ragihandina te. Em ê naverokê kontrol bikin.',
       'weekly_ai_consent_title': 'Tu şîroveya AI li ser heftaya xwe dixwazî?',
-      'weekly_ai_consent_body': 'Tenê bi razîbûna te, hest û bersivên vê nirxandinê bi rêya servera me ji Google Gemini re tên şandin. Nav û hûrguliyên hestiyar nenivîse. Ev razîbûn tenê ji bo nirxandinên vê hesabê ye û tu dikarî li vir paşde bikêşî. Paşvekişandin daneyên berê şandî venagerîne. Nirxandina te bê AI jî li ser cîhazê dimîne.',
+      'weekly_ai_consent_body':
+          'Tenê bi razîbûna te, hest û bersivên vê nirxandinê bi rêya servera me ji Google Gemini re tên şandin. Nav û hûrguliyên hestiyar nenivîse. Ev razîbûn tenê ji bo nirxandinên vê hesabê ye û tu dikarî li vir paşde bikêşî. Paşvekişandin daneyên berê şandî venagerîne. Nirxandina te bê AI jî li ser cîhazê dimîne.',
       'weekly_ai_consent_accept': 'Razî me, şîroveyê biafirîne',
       'weekly_ai_generate': 'Şîroveya AI bixwaze',
       'weekly_ai_revoke': 'Razîbûna AI ji bo nirxandinan paşde bikişîne',
-      'weekly_ai_failed': 'Şîroveya AI nehat afirandin. Nirxandina te li ser cîhazê parastî ye. Dîsa biceribîne.',
-      'weekly_local_saved': 'Nirxandina te li ser cîhazê hat tomarkirin. Şîroveya AI ne mecbûrî ye.',
-      'weekly_legacy_unassigned': 'Nirxandinên kevn li ser cîhazê parastî ne, lê hê bi hesabekê ve nehatine girêdan.',
+      'weekly_ai_failed':
+          'Şîroveya AI nehat afirandin. Nirxandina te li ser cîhazê parastî ye. Dîsa biceribîne.',
+      'weekly_local_saved':
+          'Nirxandina te li ser cîhazê hat tomarkirin. Şîroveya AI ne mecbûrî ye.',
+      'weekly_legacy_unassigned':
+          'Nirxandinên kevn li ser cîhazê parastî ne, lê hê bi hesabekê ve nehatine girêdan.',
       'weekly_legacy_import': 'Nirxandinên kevn veguhêze',
-      'weekly_legacy_confirm': 'Piştrast bike ku nirxandinên kevn ên vê cîhazê yên te ne. Ew tenê bi vê hesabê ve tên girêdan û ji AI re nayên şandin. Têketinên heyî tên parastin.',
-      'report_delivery_failed': 'Ragihandin nehat şandin. Ji kerema xwe dîsa biceribîne.',
-      'request_failed_retry': 'Kar nehat temamkirin. Ji kerema xwe dîsa biceribîne.',
-      'events_location_unconfirmed': 'Navnîşan li ser nexşeyê nehat piştrastkirin — berî çûyînê kontrol bike',
-      'events_ai_unverified_hint': 'Pêşniyara zîrekiya çêkirî — ji kerema xwe bi rêxistinvan re piştrast bike',
+      'weekly_legacy_confirm':
+          'Piştrast bike ku nirxandinên kevn ên vê cîhazê yên te ne. Ew tenê bi vê hesabê ve tên girêdan û ji AI re nayên şandin. Têketinên heyî tên parastin.',
+      'report_delivery_failed':
+          'Ragihandin nehat şandin. Ji kerema xwe dîsa biceribîne.',
+      'request_failed_retry':
+          'Kar nehat temamkirin. Ji kerema xwe dîsa biceribîne.',
+      'events_location_unconfirmed':
+          'Navnîşan li ser nexşeyê nehat piştrastkirin — berî çûyînê kontrol bike',
+      'events_ai_unverified_hint':
+          'Pêşniyara zîrekiya çêkirî — ji kerema xwe bi rêxistinvan re piştrast bike',
       ...profileAccountKu,
       'events_attendees_count': '{count} beşdar in',
       'events_attendees_none': 'Hêj kes tune',
@@ -13077,8 +13285,7 @@ class AppStringsManager {
       'ritualRuheTitle': 'Rîtuel û Aramî',
       'ritualRuheTileSubtitle': 'Demek aram ji bo jiyana rojane ya malbata we',
       'tile_network': 'Civata malbatan',
-      'tile_network_desc':
-          'Malbatan nas bike û kêlîkên xwe parve bikin.',
+      'tile_network_desc': 'Malbatan nas bike û kêlîkên xwe parve bikin.',
       'tile_chat': 'Şêwirmendiya dêûbavan a AI',
       'tile_chat_desc': 'Alîkariya bilez û şîretên li ser perwerdehiyê',
       'tile_zentrale': 'Navenda malbatê',
@@ -13967,7 +14174,8 @@ class AppStringsManager {
       'network_tab_discover': 'Nas bike',
       'network_tab_matches': 'Hevgirtin',
       'network_matches_empty_title': 'Hête tiç hevgirtin',
-      'network_matches_empty_body': 'Dema hemû tû hûn her dû li ser “Bala min heye” bitikinî, hevgirtina we li vir xuya dibe.',
+      'network_matches_empty_body':
+          'Dema hemû tû hûn her dû li ser “Bala min heye” bitikinî, hevgirtina we li vir xuya dibe.',
       'network_tab_network': 'Tor',
       'network_new_chat': 'Chata nû',
       // Jêbirina chatê (şêwaza WhatsApp)
@@ -14397,6 +14605,13 @@ class AppStringsManager {
           'Hesab dê ji torê û vedîtinê were veşartin. Rawestandin dikare were paşvebirin — tu dane nayên jêbirin.\n\nNasnameya bikarhêner: {userId}',
       'admin_suspend_action': 'Rawestîne',
       'admin_suspended': 'Hesab hat rawestandin.',
+      'admin_distinct_reporters': '{count} ragihîner',
+      'admin_profile_hidden': 'veşartî',
+      'admin_deactivate_title': 'Profîl veşêre?',
+      'admin_deactivate_message':
+          'Profîla {name} ji lîsteya vedîtinê were veşartin. Hesab dimîne û dikare wê ji nû ve çalak bike.',
+      'admin_deactivate_action': 'Profîlê veşêre',
+      'admin_deactivated': 'Profîl hat veşartin.',
       'admin_suspend_failed': 'Rawestandin bi ser neket.',
       'admin_unsuspended': 'Rawestandin hat rakirin.',
       'admin_action_failed': 'Çalakî bi ser neket.',
@@ -16017,8 +16232,10 @@ class AppStringsManager {
     },
     // کوردی سۆرانی (ckb)
     'ckb': {
-      'events_location_unconfirmed': 'ناونیشان لەسەر نەخشە پشتڕاست نەکراوەتەوە — پێش ڕۆیشتن بیپشکنە',
-      'events_ai_unverified_hint': 'پێشنیاری زیرەکی دەستکرد — لەگەڵ ڕێکخەر پشتڕاستی بکەرەوە',
+      'events_location_unconfirmed':
+          'ناونیشان لەسەر نەخشە پشتڕاست نەکراوەتەوە — پێش ڕۆیشتن بیپشکنە',
+      'events_ai_unverified_hint':
+          'پێشنیاری زیرەکی دەستکرد — لەگەڵ ڕێکخەر پشتڕاستی بکەرەوە',
       'events_attendees_count': '{count} going',
       'events_attendees_none': 'No one yet',
       'events_attendees_one_family': '1 family going',
@@ -18384,7 +18601,8 @@ class AppStringsManager {
     },
     // हिन्दी (Hindi)
     'hi': {
-      'events_location_unconfirmed': 'पता मानचित्र पर पुष्ट नहीं — जाने से पहले जाँचें',
+      'events_location_unconfirmed':
+          'पता मानचित्र पर पुष्ट नहीं — जाने से पहले जाँचें',
       'events_ai_unverified_hint': 'एआई सुझाव — आयोजक से पुष्टि करें',
       'events_attendees_count': '{count} going',
       'events_attendees_none': 'No one yet',
@@ -18823,8 +19041,7 @@ class AppStringsManager {
       'tile_events': 'कार्यक्रम और गतिविधियाँ',
       'tile_events_desc': 'कार्यक्रम खोजें और अपने स्वयं के प्रस्ताव दें',
       'tile_network': 'परिवार समुदाय',
-      'tile_network_desc':
-          'दूसरे परिवारों से मिलें और अपने पल साझा करें।',
+      'tile_network_desc': 'दूसरे परिवारों से मिलें और अपने पल साझा करें।',
       'tile_chat': 'AI पेरेंटिंग सलाह',
       'tile_chat_desc': 'पालन-पोषण पर त्वरित सहायता और सुझाव',
       'tile_zentrale': 'परिवार केंद्र',
@@ -19197,7 +19414,8 @@ class AppStringsManager {
     // Türkçe (Turkish)
     'tr': {
       'network_match_title': 'Eşleştiniz!',
-      'network_match_subtitle': 'İkiniz de ilgileniyorsunuz. Size uygun olduğunda merhaba deyin.',
+      'network_match_subtitle':
+          'İkiniz de ilgileniyorsunuz. Size uygun olduğunda merhaba deyin.',
       'network_match_icebreaker_1': 'Merhaba! Sık sık oyun parkındayız.',
       'network_match_icebreaker_2': 'Çocuklarla buluşmak ister misiniz?',
       'network_match_icebreaker_3': 'Birbirimizi bulduğumuza sevindik!',
@@ -19212,26 +19430,37 @@ class AppStringsManager {
       'network_match_mutual': 'İkiniz de ilgileniyorsunuz!',
       'network_interest_sent': 'İlgin gönderildi.',
       'ads_consent_title': 'Reklam ve sponsor onayı',
-      'ads_consent_body': 'Herkese açık etkinlik keşfinde elle incelenen, kişiselleştirilmemiş sponsor içeriklerine gönüllü olarak izin verebilirsin. Takip, reklam kimliği veya reklam amacıyla çocuk verisi, konum ya da yapay zekâ içeriği paylaşımı yoktur. Reddetmek, kabul etmek kadar kolaydır. Onayını buradan istediğin zaman geri alabilirsin; sonraki tüm reklam işlemleri engellenir. Geri alma, önceden gönderilmiş verileri geri getirmez. Uygulamayı onay vermeden de kullanabilirsin. Reklamlar şu anda kapalıdır.',
+      'ads_consent_body':
+          'Herkese açık etkinlik keşfinde elle incelenen, kişiselleştirilmemiş sponsor içeriklerine gönüllü olarak izin verebilirsin. Takip, reklam kimliği veya reklam amacıyla çocuk verisi, konum ya da yapay zekâ içeriği paylaşımı yoktur. Reddetmek, kabul etmek kadar kolaydır. Onayını buradan istediğin zaman geri alabilirsin; sonraki tüm reklam işlemleri engellenir. Geri alma, önceden gönderilmiş verileri geri getirmez. Uygulamayı onay vermeden de kullanabilirsin. Reklamlar şu anda kapalıdır.',
       'ads_consent_grant': 'Kabul et',
       'ads_consent_deny': 'Reddet',
       'ads_consent_revoke': 'Onayı geri al',
       'ads_consent_status_unknown': 'Onay verilmedi.',
-      'ads_consent_status_denied': 'Reddedildi veya geri alındı. Reklam verisi işlemeye izin verilmiyor.',
-      'ads_consent_status_granted': 'Onay verildi. Bu, reklamları etkinleştirmez.',
-      'ads_consent_status_unavailable': 'Onay doğrulanamadı. Reklam işlemleri engellendi.',
+      'ads_consent_status_denied':
+          'Reddedildi veya geri alındı. Reklam verisi işlemeye izin verilmiyor.',
+      'ads_consent_status_granted':
+          'Onay verildi. Bu, reklamları etkinleştirmez.',
+      'ads_consent_status_unavailable':
+          'Onay doğrulanamadı. Reklam işlemleri engellendi.',
       'ads_consent_version': 'Bilgilendirme sürümü: {version}',
-      'ads_consent_failed': 'Seçimin doğrulanamadı. Reklam işlemleri engellenmeye devam ediyor. Lütfen yeniden dene; bekleyen geri alma isteği sonraki eşitlemede gönderilecek.',
-      'ads_consent_legal_draft': 'Taslak onay metni: nihai hukuki ifade ve saklama süresi yayından önce onaylanmalıdır.',
+      'ads_consent_failed':
+          'Seçimin doğrulanamadı. Reklam işlemleri engellenmeye devam ediyor. Lütfen yeniden dene; bekleyen geri alma isteği sonraki eşitlemede gönderilecek.',
+      'ads_consent_legal_draft':
+          'Taslak onay metni: nihai hukuki ifade ve saklama süresi yayından önce onaylanmalıdır.',
       'ritual_ai_consent_title': 'Rutinler ve hikâyeler için yapay zekâ?',
-      'ritual_ai_consent_body': 'İsteğe bağlı rutin önerileri ve uyku hikâyeleri için tamamlanmış yıl olarak yaş, seçilen gün bölümü ve uygulama dili sunucumuz üzerinden Google Gemini’ye gönderilir. İsimler, doğum tarihleri ve yerel notların gönderilmez. Onay yalnızca bu hesap ve bu rutin yapay zekâ özellikleri için geçerlidir. Yerel rutinler yapay zekâ olmadan da kullanılabilir.',
+      'ritual_ai_consent_body':
+          'İsteğe bağlı rutin önerileri ve uyku hikâyeleri için tamamlanmış yıl olarak yaş, seçilen gün bölümü ve uygulama dili sunucumuz üzerinden Google Gemini’ye gönderilir. İsimler, doğum tarihleri ve yerel notların gönderilmez. Onay yalnızca bu hesap ve bu rutin yapay zekâ özellikleri için geçerlidir. Yerel rutinler yapay zekâ olmadan da kullanılabilir.',
       'ritual_ai_consent_accept': 'Onayla ve yapay zekâyı kullan',
-      'ritual_ai_consent_declined': 'Onay olmadan yapay zekâ isteği başlatılmaz. Yerel rutinlerin kullanılabilir kalır.',
-      'ritual_ai_consent_failed': 'Yapay zekâ özelliğine izin verilemedi. Lütfen yeniden dene.',
-      'treasureReportLocalOnly': 'Bildirim gönderilemedi. Lütfen daha sonra yeniden dene.',
+      'ritual_ai_consent_declined':
+          'Onay olmadan yapay zekâ isteği başlatılmaz. Yerel rutinlerin kullanılabilir kalır.',
+      'ritual_ai_consent_failed':
+          'Yapay zekâ özelliğine izin verilemedi. Lütfen yeniden dene.',
+      'treasureReportLocalOnly':
+          'Bildirim gönderilemedi. Lütfen daha sonra yeniden dene.',
       'treasureBlockAction': 'Gizle',
       'treasureBlockSuccess': 'İlan akışından gizlendi.',
-      'treasureBlockText': 'Bu ilan bu cihazda gizlenecek ve artık akışta gösterilmeyecek.',
+      'treasureBlockText':
+          'Bu ilan bu cihazda gizlenecek ve artık akışta gösterilmeyecek.',
       'treasureBlockTitle': 'İlan gizlensin mi?',
       'treasureCategoryLabel': 'Kategori',
       'treasureConditionLabel': 'Durum',
@@ -19242,37 +19471,50 @@ class AppStringsManager {
       'treasureImageUploadFailed': 'Fotoğraf yüklenemedi. Lütfen yeniden dene.',
       'treasureLoadingHint': 'Yakınındaki uygun ilanlar yükleniyor.',
       'treasurePickupAreaLine': 'Teslim alma bölgesi: {area}',
-      'treasurePickupLocationHint': 'Konumun, ilanını hangi ailelerin göreceğini belirler.',
+      'treasurePickupLocationHint':
+          'Konumun, ilanını hangi ailelerin göreceğini belirler.',
       'treasurePickupLocationTitle': 'Teslim alma bölgesi',
       'treasureRatingLine': 'Değerlendirme: {rating} ({count})',
       'treasureReportAction': 'Bildir',
-      'treasureReportNoteHint': 'İsteğe bağlı: moderasyon ekibi için kısa bir not',
+      'treasureReportNoteHint':
+          'İsteğe bağlı: moderasyon ekibi için kısa bir not',
       'treasureReportSubmit': 'Bildir',
       'treasureReportSuccess': 'Teşekkürler. Bu bildirimi inceleyeceğiz.',
       'treasureReportTitle': 'İlanı bildir',
       'treasureReportedFlag': 'Bildirildi',
       'treasureSizeAgeLabel': 'Beden veya yaş',
       'treasureSizeAgeLine': 'Beden/yaş: {sizeAge}',
-      'treasureSyncHintFallback': 'Canlı eşitleme şu anda sınırlı. Yenilemek için aşağı çek.',
+      'treasureSyncHintFallback':
+          'Canlı eşitleme şu anda sınırlı. Yenilemek için aşağı çek.',
       'treasureUploadHeadline': 'Ailenizin artık kullanmadığı eşyaları paylaş',
       'treasureViewsLine': '{count} görüntüleme',
       'no_items': 'Ürün yok',
       'retry': 'Yeniden dene',
-      'report_delivery_success': 'Bildirimin için teşekkürler. İçeriği inceleyeceğiz.',
-      'weekly_ai_consent_title': 'Haftalık değerlendirmen için yapay zekâ geri bildirimi?',
-      'weekly_ai_consent_body': 'Yalnızca onayınla bu değerlendirmedeki ruh hâlin ve yanıtların sunucumuz üzerinden Google Gemini’ye gönderilir. Lütfen ad veya hassas ayrıntı girme. Onay yalnızca bu hesabın haftalık değerlendirmeleri için geçerlidir ve buradan geri alınabilir. Geri almak, daha önce gönderilen verileri geri getirmez. Değerlendirmen yapay zekâ olmadan da cihazında kullanılabilir.',
+      'report_delivery_success':
+          'Bildirimin için teşekkürler. İçeriği inceleyeceğiz.',
+      'weekly_ai_consent_title':
+          'Haftalık değerlendirmen için yapay zekâ geri bildirimi?',
+      'weekly_ai_consent_body':
+          'Yalnızca onayınla bu değerlendirmedeki ruh hâlin ve yanıtların sunucumuz üzerinden Google Gemini’ye gönderilir. Lütfen ad veya hassas ayrıntı girme. Onay yalnızca bu hesabın haftalık değerlendirmeleri için geçerlidir ve buradan geri alınabilir. Geri almak, daha önce gönderilen verileri geri getirmez. Değerlendirmen yapay zekâ olmadan da cihazında kullanılabilir.',
       'weekly_ai_consent_accept': 'Onayla ve geri bildirim oluştur',
       'weekly_ai_generate': 'Yapay zekâ geri bildirimi iste',
-      'weekly_ai_revoke': 'Haftalık değerlendirmeler için yapay zekâ onayını geri al',
-      'weekly_ai_failed': 'Yapay zekâ geri bildirimi oluşturulamadı. Cihazındaki değerlendirmen korunuyor. Lütfen yeniden dene.',
-      'weekly_local_saved': 'Değerlendirmen cihazına kaydedildi. Yapay zekâ geri bildirimi isteğe bağlıdır.',
-      'weekly_legacy_unassigned': 'Eski değerlendirmeler cihazda korunuyor ancak henüz bir hesaba bağlı değil.',
+      'weekly_ai_revoke':
+          'Haftalık değerlendirmeler için yapay zekâ onayını geri al',
+      'weekly_ai_failed':
+          'Yapay zekâ geri bildirimi oluşturulamadı. Cihazındaki değerlendirmen korunuyor. Lütfen yeniden dene.',
+      'weekly_local_saved':
+          'Değerlendirmen cihazına kaydedildi. Yapay zekâ geri bildirimi isteğe bağlıdır.',
+      'weekly_legacy_unassigned':
+          'Eski değerlendirmeler cihazda korunuyor ancak henüz bir hesaba bağlı değil.',
       'weekly_legacy_import': 'Eski değerlendirmeleri aktar',
-      'weekly_legacy_confirm': 'Bu cihazdaki eski değerlendirmelerin sana ait olduğunu doğrula. Yalnızca bu hesaba bağlanır ve yapay zekâya gönderilmez. Mevcut kayıtlar korunur.',
+      'weekly_legacy_confirm':
+          'Bu cihazdaki eski değerlendirmelerin sana ait olduğunu doğrula. Yalnızca bu hesaba bağlanır ve yapay zekâya gönderilmez. Mevcut kayıtlar korunur.',
       'report_delivery_failed': 'Bildirim gönderilemedi. Lütfen tekrar dene.',
       'request_failed_retry': 'İşlem tamamlanamadı. Lütfen tekrar dene.',
-      'events_location_unconfirmed': 'Adres haritada doğrulanmadı — gitmeden önce lütfen kontrol et',
-      'events_ai_unverified_hint': 'Yapay zekâ önerisi — lütfen düzenleyenle doğrula',
+      'events_location_unconfirmed':
+          'Adres haritada doğrulanmadı — gitmeden önce lütfen kontrol et',
+      'events_ai_unverified_hint':
+          'Yapay zekâ önerisi — lütfen düzenleyenle doğrula',
       ...profileAccountTr,
       'events_attendees_count': '{count} katılıyor',
       'events_attendees_none': 'Henüz kimse yok',
@@ -20513,7 +20755,8 @@ class AppStringsManager {
       'network_tab_discover': 'Keşfet',
       'network_tab_matches': 'Eşleşmeler',
       'network_matches_empty_title': 'Henüz eşleşme yok',
-      'network_matches_empty_body': 'Siz ve başka bir aile „İlgileniyorum“’a dokunduğunuzda eşleşmeniz burada görünür.',
+      'network_matches_empty_body':
+          'Siz ve başka bir aile „İlgileniyorum“’a dokunduğunuzda eşleşmeniz burada görünür.',
       'network_tab_network': 'Ağ',
       'network_new_chat': 'Yeni sohbet',
       // Sohbeti sil (WhatsApp tarzı)
@@ -20950,6 +21193,13 @@ class AppStringsManager {
           'Hesap ağda ve keşfet bölümünde gizlenecek. Askıya alma işlemi geri alınabilir; hiçbir veri silinmez.\n\nKullanıcı kimliği: {userId}',
       'admin_suspend_action': 'Askıya al',
       'admin_suspended': 'Hesap askıya alındı.',
+      'admin_distinct_reporters': '{count} şikayetçi',
+      'admin_profile_hidden': 'gizlendi',
+      'admin_deactivate_title': 'Profil gizlensin mi?',
+      'admin_deactivate_message':
+          '{name} adlı kullanıcının profili keşfet listesinden gizlenecek. Hesap açık kalır ve profili yeniden etkinleştirebilir.',
+      'admin_deactivate_action': 'Profili gizle',
+      'admin_deactivated': 'Profil gizlendi.',
       'admin_suspend_failed': 'Hesap askıya alınamadı.',
       'admin_unsuspended': 'Hesaptaki askı kaldırıldı.',
       'admin_action_failed': 'İşlem başarısız oldu.',
@@ -22710,8 +22960,7 @@ class AppStringsManager {
       'tile_events': 'Мероприятия и активности',
       'tile_events_desc': 'Находите мероприятия и предлагайте свои',
       'tile_network': 'Сообщество семей',
-      'tile_network_desc':
-          'Знакомьтесь с семьями и делитесь своими моментами.',
+      'tile_network_desc': 'Знакомьтесь с семьями и делитесь своими моментами.',
       'tile_chat': 'ИИ-консультация для родителей',
       'tile_chat_desc': 'Быстрая помощь и советы по воспитанию',
       'tile_zentrale': 'Семейный центр',
@@ -23231,8 +23480,7 @@ class AppStringsManager {
       'tile_events': 'Події та активності',
       'tile_events_desc': 'Знайдіть події та запропонуйте свої',
       'tile_network': 'Спільнота родин',
-      'tile_network_desc':
-          'Знайомтеся з родинами й діліться своїми моментами.',
+      'tile_network_desc': 'Знайомтеся з родинами й діліться своїми моментами.',
       'tile_chat': 'ШІ-консультація для батьків',
       'tile_chat_desc': 'Швидка допомога та поради з виховання',
       'tile_zentrale': 'Сімейний центр',
@@ -23605,7 +23853,8 @@ class AppStringsManager {
     },
     // Polski (Polish)
     'pl': {
-      'events_location_unconfirmed': 'Adres niepotwierdzony na mapie — sprawdź przed wyjazdem',
+      'events_location_unconfirmed':
+          'Adres niepotwierdzony na mapie — sprawdź przed wyjazdem',
       'events_ai_unverified_hint': 'Sugestia SI — potwierdź u organizatora',
       'events_attendees_count': '{count} going',
       'events_attendees_none': 'No one yet',
@@ -24047,8 +24296,7 @@ class AppStringsManager {
       'tile_events': 'Wydarzenia i aktywności',
       'tile_events_desc': 'Znajdź wydarzenia i zaproponuj swoje',
       'tile_network': 'Społeczność rodzin',
-      'tile_network_desc':
-          'Poznawaj rodziny i dzielcie się swoimi chwilami.',
+      'tile_network_desc': 'Poznawaj rodziny i dzielcie się swoimi chwilami.',
       'tile_chat': 'Porada rodzicielska AI',
       'tile_chat_desc': 'Szybka pomoc i porady dotyczące wychowania',
       'tile_zentrale': 'Centrum rodzinne',
@@ -24570,8 +24818,7 @@ class AppStringsManager {
       'tile_events': 'Događaji i aktivnosti',
       'tile_events_desc': 'Pronađite događaje i ponudite svoje',
       'tile_network': 'Zajednica obitelji',
-      'tile_network_desc':
-          'Upoznaj obitelji i podijelite svoje trenutke.',
+      'tile_network_desc': 'Upoznaj obitelji i podijelite svoje trenutke.',
       'tile_chat': 'AI Roditeljski savjet',
       'tile_chat_desc': 'Brza pomoć i savjeti o odgoju',
       'tile_zentrale': 'Obiteljski centar',
@@ -25093,8 +25340,7 @@ class AppStringsManager {
       'tile_events': 'Догађаји и активности',
       'tile_events_desc': 'Пронађите догађаје и понудите своје',
       'tile_network': 'Заједница породица',
-      'tile_network_desc':
-          'Упознај породице и поделите своје тренутке.',
+      'tile_network_desc': 'Упознај породице и поделите своје тренутке.',
       'tile_chat': 'АИ Родитељски савет',
       'tile_chat_desc': 'Брза помоћ и савети о васпитању',
       'tile_zentrale': 'Породични центар',
@@ -28741,8 +28987,7 @@ class AppStringsManager {
       'tile_events': 'Dhacdooyinka & Howlaha',
       'tile_events_desc': 'Raadi dhacdooyin oo soo bandhig kuwaaga',
       'tile_network': 'Bulshada Qoysaska',
-      'tile_network_desc':
-          'La kulan qoysas kuwadnna wadaaga daqiiqadahiinna.',
+      'tile_network_desc': 'La kulan qoysas kuwadnna wadaaga daqiiqadahiinna.',
       'tile_chat': 'La-talinta AI ee waalidiinta',
       'tile_chat_desc': 'Caawimo degdeg ah iyo talooyin ku saabsan barbaarinta',
       'tile_zentrale': 'Xarunta qoyska',

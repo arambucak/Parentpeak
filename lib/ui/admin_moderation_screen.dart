@@ -43,8 +43,8 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
       setState(() {
         _loading = false;
         _error = e.toString().contains('403')
-          ? context.tr('admin_no_access')
-          : context.tr('admin_load_failed');
+            ? context.tr('admin_no_access')
+            : context.tr('admin_load_failed');
       });
     }
   }
@@ -57,8 +57,8 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text(context.tr('admin_suspend_title')),
-        content: Text(context.tr('admin_suspend_message',
-          values: {'userId': g.reportedUserId})),
+        content: Text(context
+            .tr('admin_suspend_message', values: {'userId': g.reportedUserId})),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
@@ -75,19 +75,47 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
     final success = await _service.suspendUser(g.reportedUserId,
         reason: 'Moderation: ${g.lastReason}');
     _afterAction(success,
-      context.tr(success ? 'admin_suspended' : 'admin_suspend_failed'));
+        context.tr(success ? 'admin_suspended' : 'admin_suspend_failed'));
   }
 
   Future<void> _unsuspend(ReportGroup g) async {
     final success = await _service.unsuspendUser(g.reportedUserId);
     _afterAction(success,
-      context.tr(success ? 'admin_unsuspended' : 'admin_action_failed'));
+        context.tr(success ? 'admin_unsuspended' : 'admin_action_failed'));
   }
 
   Future<void> _ignore(ReportGroup g) async {
     final success = await _service.resolveReportsForUser(g.reportedUserId);
     _afterAction(success,
-      context.tr(success ? 'admin_reports_resolved' : 'admin_action_failed'));
+        context.tr(success ? 'admin_reports_resolved' : 'admin_action_failed'));
+  }
+
+  /// Blendet das gemeldete Matching-Profil aus der Entdecken-Liste aus, ohne
+  /// das Konto zu sperren. Milderes Mittel als eine Sperre.
+  Future<void> _confirmDeactivate(ReportGroup g) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        icon: const Icon(Icons.visibility_off_rounded, size: 32),
+        title: Text(context.tr('admin_deactivate_title')),
+        content: Text(context.tr('admin_deactivate_message',
+            values: {'name': g.profileName ?? g.reportedUserId})),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(context.tr('cancel'))),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(context.tr('admin_deactivate_action'))),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    final success = await _service.deactivateProfile(g.reportedUserId);
+    if (!mounted) return;
+    _afterAction(success,
+        context.tr(success ? 'admin_deactivated' : 'admin_action_failed'));
   }
 
   void _afterAction(bool success, String message) {
@@ -133,16 +161,16 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         icon: const Icon(Icons.cleaning_services_rounded, size: 32),
         title: Text(context.tr('admin_cleanup_title')),
-        content: Text(context.tr('admin_cleanup_message',
-          values: {'count': count})),
+        content:
+            Text(context.tr('admin_cleanup_message', values: {'count': count})),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
               child: Text(context.tr('cancel'))),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-                child: Text(context.tr('admin_remove_count',
-                  values: {'count': count}))),
+              child: Text(
+                  context.tr('admin_remove_count', values: {'count': count}))),
         ],
       ),
     );
@@ -155,7 +183,7 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
     if (!mounted) return;
     setState(() => _cleaning = false);
     messenger.showSnackBar(SnackBar(
-        content: Text(deleted >= 0
+      content: Text(deleted >= 0
           ? context.tr('admin_cleanup_success', values: {'count': deleted})
           : context.tr('admin_cleanup_failed')),
       behavior: SnackBarBehavior.floating,
@@ -183,13 +211,13 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
             },
             itemBuilder: (_) => [
               PopupMenuItem(
-                value: 'pending',
-                child: Text(context.tr('admin_filter_open'))),
+                  value: 'pending',
+                  child: Text(context.tr('admin_filter_open'))),
               PopupMenuItem(
-                value: 'resolved',
-                child: Text(context.tr('admin_filter_done'))),
+                  value: 'resolved',
+                  child: Text(context.tr('admin_filter_done'))),
               PopupMenuItem(
-                value: 'all', child: Text(context.tr('admin_filter_all'))),
+                  value: 'all', child: Text(context.tr('admin_filter_all'))),
             ],
             icon: const Icon(Icons.filter_list_rounded),
           ),
@@ -266,13 +294,38 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
             decoration: BoxDecoration(
                 color: theme.colorScheme.error.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8)),
-            child: Text(context.tr('admin_reported_count',
-              values: {'count': g.reportCount}),
+            child: Text(
+                context.tr('admin_reported_count',
+                    values: {'count': g.reportCount}),
                 style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     color: theme.colorScheme.error)),
           ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+                color: theme.colorScheme.outline.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(8)),
+            child: Text(
+                context.tr('admin_distinct_reporters',
+                    values: {'count': g.distinctReporters}),
+                style:
+                    const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+          ),
+          if (g.hasProfile && !g.profileActive) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                  color: theme.colorScheme.tertiary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8)),
+              child: Text(context.tr('admin_profile_hidden'),
+                  style: const TextStyle(
+                      fontSize: 11, fontWeight: FontWeight.w700)),
+            ),
+          ],
           const SizedBox(width: 8),
           if (g.suspended)
             Container(
@@ -281,7 +334,8 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
                   color: theme.colorScheme.outline.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8)),
               child: Text(context.tr('admin_locked'),
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                  style: const TextStyle(
+                      fontSize: 11, fontWeight: FontWeight.w700)),
             ),
           const Spacer(),
           if (g.lastReportedAt != null)
@@ -290,12 +344,40 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
                     ?.copyWith(color: theme.colorScheme.outline)),
         ]),
         const SizedBox(height: 10),
+        if (g.hasProfile) ...[
+          Text(g.profileName!,
+              style: theme.textTheme.titleSmall
+                  ?.copyWith(fontWeight: FontWeight.w700)),
+          if ((g.profileCity ?? '').isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Row(children: [
+                Icon(Icons.place_outlined,
+                    size: 13, color: theme.colorScheme.outline),
+                const SizedBox(width: 2),
+                Text(g.profileCity!,
+                    style: theme.textTheme.labelSmall
+                        ?.copyWith(color: theme.colorScheme.outline)),
+              ]),
+            ),
+          if ((g.profileBio ?? '').isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(g.profileBio!,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            ),
+          const SizedBox(height: 6),
+        ],
         Text(context.tr('admin_user_id', values: {'userId': g.reportedUserId}),
-            style: theme.textTheme.bodySmall
-                ?.copyWith(fontWeight: FontWeight.w600)),
+            style: theme.textTheme.labelSmall
+                ?.copyWith(color: theme.colorScheme.outline)),
         const SizedBox(height: 4),
-        Text(context.tr('admin_last_reason',
-          values: {'reason': _reasonLabel(g.lastReason)}),
+        Text(
+            context.tr('admin_last_reason',
+                values: {'reason': _reasonLabel(g.lastReason)}),
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
         if (details.isNotEmpty) ...[
@@ -312,6 +394,17 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
               )),
         ],
         const Divider(height: 24),
+        if (g.hasProfile && g.profileActive) ...[
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => _confirmDeactivate(g),
+              icon: const Icon(Icons.visibility_off_rounded, size: 16),
+              label: Text(context.tr('admin_deactivate_action')),
+            ),
+          ),
+          const SizedBox(height: 10),
+        ],
         Row(children: [
           Expanded(
             child: OutlinedButton.icon(

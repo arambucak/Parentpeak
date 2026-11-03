@@ -110,6 +110,13 @@ const appLocalizationsArExtra = <String, String>{
       'سيُخفى الحساب من الشبكة ومن الاكتشاف. ويمكن التراجع عن الحظر – ولن تُحذف أي بيانات.\n\nمُعرّف المستخدم: {userId}',
   'admin_suspend_title': 'تعليق الحساب؟',
   'admin_suspended': 'تم حظر الحساب.',
+  'admin_distinct_reporters': '{count} مُبلِّغين',
+  'admin_profile_hidden': 'مخفي',
+  'admin_deactivate_title': 'إخفاء الملف الشخصي؟',
+  'admin_deactivate_message':
+      'سيتم إخفاء ملف {name} من قائمة الاكتشاف. يبقى الحساب نشطًا ويمكنه إعادة تفعيله.',
+  'admin_deactivate_action': 'إخفاء الملف الشخصي',
+  'admin_deactivated': 'تم إخفاء الملف الشخصي.',
   'admin_title': 'الإشراف',
   'admin_unlock': 'رفع الحظر',
   'admin_unsuspended': 'تم رفع الحظر.',

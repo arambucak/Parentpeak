@@ -116,6 +116,13 @@ const appLocalizationsItExtra = <String, String>{
       'L\'account verrà nascosto dalla rete e dalla ricerca. La sospensione è reversibile e nessun dato verrà eliminato.\n\nID utente: {userId}',
   'admin_suspend_title': 'Sospendere l\'account?',
   'admin_suspended': 'Account sospeso.',
+  'admin_distinct_reporters': '{count} segnalatori',
+  'admin_profile_hidden': 'nascosto',
+  'admin_deactivate_title': 'Nascondere il profilo?',
+  'admin_deactivate_message':
+      'Il profilo di {name} verrà nascosto dalla ricerca. L\'account resta attivo e può riattivarlo.',
+  'admin_deactivate_action': 'Nascondi profilo',
+  'admin_deactivated': 'Profilo nascosto.',
   'admin_title': 'Moderazione',
   'admin_unlock': 'Revoca sospensione',
   'admin_unsuspended': 'Sospensione rimossa.',
