@@ -35,6 +35,7 @@ import 'package:parentpeak/ui/widgets/network/network_actions.dart';
 import 'package:parentpeak/ui/widgets/network/safety_menu.dart';
 import 'package:parentpeak/ui/widgets/network/family_swipe_stack.dart';
 import 'package:parentpeak/ui/widgets/network/moments_feed.dart';
+import 'package:parentpeak/ui/moment_compose_screen.dart';
 import 'package:parentpeak/ui/widgets/network/match_celebration_sheet.dart';
 import 'package:parentpeak/ui/widgets/network/network_empty_state.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
@@ -110,6 +111,8 @@ class ElternNetzwerkScreen extends StatefulWidget {
 class _ScreenState extends State<ElternNetzwerkScreen> {
   // 0 = Entdecken, 1 = Momente, 2 = Chats, 3 = Meine Familie
   int _index = 0;
+  final GlobalKey<MomentsFeedState> _momentsKey =
+      GlobalKey<MomentsFeedState>();
   final _matching = ParentMatchingBackendService(
     apiClient: BackendServiceFactory.createApiClient(),
   );
@@ -478,8 +481,10 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    // FAB nur im Chats-Tab (Index 2): neuer Chat / neue Gruppe.
-    final showFab = _index == 2;
+    // FAB: Momente-Tab (Index 1) -> 'Moment teilen'; Chats-Tab (Index 2)
+    // -> neuer Chat / neue Gruppe.
+    final showChatFab = _index == 2;
+    final showMomentFab = _index == 1;
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -490,7 +495,17 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
         ),
         elevation: 0,
       ),
-      floatingActionButton: showFab
+      floatingActionButton: showMomentFab
+          ? FloatingActionButton.extended(
+              onPressed: _openMomentCompose,
+              backgroundColor: theme.colorScheme.primary,
+              icon: const Icon(Icons.add_rounded, color: Colors.white),
+              label: Text(
+                _t('moments_share_action'),
+                style: const TextStyle(color: Colors.white),
+              ),
+            )
+          : showChatFab
           ? FloatingActionButton.extended(
               onPressed: _showNewChatOptions,
               backgroundColor: theme.colorScheme.primary,
@@ -554,7 +569,18 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
   // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _momentsTab(ThemeData theme) {
-    return const MomentsFeed();
+    return MomentsFeed(key: _momentsKey);
+  }
+
+  /// Oeffnet das Formular zum Erstellen eines Moments und laedt den Feed neu,
+  /// wenn ein Moment geteilt wurde.
+  Future<void> _openMomentCompose() async {
+    final created = await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const MomentComposeScreen()),
+    );
+    if (created != null) {
+      await _momentsKey.currentState?.reload();
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════

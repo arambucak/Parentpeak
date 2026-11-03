@@ -194,6 +194,7 @@ void main() {
           'organisation_title',
           'parent_role',
           'pdf_trend_stable',
+          'moments_add_image',
           'moments_visibility_public',
           'photos',
           'portions_label',
