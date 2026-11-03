@@ -1469,7 +1469,7 @@ flutter test --no-pub test/location_search_privacy_test.dart test/event_geocoder
 
 Für produktionsnahe Nutzung setze folgende Umgebungsvariablen vor dem Start:
 
-- `BACKEND_API_TOKEN`: Erwarteter Bearer-Token für Schreibzugriffe
+- `ADMIN_USER_IDS`: Kommagetrennte Firebase-UIDs mit Admin-Zugriff
 - `GEMINI_API_KEY`: Server-seitiger Gemini-Schlüssel für `/ai/generate` (nie im Client-Build)
 - `FIREBASE_REQUIRE_AUTH=1`: Verifiziert Firebase-ID-Tokens für Client-Schreibzugriffe
 - `REQUIRE_AUTH_FOR_WRITES=1`: Aktiviert Auth-Pflicht für `POST/PUT/PATCH/DELETE`
@@ -1486,7 +1486,7 @@ Für produktionsnahe Nutzung setze folgende Umgebungsvariablen vor dem Start:
 Beispiel:
 
 ```bash
-export BACKEND_API_TOKEN="..."
+export ADMIN_USER_IDS="firebase-uid-1,firebase-uid-2"
 export GEMINI_API_KEY="..."
 export FIREBASE_REQUIRE_AUTH=1
 export REQUIRE_AUTH_FOR_WRITES=1
@@ -1499,6 +1499,12 @@ export STRIPE_WEBHOOK_TOLERANCE_SEC=300
 export ALLOW_CLIENT_PROVIDER_EVENTS=0
 node server.js
 ```
+
+`BACKEND_API_TOKEN` autorisiert keine Backend-API-Aufrufe mehr. Die noch
+tokenbasierten Smoke-Tests `scripts/backend_security_smoke_test.sh` und
+`scripts/parent_matching_smoke_test.sh` muessen separat auf Firebase-ID-Tokens
+umgestellt werden; `scripts/release_smoke_suite.sh` reicht den Token bei
+`RUN_PARENT_MATCHING_SMOKE=1` an den zweiten Test weiter.
 
 ## Wochenimpuls Community, Moderation und Fachverifizierung
 
@@ -1583,7 +1589,6 @@ Kombiniert (Security + Stripe in einem Lauf):
 
 ```bash
 BACKEND_BASE_URL=https://api.example.com \
-BACKEND_API_TOKEN=... \
 STRIPE_WEBHOOK_SECRET=whsec_... \
 bash scripts/release_smoke_suite.sh
 ```
@@ -1610,9 +1615,11 @@ bash scripts/release_smoke_suite.sh
 
 Schneller Smoke-Test gegen eine laufende Instanz:
 
+Der unauthentifizierte Teil funktioniert; der authentifizierte Schreibtest in
+diesem Skript ist bis zur separaten Umstellung nicht verfuegbar.
+
 ```bash
 BACKEND_BASE_URL=https://api.example.com \
-BACKEND_API_TOKEN=... \
 bash scripts/backend_security_smoke_test.sh
 ```
 
