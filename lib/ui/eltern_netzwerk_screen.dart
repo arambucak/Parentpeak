@@ -33,6 +33,7 @@ import 'package:parentpeak/ui/widgets/network/family_card.dart';
 import 'package:parentpeak/ui/widgets/network/info_chip.dart';
 import 'package:parentpeak/ui/widgets/network/network_actions.dart';
 import 'package:parentpeak/ui/widgets/network/safety_menu.dart';
+import 'package:parentpeak/ui/widgets/network/family_swipe_stack.dart';
 import 'package:parentpeak/ui/widgets/network/match_celebration_sheet.dart';
 import 'package:parentpeak/ui/widgets/network/network_empty_state.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
@@ -1741,11 +1742,23 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
                 onInvite: () => setState(() => _index = 3),
               )
             else
-              ..._matches.map(
-                (m) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: _matchCard(theme, m),
-                ),
+              FamilySwipeStack(
+                cards: _matches.map(_toSwipeCard).toList(),
+                likeLabel: _t('network_interested'),
+                passLabel: _t('network_not_now'),
+                onLike: (card) => _reactToMatchById(card.id, 'like'),
+                onPass: (card) => _reactToMatchById(card.id, 'pass'),
+                safetyMenuBuilder: (card) {
+                  final m = _matchById(card.id);
+                  if (m == null) return const SizedBox.shrink();
+                  return SafetyMenu(
+                    userId: m.profile.userId ?? m.profile.id,
+                    userName: m.profile.name,
+                    reportLabel: _t('network_report'),
+                    blockLabel: _t('network_block'),
+                    onBlock: () => _blockMatch(m),
+                  );
+                },
               ),
           ],
         ),
@@ -1770,6 +1783,7 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
   }
 
   /// Karte einer echten gematchten Familie mit Verbinden-Aktion.
+  // ignore: unused_element
   Widget _matchCard(ThemeData theme, MatchResult m) {
     final p = m.profile;
     final kids = p.childAges.isEmpty
@@ -1939,6 +1953,87 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  /// Findet das MatchResult zu einer Owner-ID (Karten-ID im Wisch-Stack).
+  MatchResult? _matchById(String id) {
+    for (final m in _matches) {
+      if ((m.profile.userId ?? m.profile.id) == id) return m;
+    }
+    return null;
+  }
+
+  /// Wisch-Aktion anhand der Karten-ID (Owner-ID) auf _reactToMatch bruecken.
+  void _reactToMatchById(String id, String action) {
+    final m = _matchById(id);
+    if (m != null) _reactToMatch(m, action);
+  }
+
+  /// Uebersetzt ein MatchResult in die (bereits lokalisierten) Darstellungs-
+  /// daten der grossen Wisch-Karte. Gleiche Logik wie die fruehere _matchCard.
+  FamilySwipeCardData _toSwipeCard(MatchResult m) {
+    final p = m.profile;
+    final kids = p.childAges.isEmpty
+        ? ''
+        : '\u{1F9D2} ${p.childAges.map((tag) => networkChildAgeLabel(languageService.currentLanguage, tag)).join(' \u{2022} ')}';
+    final distanceKm = m.breakdown['distanceKm'];
+    final sameCityInMeta =
+        distanceKm == null && m.breakdown['locationLabel'] == 'same_city';
+    final reasonLabels = networkMatchReasonLabels(
+      languageService.currentLanguage,
+      (m.breakdown['reasons'] as List? ?? const []).map(
+        (reason) => reason.toString(),
+      ),
+      sameCityInMeta: sameCityInMeta,
+    );
+    final meta = <String>[
+      if (distanceKm != null) '\u{1F4CD} $distanceKm km',
+      if (sameCityInMeta) _t('network_copy_same_city'),
+      if (p.languages.isNotEmpty)
+        p.languages
+            .take(3)
+            .map(
+              (code) => networkWizardOptionLabel(
+                languageService.currentLanguage,
+                'language',
+                code,
+                code,
+              ),
+            )
+            .join(', '),
+    ].join('  \u{2022}  ');
+    final tags = <String>[
+      ...p.valuesFocus
+          .take(2)
+          .map(
+            (code) => networkWizardOptionLabel(
+              languageService.currentLanguage,
+              'values',
+              code,
+              code,
+            ),
+          ),
+      ...p.interests
+          .take(2)
+          .map(
+            (code) => networkWizardOptionLabel(
+              languageService.currentLanguage,
+              'looking',
+              code,
+              code,
+            ),
+          ),
+    ];
+    return FamilySwipeCardData(
+      id: p.userId ?? p.id,
+      name: p.name,
+      city: p.city,
+      kids: kids,
+      bio: p.bio ?? '',
+      meta: meta,
+      tags: tags,
+      reasons: reasonLabels,
     );
   }
 
