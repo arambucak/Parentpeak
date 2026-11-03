@@ -1846,7 +1846,10 @@ class _ScreenState extends State<ElternNetzwerkScreen>
     final errorColor = Theme.of(context).colorScheme.error;
     final targetUserId = m.profile.userId;
     final ok = targetUserId != null && targetUserId.isNotEmpty
-        ? await FriendshipService.instance.sendRequest(targetUserId)
+        ? await FriendshipService.instance.sendRequest(
+            targetUserId,
+            source: 'discovery',
+          )
         : false;
     if (!mounted) return;
     messenger.showSnackBar(
@@ -2562,6 +2565,7 @@ class _ScreenState extends State<ElternNetzwerkScreen>
                     final account = AuthService.instance.currentUser?.uid;
                     final ok = await FriendshipService.instance.sendRequest(
                       s.userId,
+                      source: 'discovery',
                     );
                     if (mounted &&
                         AuthService.instance.currentUser?.uid == account) {
