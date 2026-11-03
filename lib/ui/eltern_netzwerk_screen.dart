@@ -1746,39 +1746,75 @@ class _ScreenState extends State<ElternNetzwerkScreen>
             ),
           ],
           const SizedBox(height: 12),
-          PrimaryAction(
-            label: _t('network_say_hello'),
-            icon: Icons.waving_hand_rounded,
-            onPressed: () => _connectWithMatch(m),
+          Row(
+            children: [
+              Expanded(
+                child: SecondaryAction(
+                  label: _t('network_not_now'),
+                  icon: Icons.close_rounded,
+                  onPressed: () => _reactToMatch(m, 'pass'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: PrimaryAction(
+                  label: _t('network_interested'),
+                  icon: Icons.favorite_rounded,
+                  onPressed: () => _reactToMatch(m, 'like'),
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  /// Verbindungswunsch senden (echte Aktion im Matching-Backend).
-  Future<void> _connectWithMatch(MatchResult m) async {
+  /// Echte Matching-Aktion: 'like' = Interessiert, 'pass' = Nicht jetzt.
+  Future<void> _reactToMatch(MatchResult m, String action) async {
     final messenger = ScaffoldMessenger.of(context);
-    final errorColor = Theme.of(context).colorScheme.error;
-    final targetUserId = m.profile.userId;
-    final ok = targetUserId != null && targetUserId.isNotEmpty
-        ? await FriendshipService.instance.sendRequest(
-            targetUserId,
-            source: 'discovery',
-          )
-        : false;
+    final theme = Theme.of(context);
+    final uid = AuthService.instance.currentUser?.uid;
+    final profileId = m.profile.id;
+    // Karte sofort aus der Entdecken-Liste entfernen (die naechste erscheint).
+    final ownerId = m.profile.userId ?? m.profile.id;
+    setState(() {
+      _matches = _matches
+          .where((x) => (x.profile.userId ?? x.profile.id) != ownerId)
+          .toList();
+    });
+    final result = await _matching.sendAction(
+      profileId: profileId,
+      action: action,
+      userId: uid,
+    );
     if (!mounted) return;
+    if (result.matchState == 'error') {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(_t('network_copy_request_failed')),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: theme.colorScheme.error,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+      return;
+    }
+    // 'pass' = Nicht jetzt: leise, keine Rueckmeldung noetig.
+    if (action != 'like') return;
+    // 'like': bei beidseitigem Interesse Match-Hinweis, sonst Bestaetigung.
+    final matched = result.matchState == 'matched';
     messenger.showSnackBar(
       SnackBar(
         content: Text(
-          ok
-              ? _t(
-                  'network_copy_request_sent',
-                ).replaceAll('{name}', m.profile.name)
-              : _t('network_copy_request_failed'),
+          matched
+              ? _t('network_match_mutual')
+              : _t('network_interest_sent'),
         ),
         behavior: SnackBarBehavior.floating,
-        backgroundColor: ok ? const Color(0xFF16A34A) : errorColor,
+        backgroundColor: theme.colorScheme.primary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );

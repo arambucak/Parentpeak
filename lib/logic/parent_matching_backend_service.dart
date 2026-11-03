@@ -518,23 +518,42 @@ class ParentMatchingBackendService {
     yield {};
   }
 
-  /// Backward compatibility: Send action with old signature
+  /// Sendet eine Matching-Aktion (z. B. 'like' = Interessiert, 'pass' =
+  /// Nicht jetzt) und liefert den ECHTEN Verbindungsstatus aus der Server-
+  /// antwort zurueck: `connected` ist nur true bei gegenseitigem Interesse,
+  /// `matchState` ist 'matched' | 'pending' | 'none'. (Behebt W4: frueher
+  /// wurde connected schon beim Speichern auf true gesetzt.)
   Future<ParentMatchActionResult> sendAction({
     required String profileId,
     required String action,
     String? userId,
   }) async {
     lastSyncError = null;
-    try {
-      final result = await recordAction(
-        userId: userId ?? 'anonymous',
-        matchedProfileId: profileId,
-        action: action,
+    final client = _typedApiClient;
+    if (client == null) {
+      lastSyncError = 'Authenticated backend missing';
+      return const ParentMatchActionResult(
+        connected: false,
+        matchState: 'error',
       );
+    }
+    try {
+      final decoded = await client.postJsonAny('/parent-matching/actions', {
+        'profileId': profileId,
+        'action': action,
+        if (userId != null) 'userId': userId,
+      });
+      if (decoded is! Map<String, dynamic>) {
+        throw const FormatException('Invalid action response');
+      }
+      final connected = decoded['connected'] == true;
+      final rawState = decoded['matchState'];
+      final matchState = rawState is String && rawState.isNotEmpty
+          ? rawState
+          : (connected ? 'matched' : (action == 'like' ? 'pending' : 'none'));
       return ParentMatchActionResult(
-        connected: result,
-        matchState:
-            result ? 'matched' : (action == 'like' ? 'pending' : 'none'),
+        connected: connected,
+        matchState: matchState,
       );
     } catch (e) {
       lastSyncError = 'Aktion konnte nicht gespeichert werden: $e';

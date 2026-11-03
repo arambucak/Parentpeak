@@ -12,6 +12,10 @@ class AppStringsManager {
   static const Map<String, Map<String, String>> allStrings = {
     // Deutsch
     'de': {
+      'network_interested': 'Interessiert',
+      'network_not_now': 'Nicht jetzt',
+      'network_match_mutual': 'Ihr seid beide interessiert!',
+      'network_interest_sent': 'Dein Interesse ist angekommen.',
       'ads_consent_title': 'Werbe- und Sponsor-Einwilligung',
       'ads_consent_body': 'Du kannst freiwillig nicht personalisierten, manuell geprüften Sponsor-Platzierungen in der öffentlichen Event-Entdeckung zustimmen. Kein Tracking, keine Werbe-ID und keine Weitergabe von Kinder-, Standort- oder KI-Inhalten für Werbung. Ablehnen ist genauso einfach wie Zustimmen. Du kannst hier jederzeit widerrufen; danach wird jede künftige Werbeverarbeitung gesperrt. Bereits übertragene Daten werden dadurch nicht zurückgeholt. Die App bleibt ohne Zustimmung nutzbar. Werbung ist derzeit deaktiviert.',
       'ads_consent_grant': 'Zustimmen',
@@ -3410,6 +3414,10 @@ class AppStringsManager {
     },
     // English
     'en': {
+      'network_interested': 'Interested',
+      'network_not_now': 'Not now',
+      'network_match_mutual': 'You\'re both interested!',
+      'network_interest_sent': 'Your interest has been sent.',
       'ads_consent_title': 'Advertising and sponsor consent',
       'ads_consent_body': 'You may voluntarily agree to non-personalised, manually reviewed sponsor placements in public event discovery. No tracking, advertising ID or sharing of children’s data, location or AI content for advertising. Declining is as easy as agreeing. You can withdraw here at any time; all future advertising processing will then be blocked. Withdrawal cannot retrieve data already sent. The app remains usable without consent. Advertising is currently disabled.',
       'ads_consent_grant': 'Agree',
@@ -6740,6 +6748,10 @@ class AppStringsManager {
     },
     // Français
     'fr': {
+      'network_interested': 'Intéressé',
+      'network_not_now': 'Pas maintenant',
+      'network_match_mutual': 'Vous êtes tous les deux intéressés !',
+      'network_interest_sent': 'Votre intérêt a été envoyé.',
       'network_tab_discover': 'Découvrir',
       'network_tab_matches': 'Correspondances',
       'network_matches_empty_title': 'Pas encore de correspondances',
@@ -7599,6 +7611,10 @@ class AppStringsManager {
     },
     // Español
     'es': {
+      'network_interested': 'Me interesa',
+      'network_not_now': 'Ahora no',
+      'network_match_mutual': '¡Los dos tenéis interés!',
+      'network_interest_sent': 'Tu interés se ha enviado.',
       'network_tab_discover': 'Descubrir',
       'network_tab_matches': 'Coincidencias',
       'network_matches_empty_title': 'Aún no hay coincidencias',
@@ -8445,6 +8461,10 @@ class AppStringsManager {
     },
     // Italiano
     'it': {
+      'network_interested': 'Mi interessa',
+      'network_not_now': 'Non ora',
+      'network_match_mutual': 'Siete entrambi interessati!',
+      'network_interest_sent': 'Il tuo interesse è stato inviato.',
       'network_tab_discover': 'Scopri',
       'network_tab_matches': 'Corrispondenze',
       'network_matches_empty_title': 'Ancora nessuna corrispondenza',
@@ -10920,6 +10940,10 @@ class AppStringsManager {
     },
     // العربية (Arabic)
     'ar': {
+      'network_interested': 'مهتم',
+      'network_not_now': 'ليس الآن',
+      'network_match_mutual': 'كلاكما مهتم!',
+      'network_interest_sent': 'تم إرسال اهتمامك.',
       'network_tab_discover': 'اكتشف',
       'network_tab_matches': 'التوافقات',
       'network_matches_empty_title': 'لا توجد توافقات بعد',
@@ -12556,6 +12580,10 @@ class AppStringsManager {
     },
     // کوردی Kurmancî (ku)
     'ku': {
+      'network_interested': 'Bala min heye',
+      'network_not_now': 'Niha na',
+      'network_match_mutual': 'Herdu jî bala we heye!',
+      'network_interest_sent': 'Bala te hat şandin.',
       'ads_consent_title': 'Razîbûna reklam û sponsoriyê',
       'ads_consent_body': 'Tu dikarî bi dilê xwe razî bibî ku di keşfkirina çalakiyên giştî de naveroka sponsorî ya ne kesanekirî û bi destan kontrolkirî were nîşandan. Ne şopandin, ne nasnameya reklamê û ne parvekirina daneyên zarokan, cih an naveroka AI ji bo reklamê heye. Redkirin bi qasî razîbûnê hêsan e. Tu dikarî li vir her dem razîbûna xwe paşde bikêşî; wê demê hemû pêvajokirina reklamê ya pêşerojê tê astengkirin. Paşvekişandin daneyên berê şandî venagerîne. Sepan bê razîbûn jî tê bikaranîn. Reklam niha neçalakin.',
       'ads_consent_grant': 'Razî me',
@@ -19091,6 +19119,10 @@ class AppStringsManager {
     },
     // Türkçe (Turkish)
     'tr': {
+      'network_interested': 'İlgileniyorum',
+      'network_not_now': 'Şimdi değil',
+      'network_match_mutual': 'İkiniz de ilgileniyorsunuz!',
+      'network_interest_sent': 'İlgin gönderildi.',
       'ads_consent_title': 'Reklam ve sponsor onayı',
       'ads_consent_body': 'Herkese açık etkinlik keşfinde elle incelenen, kişiselleştirilmemiş sponsor içeriklerine gönüllü olarak izin verebilirsin. Takip, reklam kimliği veya reklam amacıyla çocuk verisi, konum ya da yapay zekâ içeriği paylaşımı yoktur. Reddetmek, kabul etmek kadar kolaydır. Onayını buradan istediğin zaman geri alabilirsin; sonraki tüm reklam işlemleri engellenir. Geri alma, önceden gönderilmiş verileri geri getirmez. Uygulamayı onay vermeden de kullanabilirsin. Reklamlar şu anda kapalıdır.',
       'ads_consent_grant': 'Kabul et',
