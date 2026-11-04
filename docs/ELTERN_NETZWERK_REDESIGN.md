@@ -19,6 +19,17 @@ Umsetzungsstand 2026-11-04 (die Analyse unten bleibt historisch):
   Zurueckziehen-Aktion ist entfernt. Gemeinsame Netzwerkbereiche unter Meine
   Familie, Interest-Laden fuer verbundene Familien und das Lade-Skeleton
   bleiben erhalten; historische Uebersetzungsschluessel bleiben bestehen.
+- Kartenillustration (separate visuelle Freigabe): abstrakte Figuren per
+  CustomPainter in Gelb/Orange, Rot und Gruen, ohne Gesichter, Geschlecht,
+  Hautfarben oder neue Assets. Jede Angabe in `childAges` ergibt eine Kinderfigur.
+  `alleinerziehend` ergibt eine erwachsene Figur; alle anderen Wizard-Formen
+  und unbekannte/eigene Werte verwenden zwei Erwachsene, da das Profil keine
+  exakte Erwachsenenanzahl speichert. Keine Kinderfigur wird abgeschnitten
+  oder durch ein Mengenlimit versteckt. Der Name bleibt gross unter der
+  Illustration, die Initiale steht in einem kleinen Abzeichen.
+  Bei schmalen/niedrigen Karten bleiben volle Profilangaben durch scrollbar
+  bleibende Kartendetails lesbar; Wisch- und Entscheidungsaktionen bleiben
+  ausserhalb dieses Detail-Scrollbereichs erhalten.
 
 Kennzeichnung in diesem Dokument:
 

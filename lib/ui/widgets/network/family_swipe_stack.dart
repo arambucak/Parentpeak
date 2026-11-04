@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parentpeak/ui/widgets/network/family_illustration.dart';
 import 'package:parentpeak/ui/widgets/network/info_chip.dart';
 import 'package:parentpeak/ui/widgets/network/network_actions.dart';
 
@@ -15,12 +16,16 @@ class FamilySwipeCardData {
     this.meta = '',
     this.tags = const [],
     this.reasons = const [],
+    this.childCount = 0,
+    this.familyForm,
   });
 
-  /// Stabile ID (Owner-ID) — steuert Farbe und Identität der Karte.
+  /// Stabile ID (Owner-ID) — steuert die Identität der Karte.
   final String id;
   final String name;
   final String city;
+  final int childCount;
+  final String? familyForm;
 
   /// Bereits formatierte Kinder-Zeile (z. B. "🧒 3-5 • 6-9"), leer = aus.
   final String kids;
@@ -36,12 +41,12 @@ class FamilySwipeCardData {
 
 /// Bumble-artiger Wisch-Stack für die Familien-Community.
 ///
-/// Zeigt die oberste Familie als große Karte mit warmem Verlauf-Avatar-Bereich.
+/// Zeigt die oberste Familie als große Karte mit abstrakter Familienillustration.
 /// Nach rechts wischen = Interessiert ([onLike]), nach links = Nicht jetzt
 /// ([onPass]). Zwei gleichwertige Buttons unter dem Stack bieten dieselbe
 /// Aktion ohne Wischen (wichtig auf Web/Desktop).
 ///
-/// Zeigt bewusst **keine Fotos** (Kinderschutz): nur Initiale + Farbverlauf.
+/// Zeigt bewusst **keine Fotos** (Kinderschutz): Illustration + Initialen-Badge.
 /// Web-kompatibel (kein `dart:io`, `GestureDetector` mit
 /// `HitTestBehavior.opaque`).
 class FamilySwipeStack extends StatefulWidget {
@@ -194,7 +199,7 @@ class _FamilySwipeStackState extends State<FamilySwipeStack>
     );
   }
 
-  /// Eine einzelne große Karte: warmer Verlauf-Avatar oben, Infos unten.
+  /// Eine einzelne große Karte: Familienillustration oben, Infos unten.
   Widget _card(
     BuildContext context,
     FamilySwipeCardData card, {
@@ -202,7 +207,6 @@ class _FamilySwipeStackState extends State<FamilySwipeStack>
   }) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final tint = _tint(scheme, card.id.isNotEmpty ? card.id : card.name);
     // Wisch-Richtungs-Hinweis (grün = interessiert, grau = nicht jetzt).
     final dir = overlay && !_flinging ? _drag.dx : 0.0;
 
@@ -225,7 +229,7 @@ class _FamilySwipeStackState extends State<FamilySwipeStack>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Warmer Avatar-Bereich (Verlauf + großes Initial) ──────────────
+          // ── Abstrakte Familie in Logo-Farben ──────────────────────────────
           Stack(
             children: [
               Container(
@@ -236,21 +240,22 @@ class _FamilySwipeStackState extends State<FamilySwipeStack>
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      tint,
                       Color.alphaBlend(
-                          Colors.black.withValues(alpha: 0.12), tint)
+                        FamilyIllustrationPainter.adultYellow
+                            .withValues(alpha: 0.16),
+                        scheme.surface,
+                      ),
+                      Color.alphaBlend(
+                        FamilyIllustrationPainter.adultRed
+                            .withValues(alpha: 0.07),
+                        scheme.surface,
+                      ),
                     ],
                   ),
                 ),
-                child: Center(
-                  child: Text(
-                    _initial(card.name),
-                    style: TextStyle(
-                      fontSize: 84,
-                      fontWeight: FontWeight.w800,
-                      color: _onTint(tint),
-                    ),
-                  ),
+                child: FamilyIllustration(
+                  childCount: card.childCount,
+                  familyForm: card.familyForm,
                 ),
               ),
               if (overlay && widget.safetyMenuBuilder != null)
@@ -277,96 +282,130 @@ class _FamilySwipeStackState extends State<FamilySwipeStack>
           ),
           // ── Infos ─────────────────────────────────────────────────────────
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(18, 14, 18, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    card.name,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (card.city.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        Icon(Icons.place_outlined,
-                            size: 15, color: scheme.outline),
-                        const SizedBox(width: 3),
-                        Flexible(
-                          child: Text(
-                            card.city,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: scheme.onSurfaceVariant,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+            child: LayoutBuilder(
+              builder: (context, constraints) => SingleChildScrollView(
+                key: ValueKey(card.id),
+                primary: false,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: IntrinsicHeight(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 14, 18, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  card.name,
+                                  style: theme.textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              ExcludeSemantics(
+                                child: CircleAvatar(
+                                  radius: 14,
+                                  backgroundColor: scheme.primaryContainer,
+                                  foregroundColor: scheme.onPrimaryContainer,
+                                  child: Text(
+                                    _initial(card.name),
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
-                  if (card.kids.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      card.kids,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                  if (card.bio.isNotEmpty) ...[
-                    const SizedBox(height: 6),
-                    Text(
-                      card.bio,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: scheme.onSurfaceVariant,
-                        height: 1.3,
-                      ),
-                    ),
-                  ],
-                  if (card.tags.isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children:
-                          card.tags.map((t) => InfoChip(label: t)).toList(),
-                    ),
-                  ],
-                  const Spacer(),
-                  if (card.reasons.isNotEmpty)
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 4,
-                      children: card.reasons
-                          .map(
-                            (label) => Text(
-                              label,
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: scheme.primary,
-                                fontWeight: FontWeight.w700,
+                          if (card.city.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Row(
+                              children: [
+                                Icon(Icons.place_outlined,
+                                    size: 15, color: scheme.outline),
+                                const SizedBox(width: 3),
+                                Flexible(
+                                  child: Text(
+                                    card.city,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: scheme.onSurfaceVariant,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                          if (card.kids.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              card.kids,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
-                          )
-                          .toList(),
-                    ),
-                  if (card.meta.isNotEmpty) ...[
-                    const SizedBox(height: 6),
-                    Text(
-                      card.meta,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: scheme.outline,
+                          ],
+                          if (card.bio.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Text(
+                              card.bio,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: scheme.onSurfaceVariant,
+                                height: 1.3,
+                              ),
+                            ),
+                          ],
+                          if (card.tags.isNotEmpty) ...[
+                            const SizedBox(height: 10),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              children: card.tags
+                                  .map((t) => InfoChip(label: t))
+                                  .toList(),
+                            ),
+                          ],
+                          const Spacer(),
+                          if (card.reasons.isNotEmpty)
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 4,
+                              children: card.reasons
+                                  .map(
+                                    (label) => Text(
+                                      label,
+                                      style:
+                                          theme.textTheme.labelSmall?.copyWith(
+                                        color: scheme.primary,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                            ),
+                          if (card.meta.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            Text(
+                              card.meta,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: scheme.outline,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
-                  ],
-                ],
+                  ),
+                ),
               ),
             ),
           ),
@@ -400,25 +439,4 @@ class _FamilySwipeStackState extends State<FamilySwipeStack>
     if (t.isEmpty) return '?';
     return t.characters.first.toUpperCase();
   }
-
-  /// Stabil aus der Karten-ID abgeleitete Tönung aus dem Theme-ColorScheme —
-  /// gleiche Familie, gleiche Farbe (wie FamilyAvatar, nur für den Verlauf).
-  Color _tint(ColorScheme scheme, String seed) {
-    final palette = <Color>[
-      scheme.primary,
-      scheme.secondary,
-      scheme.tertiary,
-      scheme.primaryContainer,
-      scheme.secondaryContainer,
-      scheme.tertiaryContainer,
-    ];
-    if (seed.isEmpty) return palette.first;
-    final idx = seed.codeUnitAt(0) % palette.length;
-    return palette[idx];
-  }
-
-  Color _onTint(Color bg) =>
-      ThemeData.estimateBrightnessForColor(bg) == Brightness.dark
-          ? Colors.white
-          : Colors.black.withValues(alpha: 0.75);
 }

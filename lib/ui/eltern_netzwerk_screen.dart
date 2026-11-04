@@ -1798,6 +1798,8 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
     return FamilySwipeCardData(
       id: p.userId ?? p.id,
       name: p.name,
+      childCount: p.childAges.length,
+      familyForm: p.familyForm,
       city: p.city,
       kids: kids,
       bio: p.bio ?? '',
