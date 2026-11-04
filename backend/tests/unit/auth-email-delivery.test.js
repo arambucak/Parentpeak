@@ -20,19 +20,16 @@ function routeBlock(startMarker) {
   return source.slice(start, end);
 }
 
-function emailRouteFixture({ provider = async () => true, firebase = true } = {}) {
+function emailRouteFixture({
+  provider = async () => true,
+  firebase = true,
+  rateAllowed = true,
+  linkFor = null,
+} = {}) {
   const routes = new Map();
   const sentEmails = [];
+  const actionLinkRequests = [];
   const firebaseAuth = {
-    generatePasswordResetLink: async email => {
-      if (email === 'missing@example.com') {
-        throw Object.assign(new Error('not found'), { code: 'auth/user-not-found' });
-      }
-      return 'https://firebase.example/action?oobCode=reset&apiKey=public';
-    },
-    generateEmailVerificationLink: async email => (
-      `https://firebase.example/action?oobCode=verify&email=${encodeURIComponent(email)}`
-    ),
     verifyIdToken: async token => {
       if (token !== 'valid-id-token') throw new Error('Invalid token');
       return { email: 'parent@example.com', name: 'Parent', email_verified: false };
@@ -41,6 +38,14 @@ function emailRouteFixture({ provider = async () => true, firebase = true } = {}
   const context = vm.createContext({
     app: { post: (route, ...handlers) => routes.set(route, handlers) },
     firebaseAdmin: firebase ? { auth: () => firebaseAuth } : null,
+    // Aktionslink kommt direkt von der Identity-Toolkit-API (nicht vom Admin-SDK).
+    generateFirebaseActionLink: async (type, email) => {
+      actionLinkRequests.push([type, email]);
+      if (linkFor) return linkFor(type, email);
+      if (email === 'missing@example.com') return null; // unbekannte Adresse
+      return `https://firebase.example/action?oobCode=${type}&apiKey=public`;
+    },
+    allowAuthMail: () => rateAllowed,
     ACTION_HANDLER_BASE: 'https://parentpeak.example/auth/action',
     buildCustomActionUrl: (_link, mode) => `https://parentpeak.example/auth/action?mode=${mode}&code=abc`,
     buildPasswordResetEmail: url => `<a href="${url}">reset</a>`,
@@ -76,7 +81,7 @@ function emailRouteFixture({ provider = async () => true, firebase = true } = {}
     return { status, body: payload };
   }
 
-  return { request, sentEmails };
+  return { request, sentEmails, actionLinkRequests };
 }
 
 test('password reset responds only after the email provider accepts delivery', async () => {
@@ -306,4 +311,132 @@ test('generated action links use the configured handler without forwarding redir
   assert.throws(() => context.buildCustomActionUrl('https://firebase.example?oobCode=code', 'unknown'));
   context.ACTION_HANDLER_BASE = 'http://public.example/auth/action';
   assert.throws(() => context.buildCustomActionUrl('https://firebase.example?oobCode=code', 'resetPassword'));
+});
+
+// ── Gebrandete Mails: Aktionslink über Identity-Toolkit-API + Begrenzung ─────
+
+test('password reset asks for a PASSWORD_RESET action link and sends the branded mail', async () => {
+  const fixture = emailRouteFixture();
+  const result = await fixture.request('/auth/send-password-reset', {
+    email: 'parent@example.com',
+  });
+  assert.equal(result.status, 200);
+  assert.deepEqual(fixture.actionLinkRequests, [['PASSWORD_RESET', 'parent@example.com']]);
+  assert.equal(fixture.sentEmails.length, 1);
+  // Link zeigt auf UNSERE Seite (gebrandet), nicht auf die Firebase-Standardseite.
+  assert.match(fixture.sentEmails[0].html, /parentpeak\.example\/auth\/action\?mode=resetPassword/);
+});
+
+test('password reset is rate limited and then sends nothing', async () => {
+  const fixture = emailRouteFixture({ rateAllowed: false });
+  const result = await fixture.request('/auth/send-password-reset', {
+    email: 'parent@example.com',
+  });
+  assert.equal(result.status, 429);
+  assert.equal(fixture.sentEmails.length, 0);
+  assert.deepEqual(fixture.actionLinkRequests, []);
+});
+
+test('password reset reports a failing action-link lookup as 503 so the app can fall back', async () => {
+  const fixture = emailRouteFixture({
+    linkFor: async () => { throw Object.assign(new Error('boom'), { code: 'auth/internal-error' }); },
+  });
+  const result = await fixture.request('/auth/send-password-reset', {
+    email: 'parent@example.com',
+  });
+  assert.equal(result.status, 503);
+  assert.equal(fixture.sentEmails.length, 0);
+});
+
+test('verification email uses VERIFY_EMAIL, is rate limited, and fails closed without a link', async () => {
+  const ok = emailRouteFixture();
+  assert.equal((await ok.request('/auth/send-verification-email')).status, 200);
+  assert.deepEqual(ok.actionLinkRequests, [['VERIFY_EMAIL', 'parent@example.com']]);
+
+  const limited = emailRouteFixture({ rateAllowed: false });
+  assert.equal((await limited.request('/auth/send-verification-email')).status, 429);
+  assert.equal(limited.sentEmails.length, 0);
+
+  const noLink = emailRouteFixture({ linkFor: async () => null });
+  assert.equal((await noLink.request('/auth/send-verification-email')).status, 503);
+  assert.equal(noLink.sentEmails.length, 0);
+});
+
+function actionLinkHelperFixture({ env, response } = {}) {
+  const calls = [];
+  const context = vm.createContext({
+    process: { env: env ?? { FIREBASE_SERVICE_ACCOUNT_JSON: JSON.stringify({ project_id: 'demo-proj' }) } },
+    URL, JSON, Promise, String, Object, Date, Map, Error,
+    encodeURIComponent,
+    AbortSignal: { timeout: () => undefined },
+    require: id => {
+      assert.equal(id, 'firebase-admin/app');
+      return { cert: () => ({ getAccessToken: async () => ({ access_token: 'token-123' }) }) };
+    },
+    fetch: async (url, init) => {
+      calls.push({ url, init });
+      return response ?? { ok: true, status: 200, json: async () => ({ oobLink: 'https://x.test/a?oobCode=c1' }) };
+    },
+  });
+  vm.runInContext(
+    block('// ── Firebase-Aktionslink ohne Admin-SDK', '/** Build a custom action URL'),
+    context,
+  );
+  return { context, calls };
+}
+
+test('generateFirebaseActionLink calls sendOobCode with returnOobLink and returns the link', async () => {
+  const { context, calls } = actionLinkHelperFixture();
+  const link = await context.generateFirebaseActionLink('PASSWORD_RESET', 'a@b.de');
+  assert.equal(link, 'https://x.test/a?oobCode=c1');
+  assert.equal(calls.length, 1);
+  assert.match(calls[0].url, /\/v1\/projects\/demo-proj\/accounts:sendOobCode$/);
+  assert.equal(calls[0].init.headers.Authorization, 'Bearer token-123');
+  assert.deepEqual(JSON.parse(calls[0].init.body), {
+    requestType: 'PASSWORD_RESET', email: 'a@b.de', returnOobLink: true,
+  });
+});
+
+test('generateFirebaseActionLink returns null for unknown addresses (200 without link)', async () => {
+  const { context } = actionLinkHelperFixture({
+    response: { ok: true, status: 200, json: async () => ({ kind: 'identitytoolkit#GetOobConfirmationCodeResponse', email: 'a@b.de' }) },
+  });
+  assert.equal(await context.generateFirebaseActionLink('PASSWORD_RESET', 'a@b.de'), null);
+});
+
+test('generateFirebaseActionLink maps API errors and missing configuration', async () => {
+  const notFound = actionLinkHelperFixture({
+    response: { ok: false, status: 400, json: async () => ({ error: { message: 'EMAIL_NOT_FOUND' } }) },
+  });
+  await assert.rejects(
+    notFound.context.generateFirebaseActionLink('PASSWORD_RESET', 'a@b.de'),
+    error => error.code === 'auth/user-not-found',
+  );
+  const broken = actionLinkHelperFixture({
+    response: { ok: false, status: 500, json: async () => ({}) },
+  });
+  await assert.rejects(
+    broken.context.generateFirebaseActionLink('PASSWORD_RESET', 'a@b.de'),
+    error => error.code === 'auth/internal-error',
+  );
+  const unconfigured = actionLinkHelperFixture({ env: {} });
+  await assert.rejects(
+    unconfigured.context.generateFirebaseActionLink('PASSWORD_RESET', 'a@b.de'),
+    error => error.code === 'auth/not-configured',
+  );
+  assert.equal(unconfigured.calls.length, 0);
+});
+
+test('allowAuthMail limits per key within the window and frees it afterwards', () => {
+  const { context } = actionLinkHelperFixture();
+  const t0 = 1_000_000;
+  const hour = 60 * 60 * 1000;
+  assert.equal(context.allowAuthMail('reset:a', 3, hour, t0), true);
+  assert.equal(context.allowAuthMail('reset:a', 3, hour, t0 + 1), true);
+  assert.equal(context.allowAuthMail('reset:a', 3, hour, t0 + 2), true);
+  assert.equal(context.allowAuthMail('reset:a', 3, hour, t0 + 3), false);
+  // andere Adresse bleibt unberührt
+  assert.equal(context.allowAuthMail('reset:b', 3, hour, t0 + 3), true);
+  // nach Ablauf des Fensters wieder erlaubt
+  assert.equal(context.allowAuthMail('reset:a', 3, hour, t0 + hour + 10), true);
 });
