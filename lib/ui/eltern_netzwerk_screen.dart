@@ -132,7 +132,6 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
   bool _loadingMatches = false;
   String? _matchesErrorKey;
   int _matchRequest = 0;
-  String _matchScope = '10km';
 
   // Matches-Tab: gegenseitige Matches + eigene offene Anfragen (/interest).
   ParentMatchingInterest _interest = const ParentMatchingInterest();
@@ -494,6 +493,14 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
           ),
         ),
         elevation: 0,
+        actions: [
+          if (_index == 0 && !_loadingMatches)
+            IconButton(
+              tooltip: _t('convo_refresh'),
+              onPressed: _loadMatches,
+              icon: const Icon(Icons.refresh_rounded),
+            ),
+        ],
       ),
       floatingActionButton: showMomentFab
           ? FloatingActionButton.extended(
@@ -1635,7 +1642,6 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
           _profileStatus == PlaymateProfileStatus.active) {
         setState(() {
           _matches = visible;
-          _matchScope = result.scope;
           _loadingMatches = false;
           _matchesErrorKey = null;
         });
@@ -1658,180 +1664,54 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
   }
 
   Widget _discoveryView(ThemeData theme) {
-    return RefreshIndicator(
-      onRefresh: _loadMatches,
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _profileStatusPanel(),
-            // ── Eigenes Profil (Header) ──────────────────────────────────────
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer.withValues(alpha: 0.35),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.2),
-                ),
-              ),
-              child: Row(
-                children: [
-                  const Text('\u{1F46A}', style: TextStyle(fontSize: 24)),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _t(
-                            'network_family_name',
-                          ).replaceAll('{name}', _profile!.displayName),
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        Text(
-                          _profile!.bio.isNotEmpty
-                              ? _profile!.bio
-                              : _t('network_profile_active'),
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: _deletingProfile
-                            ? null
-                            : () => setState(() => _editingProfile = true),
-                        child: Text(
-                          AppStringsManager.getString(
-                            languageService.currentLanguage,
-                            'edit_btn',
-                          ),
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: theme.colorScheme.primary,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: _deletingProfile
-                            ? null
-                            : () => _confirmDeleteProfile(theme),
-                        child: Text(
-                          _t('delete'),
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: theme.colorScheme.error,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // ── Titelzeile Discovery ─────────────────────────────────────────
-            Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cardHeight =
+            (constraints.maxHeight - 110).clamp(420.0, 640.0).toDouble();
+        return RefreshIndicator(
+          onRefresh: _loadMatches,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('\u{1F50D}', style: TextStyle(fontSize: 18)),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    _t('network_families_nearby'),
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
                 if (_loadingMatches)
-                  const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                  _matchesLoadingSkeleton(theme)
+                else if (_matchesErrorKey != null)
+                  PlaymateDiscoveryError(
+                    messageKey: _matchesErrorKey!,
+                    onRetry: _loadMatches,
+                  )
+                else if (_matches.isEmpty)
+                  PlaymateDiscoveryEmptyState(
+                    onInvite: () => setState(() => _index = 3),
                   )
                 else
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: _loadMatches,
-                    child: Icon(
-                      Icons.refresh_rounded,
-                      size: 20,
-                      color: theme.colorScheme.primary,
-                    ),
+                  FamilySwipeStack(
+                    cardHeight: cardHeight,
+                    cards: _matches.map(_toSwipeCard).toList(),
+                    likeLabel: _t('network_interested'),
+                    passLabel: _t('network_not_now'),
+                    onLike: (card) => _reactToMatchById(card.id, 'like'),
+                    onPass: (card) => _reactToMatchById(card.id, 'pass'),
+                    safetyMenuBuilder: (card) {
+                      final m = _matchById(card.id);
+                      if (m == null) return const SizedBox.shrink();
+                      return SafetyMenu(
+                        userId: m.profile.userId ?? m.profile.id,
+                        userName: m.profile.name,
+                        reportLabel: _t('network_report'),
+                        blockLabel: _t('network_block'),
+                        onBlock: () => _blockMatch(m),
+                      );
+                    },
                   ),
               ],
             ),
-            if (!_loadingMatches &&
-                _matchesErrorKey == null &&
-                _matches.isNotEmpty) ...[
-              const SizedBox(height: 4),
-              Text(
-                _matchScope == '10km'
-                    ? _t('network_radius').replaceAll('{distance}', '10')
-                    : _matchScope == '50km'
-                    ? _t('network_radius').replaceAll('{distance}', '50')
-                    : _matchScope == '100km'
-                    ? _t('network_radius').replaceAll('{distance}', '100')
-                    : _t('network_wide_radius'),
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.outline,
-                ),
-              ),
-            ],
-            const SizedBox(height: 12),
-
-            // ── Ergebnis: Liste, Loading oder ehrlicher Empty-State ──────────
-            if (_loadingMatches)
-              _matchesLoadingSkeleton(theme)
-            else if (_matchesErrorKey != null)
-              PlaymateDiscoveryError(
-                messageKey: _matchesErrorKey!,
-                onRetry: _loadMatches,
-              )
-            else if (_matches.isEmpty)
-              PlaymateDiscoveryEmptyState(
-                onInvite: () => setState(() => _index = 3),
-              )
-            else
-              FamilySwipeStack(
-                cards: _matches.map(_toSwipeCard).toList(),
-                likeLabel: _t('network_interested'),
-                passLabel: _t('network_not_now'),
-                onLike: (card) => _reactToMatchById(card.id, 'like'),
-                onPass: (card) => _reactToMatchById(card.id, 'pass'),
-                safetyMenuBuilder: (card) {
-                  final m = _matchById(card.id);
-                  if (m == null) return const SizedBox.shrink();
-                  return SafetyMenu(
-                    userId: m.profile.userId ?? m.profile.id,
-                    userName: m.profile.name,
-                    reportLabel: _t('network_report'),
-                    blockLabel: _t('network_block'),
-                    onBlock: () => _blockMatch(m),
-                  );
-                },
-              ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 

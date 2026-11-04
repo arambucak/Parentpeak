@@ -4,6 +4,18 @@ Status: **Konzept, kein Code.** Grundlage ist `origin/main` bei `f6ae923` (nach 
 Alle Zeilenangaben beziehen sich auf diesen Stand. Die Entscheidungen in Abschnitt 9
 hat der Nutzer am 2026-11-03 bestätigt.
 
+Umsetzungsstand 2026-11-04 (die Analyse unten bleibt historisch):
+
+- Navigation: Entdecken, Momente, Chats, Meine Familie. Einladen per Link/QR,
+  Anfragen samt Badge und Freunde sind seit #269 unter Meine Familie erreichbar.
+- Aktive Discovery zeigt direkt den Wisch-Stack, ohne Statuspanel, eigene
+  Profilverwaltung oder Radius-Kopf. Bearbeiten/Loeschen bleibt unter Meine Familie.
+- Aktualisieren geht per Pull-to-Refresh und per AppBar-Button im Entdecken-Tab,
+  solange keine Discovery-Anfrage laeuft.
+- Die Kartenhoehe nutzt die verfuegbare Hoehe minus 110 Pixel, begrenzt auf
+  420 bis 640 Pixel; kleine Fenster bleiben scrollbar. Lade-, Fehler- und
+  Einladungs-Leerzustand bleiben erhalten.
+
 Kennzeichnung in diesem Dokument:
 
 - **[V] verifiziert**: im Code an der genannten Stelle gelesen.
