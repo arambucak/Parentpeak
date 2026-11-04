@@ -1895,7 +1895,7 @@ const appLocalizationsArExtra = <String, String>{
       'تبقى هذه المعطيات على جهازك فقط. ولا تُنشر ولا تُستخدَم في التوافق على الخادم.',
   'network_start_direct_chat': 'مراسلة صديق',
   'network_start_direct_chat_hint':
-      'اختر صديقًا في تبويب الشبكة وابدأ المحادثة.',
+      'اختر صديقًا في تبويب عائلتي وابدأ المحادثة.',
   'network_suggestions_count': '{count} اقتراحات',
   'network_tab_chats': 'المحادثات',
   'network_tab_network': 'الشبكة',

@@ -1378,7 +1378,7 @@ class AppStringsManager {
           'Verbinde dich mit anderen Eltern und starte deinen ersten Chat – einzeln oder als Gruppe.',
       'network_start_direct_chat': 'Freund anschreiben',
       'network_start_direct_chat_hint':
-          'Wähle einen Freund im Netzwerk-Tab und starte den Chat.',
+          'Wähle unter „Meine Familie“ einen Freund und starte den Chat.',
       'network_create_group': 'Gruppe erstellen',
       'network_create_group_hint': 'z. B. Kita-Gruppe oder Spielplatz-Treffen',
       'network_group_needs_friends':
@@ -6640,7 +6640,7 @@ class AppStringsManager {
           'Connect with other parents and start your first chat — one-on-one or as a group.',
       'network_start_direct_chat': 'Message a friend',
       'network_start_direct_chat_hint':
-          'Pick a friend in the Network tab and start chatting.',
+          'Pick a friend in the My Family tab and start chatting.',
       'network_create_group': 'Create group',
       'network_create_group_hint': 'e.g. daycare group or playground meetup',
       'network_group_needs_friends': 'Add friends first to create a group.',
@@ -14437,7 +14437,7 @@ class AppStringsManager {
           'Bi dêûbavên din re girêbide û chata xwe ya yekem dest pê bike — ferdî an wekî kom.',
       'network_start_direct_chat': 'Ji hevalekî re binivîse',
       'network_start_direct_chat_hint':
-          'Di tora de hevalekî hilbijêre û chatê dest pê bike.',
+          'Di beşa Malbata min de hevalekî hilbijêre û chatê dest pê bike.',
       'network_create_group': 'Komê çêbike',
       'network_create_group_hint': 'wek koma baxçeyê an civîna holê',
       'network_group_needs_friends':
@@ -21055,7 +21055,7 @@ class AppStringsManager {
           'Diğer ebeveynlerle bağlan ve ilk sohbetini başlat — birebir ya da grup olarak.',
       'network_start_direct_chat': 'Bir arkadaşa yaz',
       'network_start_direct_chat_hint':
-          'Ağ sekmesinde bir arkadaş seç ve sohbete başla.',
+          'Ailem sekmesinde bir arkadaş seç ve sohbete başla.',
       'network_create_group': 'Grup oluştur',
       'network_create_group_hint': 'örn. kreş grubu veya oyun parkı buluşması',
       'network_group_needs_friends': 'Grup oluşturmak için önce arkadaş ekle.',

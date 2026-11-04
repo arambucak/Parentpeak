@@ -1996,7 +1996,7 @@ const appLocalizationsItExtra = <String, String>{
       'Queste informazioni restano solo sul tuo dispositivo. Non vengono pubblicate né usate per l\'abbinamento sul backend.',
   'network_start_direct_chat': 'Scrivi a un amico',
   'network_start_direct_chat_hint':
-      'Scegli un amico nella scheda Rete e avvia la chat.',
+      'Scegli un amico nella scheda La mia famiglia e avvia la chat.',
   'network_suggestions_count': '{count} suggerimenti',
   'network_tab_chats': 'Chat',
   'network_tab_network': 'Rete',

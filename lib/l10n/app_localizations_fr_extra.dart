@@ -2003,7 +2003,7 @@ const appLocalizationsFrExtra = <String, String>{
       'Ces informations restent uniquement sur votre appareil. Elles ne sont pas publiées ni utilisées pour le matching backend.',
   'network_start_direct_chat': 'Écrire à un ami',
   'network_start_direct_chat_hint':
-      'Choisissez un ami dans l\'onglet Réseau et démarrez la discussion.',
+      'Choisissez un ami dans l\'onglet Ma famille et démarrez la discussion.',
   'network_suggestions_count': '{count} suggestions',
   'network_tab_chats': 'Discussions',
   'network_tab_network': 'Réseau',
