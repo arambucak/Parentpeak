@@ -317,4 +317,70 @@ void main() {
     expect(position('next').pixels, 0);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('swiping right shows the golden sparkle feedback, left does not',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: FamilySwipeStack(
+              cards: const [card],
+              cardHeight: 530,
+              likeLabel: 'Kennenlernen',
+              passLabel: 'Nicht jetzt',
+              onLike: (_) {},
+              onPass: (_) {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    // Vor dem Wischen laeuft keine Sterne-Animation.
+    bool sparkleActive() => tester
+        .widgetList<CustomPaint>(find.byType(CustomPaint))
+        .any((p) => p.painter.runtimeType.toString() == '_SparklePainter');
+    expect(sparkleActive(), isFalse);
+
+    // Rechtswischen (Kennenlernen): Sterne erscheinen kurz.
+    await tester.tap(find.text('Kennenlernen'));
+    await tester.pump(); // Animation gestartet
+    await tester.pump(const Duration(milliseconds: 120));
+    expect(sparkleActive(), isTrue);
+
+    // Nach dem Verblassen ist nichts mehr zu malen.
+    await tester.pumpAndSettle();
+    expect(sparkleActive(), isFalse);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('swiping left shows no sparkle feedback', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: FamilySwipeStack(
+              cards: const [card],
+              cardHeight: 530,
+              likeLabel: 'Kennenlernen',
+              passLabel: 'Nicht jetzt',
+              onLike: (_) {},
+              onPass: (_) {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Nicht jetzt'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 120));
+    final sparkleActive = tester
+        .widgetList<CustomPaint>(find.byType(CustomPaint))
+        .any((p) => p.painter.runtimeType.toString() == '_SparklePainter');
+    expect(sparkleActive, isFalse);
+    // Den Weg-Flieg-Timer (220 ms) sauber auslaufen lassen.
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
 }

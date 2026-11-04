@@ -1686,8 +1686,8 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
                   FamilySwipeStack(
                     cardHeight: cardHeight,
                     cards: _matches.map(_toSwipeCard).toList(),
-                    likeLabel: _t('network_interested'),
-                    passLabel: _t('network_not_now'),
+                    likeLabel: _t('network_like_action'),
+                    passLabel: _t('network_pass_action'),
                     onLike: (card) => _reactToMatchById(card.id, 'like'),
                     onPass: (card) => _reactToMatchById(card.id, 'pass'),
                     safetyMenuBuilder: (card) {
@@ -1862,15 +1862,8 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
       );
       return;
     }
-    // Einseitiges 'like': ruhige Bestaetigung.
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(_t('network_interest_sent')),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: theme.colorScheme.primary,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
+    // Einseitiges 'like': kein Text noetig. Die goldenen Sterne im Wisch-Stack
+    // sind das Feedback, und die naechste Karte rueckt sofort nach.
   }
 
   /// Familie blockieren (lokal + serverseitig) und sofort ausblenden.
@@ -2043,9 +2036,6 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 32),
-
-          _suggestedParentsSection(theme),
           const SizedBox(height: 32),
 
           // NEUES UID-Fundament: offene Anfragen + Freundesliste vom Server.
@@ -2418,6 +2408,7 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
     );
   }
 
+  // ignore: unused_element
   Widget _suggestedParentsSection(ThemeData theme) {
     final uid = AuthService.instance.currentUser?.uid;
     if (uid == null ||
@@ -2507,6 +2498,7 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
     );
   }
 
+  // ignore: unused_element
   Widget _suggestionCard(ThemeData theme, PlaymateSuggestion s) {
     final color = _avatarColor(s.name);
     final initial = s.name.isNotEmpty ? s.name[0].toUpperCase() : '?';
