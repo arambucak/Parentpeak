@@ -25,6 +25,19 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
+  test(
+      'direct chat hints name the reachable family tab in all launch languages',
+      () {
+    for (final language in ['de', 'en', 'ar', 'ku', 'fr', 'es', 'it', 'tr']) {
+      expect(
+        AppStringsManager.getString(language, 'network_start_direct_chat_hint'),
+        contains(
+            AppStringsManager.getString(language, 'network_tab_my_family')),
+        reason: language,
+      );
+    }
+  });
+
   for (final language in ['de', 'en', 'tr', 'ku']) {
     test('every wizard option has a central $language translation', () {
       for (final group in groups.entries) {
@@ -43,12 +56,13 @@ void main() {
       }
     });
 
-    testWidgets('invite leaves playmates for the network tab in $language', (
+    testWidgets('invite leaves discovery for My Family in $language', (
       tester,
     ) async {
       final previous = languageService.currentLanguage;
       await tester.runAsync(() => languageService.setLanguage(language));
       addTearDown(() => languageService.setLanguage(previous));
+      var index = 0;
       await tester.pumpWidget(
         MaterialApp(
           locale: Locale(language),
@@ -58,27 +72,40 @@ void main() {
             AppLanguages.widgetsLocalizationsDelegate,
             AppLanguages.cupertinoLocalizationsDelegate,
           ],
-          home: DefaultTabController(
-            length: 3,
-            initialIndex: 2,
-            child: Builder(
-              builder: (context) {
-                final tabs = DefaultTabController.of(context);
-                return Scaffold(
-                  body: TabBarView(
-                    children: [
-                      const Text('Chat target'),
-                      const Text('Invitation link and QR target'),
-                      SingleChildScrollView(
-                        child: PlaymateDiscoveryEmptyState(
-                          onInvite: () => tabs.animateTo(1),
-                        ),
+          home: StatefulBuilder(
+            builder: (context, update) {
+              return Scaffold(
+                bottomNavigationBar: NavigationBar(
+                  selectedIndex: index,
+                  onDestinationSelected: (value) => update(() => index = value),
+                  destinations: [
+                    for (final key in [
+                      'network_tab_discover',
+                      'network_tab_moments',
+                      'network_tab_chats',
+                      'network_tab_my_family',
+                    ])
+                      NavigationDestination(
+                        icon: const Icon(Icons.family_restroom),
+                        label: AppStringsManager.getString(language, key),
                       ),
-                    ],
-                  ),
-                );
-              },
-            ),
+                  ],
+                ),
+                body: IndexedStack(
+                  index: index,
+                  children: [
+                    SingleChildScrollView(
+                      child: PlaymateDiscoveryEmptyState(
+                        onInvite: () => update(() => index = 3),
+                      ),
+                    ),
+                    const Text('Moments target'),
+                    const Text('Chat target'),
+                    const Text('Invitation link and QR target'),
+                  ],
+                ),
+              );
+            },
           ),
         ),
       );

@@ -1985,7 +1985,7 @@ const appLocalizationsEsExtra = <String, String>{
       'Estos datos se quedan solo en tu dispositivo. No se publican ni se usan para la búsqueda de familias en el servidor.',
   'network_start_direct_chat': 'Escribir a un amigo',
   'network_start_direct_chat_hint':
-      'Elige un amigo en la pestaña Red y empieza a chatear.',
+      'Elige un amigo en la pestaña Mi familia y empieza a chatear.',
   'network_suggestions_count': '{count} sugerencias',
   'network_tab_chats': 'Chats',
   'network_tab_network': 'Red',

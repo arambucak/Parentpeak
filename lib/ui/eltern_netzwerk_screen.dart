@@ -554,8 +554,16 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
               label: _t('network_tab_chats'),
             ),
             NavigationDestination(
-              icon: const Icon(Icons.family_restroom_outlined),
-              selectedIcon: const Icon(Icons.family_restroom_rounded),
+              icon: Badge.count(
+                count: FriendshipService.instance.incoming.length,
+                isLabelVisible: FriendshipService.instance.incoming.isNotEmpty,
+                child: const Icon(Icons.family_restroom_outlined),
+              ),
+              selectedIcon: Badge.count(
+                count: FriendshipService.instance.incoming.length,
+                isLabelVisible: FriendshipService.instance.incoming.isNotEmpty,
+                child: const Icon(Icons.family_restroom_rounded),
+              ),
               label: _t('network_tab_my_family'),
             ),
           ],
@@ -683,6 +691,8 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
               style: TextStyle(color: theme.colorScheme.error),
             ),
           ),
+          const SizedBox(height: 24),
+          _netzwerkSections(theme),
         ],
       ),
     );
@@ -2354,7 +2364,12 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
   Widget _netzwerkTab(ThemeData theme) {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
-      child: Column(
+      child: _netzwerkSections(theme),
+    );
+  }
+
+  Widget _netzwerkSections(ThemeData theme) {
+    return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Einladungs-Karte: verbinden per Link/QR (1 Tap) ────────────────
@@ -2481,7 +2496,6 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
           _friendRequestsSection(theme),
           _uidFriendsSection(theme),
         ],
-      ),
     );
   }
 
