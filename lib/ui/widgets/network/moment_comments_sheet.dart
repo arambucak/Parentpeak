@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/logic/moments_service.dart';
 import 'package:parentpeak/models/moment.dart';
+import 'package:parentpeak/services/block_report_service.dart';
 import 'package:parentpeak/ui/widgets/network/family_avatar.dart';
 
 /// Bottom-Sheet mit den Kommentaren eines Moments: laden, anzeigen, schreiben,
@@ -199,6 +200,20 @@ class _MomentCommentsSheetState extends State<MomentCommentsSheet> {
             onTap: () => _delete(c),
             child: Icon(Icons.delete_outline_rounded,
                 size: 18, color: theme.colorScheme.outline),
+          )
+        else
+          // Fremder Kommentar: melden (contentType 'moment_comment').
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => showReportSheet(
+              context,
+              userId: c.authorUserId,
+              userName: c.authorName,
+              contentType: 'moment_comment',
+              content: c.id,
+            ),
+            child: Icon(Icons.flag_outlined,
+                size: 17, color: theme.colorScheme.outline),
           ),
       ],
     );
