@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/logic/moments_service.dart';
 import 'package:parentpeak/models/moment.dart';
+import 'package:parentpeak/services/block_report_service.dart';
 import 'package:parentpeak/ui/widgets/network/family_avatar.dart';
 import 'package:parentpeak/ui/widgets/network/moment_comments_sheet.dart';
+import 'package:parentpeak/ui/widgets/network/safety_menu.dart';
 
 /// Der „Momente"-Feed der Familien-Community (M-C1: ansehen).
 ///
@@ -179,6 +181,13 @@ class _MomentCardState extends State<_MomentCard> {
     if (success && mounted) widget.onDeleted();
   }
 
+  /// Autor blockieren (lokal + serverseitig) und den Moment sofort ausblenden.
+  Future<void> _blockAuthor() async {
+    await BlockReportService.instance
+        .blockUser(moment.authorUserId, moment.authorName);
+    if (mounted) widget.onDeleted();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -241,6 +250,18 @@ class _MomentCardState extends State<_MomentCard> {
                         ),
                       ),
                     ],
+                  )
+                else
+                  // Fremder Moment: Melden/Blockieren (contentType 'moment',
+                  // Moment-ID im content -> Moderation kann den Post zuordnen).
+                  SafetyMenu(
+                    userId: moment.authorUserId,
+                    userName: moment.authorName,
+                    contentType: 'moment',
+                    reportContent: moment.id,
+                    reportLabel: context.tr('network_report'),
+                    blockLabel: context.tr('network_block'),
+                    onBlock: _blockAuthor,
                   ),
               ],
             ),

@@ -16,6 +16,7 @@ class SafetyMenu extends StatelessWidget {
     this.reportLabel = 'Melden',
     this.blockLabel = 'Blockieren',
     this.contentType = 'profile',
+    this.reportContent = '',
   });
 
   /// Konto-/Profil-ID der zu meldenden bzw. zu blockierenden Familie.
@@ -28,6 +29,11 @@ class SafetyMenu extends StatelessWidget {
   final String reportLabel;
   final String blockLabel;
   final String contentType;
+
+  /// Optionaler Inhaltsbezug für die Meldung (z. B. die ID des gemeldeten
+  /// Moments/Kommentars). Landet im `content`-Feld des Reports, damit die
+  /// Moderation einzelne Inhalte und nicht nur den Autor zuordnen kann.
+  final String reportContent;
 
   @override
   Widget build(BuildContext context) {
@@ -43,6 +49,7 @@ class SafetyMenu extends StatelessWidget {
             userId: userId,
             userName: userName,
             contentType: contentType,
+            content: reportContent,
           );
         } else if (value == 'block') {
           onBlock();
