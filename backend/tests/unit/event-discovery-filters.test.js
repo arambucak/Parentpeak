@@ -7,9 +7,13 @@ const vm = require('node:vm');
 const source = fs.readFileSync(path.join(__dirname, '../../server.js'), 'utf8');
 const start = source.indexOf("app.get('/api/events',");
 const route = source.slice(start, source.indexOf('\n});', start) + 4);
+// Gemeinsamer Startzeitpunkt: Die Route gewichtet die Zeit bis zum Start im Score.
+// Wuerde jedes Event seinen eigenen Date.now() bekommen, entschiede eine einzelne
+// Millisekunde zwischen zwei Events ueber die Reihenfolge (flackernder Test).
+const DEFAULT_START = new Date(Date.now() + 86400000);
 function event(id, overrides = {}) {
   return { id, hosterId: 'host', title: id, status: 'upcoming', visibility: 'publicNearby',
-    startDate: new Date(Date.now() + 86400000), latitude: 52.4986, longitude: 13.4033,
+    startDate: DEFAULT_START, latitude: 52.4986, longitude: 13.4033,
     shareRadiusKm: 100, costPerPerson: null, participants: [], ...overrides };
 }
 function fixture(events) {
