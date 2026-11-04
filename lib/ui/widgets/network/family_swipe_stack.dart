@@ -83,15 +83,27 @@ class FamilySwipeStack extends StatefulWidget {
 }
 
 class _FamilySwipeStackState extends State<FamilySwipeStack>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   // Aktueller Drag-Versatz der obersten Karte.
   Offset _drag = Offset.zero;
 
   // Läuft, während eine Karte nach einer Entscheidung wegfliegt.
   bool _flinging = false;
 
+  // Warmes „Kennenlernen"-Feedback (goldene Sterne) beim Rechtswischen.
+  late final AnimationController _sparkle = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  );
+
   // Schwelle (px), ab der ein Loslassen als Entscheidung zählt.
   static const double _threshold = 110;
+
+  @override
+  void dispose() {
+    _sparkle.dispose();
+    super.dispose();
+  }
 
   void _onPanUpdate(DragUpdateDetails d) {
     if (_flinging) return;
@@ -112,6 +124,7 @@ class _FamilySwipeStackState extends State<FamilySwipeStack>
   void _decide(FamilySwipeCardData top, {required bool like}) {
     // Karte sichtbar hinauswerfen, dann Aktion melden. Der Parent entfernt die
     // Karte aus der Liste; dadurch rückt die nächste automatisch nach.
+    if (like) _sparkle.forward(from: 0); // warmes "Kennenlernen"-Feedback
     setState(() {
       _flinging = true;
       _drag = Offset(like ? 600 : -600, _drag.dy);
@@ -169,6 +182,20 @@ class _FamilySwipeStackState extends State<FamilySwipeStack>
                       onPanEnd: (d) => _onPanEnd(d, top),
                       child: _card(context, top, overlay: true),
                     ),
+                  ),
+                ),
+              ),
+              // Goldene „Kennenlernen"-Sterne beim Rechtswischen. Überdecken
+              // nichts (IgnorePointer), verblassen nach knapp 1 s.
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: AnimatedBuilder(
+                    animation: _sparkle,
+                    builder: (context, _) => _sparkle.isAnimating
+                        ? CustomPaint(
+                            painter: _SparklePainter(_sparkle.value),
+                          )
+                        : const SizedBox.shrink(),
                   ),
                 ),
               ),
@@ -439,4 +466,55 @@ class _FamilySwipeStackState extends State<FamilySwipeStack>
     if (t.isEmpty) return '?';
     return t.characters.first.toUpperCase();
   }
+}
+
+/// Malt ein paar goldene Vier-Zack-Sterne, die rechts aufsteigen und verblassen
+/// — das warme „Kennenlernen"-Feedback beim Rechtswischen (wie bei Bumble).
+/// [t] läuft von 0 bis 1. Keine neuen Assets, nur Vektorformen.
+class _SparklePainter extends CustomPainter {
+  _SparklePainter(this.t);
+
+  final double t;
+
+  // Feste Streuung (relativ zur Fläche), damit die Sterne ruhig wirken.
+  static const _stars = <(double, double, double, double)>[
+    // dx, dy-Start, Größe, Zeitversatz
+    (0.80, 0.52, 18, 0.00),
+    (0.68, 0.40, 13, 0.12),
+    (0.86, 0.34, 11, 0.20),
+    (0.74, 0.62, 10, 0.08),
+    (0.90, 0.48, 14, 0.26),
+  ];
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const gold = Color(0xFFF5B301);
+    for (final (fx, fy, baseSize, delay) in _stars) {
+      final local = ((t - delay) / (1 - delay)).clamp(0.0, 1.0);
+      if (local <= 0) continue;
+      // Aufsteigen + am Ende ausblenden.
+      final rise = 46 * local;
+      final opacity = local < 0.2 ? local / 0.2 : (1 - (local - 0.2) / 0.8);
+      final center = Offset(fx * size.width, fy * size.height - rise);
+      final paint = Paint()
+        ..color = gold.withValues(alpha: opacity.clamp(0.0, 1.0) * 0.95);
+      _drawSparkle(canvas, center, baseSize * (0.6 + 0.4 * local), paint);
+    }
+  }
+
+  void _drawSparkle(Canvas canvas, Offset c, double r, Paint paint) {
+    // Vier-Zack-Stern: zwei schmale, gekreuzte Rauten.
+    final waist = r * 0.28;
+    final path = Path()
+      ..moveTo(c.dx, c.dy - r)
+      ..quadraticBezierTo(c.dx + waist, c.dy - waist, c.dx + r, c.dy)
+      ..quadraticBezierTo(c.dx + waist, c.dy + waist, c.dx, c.dy + r)
+      ..quadraticBezierTo(c.dx - waist, c.dy + waist, c.dx - r, c.dy)
+      ..quadraticBezierTo(c.dx - waist, c.dy - waist, c.dx, c.dy - r)
+      ..close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(_SparklePainter oldDelegate) => oldDelegate.t != t;
 }
