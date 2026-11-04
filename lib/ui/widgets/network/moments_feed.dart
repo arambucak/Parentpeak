@@ -3,6 +3,7 @@ import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/logic/moments_service.dart';
 import 'package:parentpeak/models/moment.dart';
 import 'package:parentpeak/ui/widgets/network/family_avatar.dart';
+import 'package:parentpeak/ui/widgets/network/moment_comments_sheet.dart';
 
 /// Der „Momente"-Feed der Familien-Community (M-C1: ansehen).
 ///
@@ -87,16 +88,96 @@ class MomentsFeedState extends State<MomentsFeed> {
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
         itemCount: _moments.length,
         separatorBuilder: (_, __) => const SizedBox(height: 14),
-        itemBuilder: (_, i) => _MomentCard(moment: _moments[i]),
+        itemBuilder: (_, i) => _MomentCard(
+          key: ValueKey(_moments[i].id),
+          moment: _moments[i],
+          onDeleted: () => setState(
+            () => _moments =
+                _moments.where((m) => m.id != _moments[i].id).toList(),
+          ),
+        ),
       ),
     );
   }
 }
 
-class _MomentCard extends StatelessWidget {
-  const _MomentCard({required this.moment});
+class _MomentCard extends StatefulWidget {
+  const _MomentCard({super.key, required this.moment, required this.onDeleted});
 
   final Moment moment;
+  final VoidCallback onDeleted;
+
+  @override
+  State<_MomentCard> createState() => _MomentCardState();
+}
+
+class _MomentCardState extends State<_MomentCard> {
+  final _service = MomentsService.instance;
+  late Moment moment = widget.moment;
+  bool _hearting = false;
+
+  Future<void> _toggleHeart() async {
+    if (_hearting) return;
+    // Optimistisches Update, dann Server. Bei Fehler zurückdrehen.
+    final previous = moment;
+    setState(() {
+      _hearting = true;
+      moment = moment.copyWith(
+        heartedByMe: !moment.heartedByMe,
+        heartCount: moment.heartCount + (moment.heartedByMe ? -1 : 1),
+      );
+    });
+    try {
+      final updated = await _service.toggleHeart(moment.id);
+      if (!mounted) return;
+      setState(() {
+        if (updated != null) moment = updated;
+        _hearting = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        moment = previous; // Rollback
+        _hearting = false;
+      });
+    }
+  }
+
+  void _openComments() {
+    MomentCommentsSheet.show(
+      context,
+      moment: moment,
+      onCountChanged: (n) {
+        if (mounted) setState(() => moment = moment.copyWith(commentCount: n));
+      },
+    );
+  }
+
+  Future<void> _confirmDelete() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(context.tr('moments_delete_title')),
+        content: Text(context.tr('moments_delete_message')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(context.tr('cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: Text(context.tr('delete')),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    final success = await _service.deleteMoment(moment.id);
+    if (success && mounted) widget.onDeleted();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -140,6 +221,27 @@ class _MomentCard extends StatelessWidget {
                   ),
                 ),
                 _visibilityChip(context, moment.visibility),
+                if (moment.isMine)
+                  PopupMenuButton<String>(
+                    icon: Icon(Icons.more_vert_rounded,
+                        size: 20, color: scheme.outline),
+                    padding: EdgeInsets.zero,
+                    onSelected: (v) {
+                      if (v == 'delete') _confirmDelete();
+                    },
+                    itemBuilder: (_) => [
+                      PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            const Icon(Icons.delete_outline_rounded, size: 18),
+                            const SizedBox(width: 10),
+                            Text(context.tr('delete')),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
               ],
             ),
           ),
@@ -154,32 +256,44 @@ class _MomentCard extends StatelessWidget {
             ),
           // ── Bild-Galerie ──────────────────────────────────────────────────
           if (moment.imageUrls.isNotEmpty) _gallery(context, moment.imageUrls),
-          // ── Fuß: Herz- und Kommentar-Zähler (read-only in M-C1) ───────────
+          // ── Fuß: Herz- und Kommentar-Aktionen ─────────────────────────────
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+            padding: const EdgeInsets.fromLTRB(6, 4, 6, 6),
             child: Row(
               children: [
-                Icon(
-                  moment.heartedByMe
-                      ? Icons.favorite_rounded
-                      : Icons.favorite_border_rounded,
-                  size: 18,
-                  color: moment.heartedByMe ? scheme.primary : scheme.outline,
+                TextButton.icon(
+                  onPressed: _toggleHeart,
+                  icon: Icon(
+                    moment.heartedByMe
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_border_rounded,
+                    size: 18,
+                    color: moment.heartedByMe ? scheme.primary : scheme.outline,
+                  ),
+                  label: Text(
+                    '${moment.heartCount}',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: moment.heartedByMe
+                          ? scheme.primary
+                          : scheme.onSurfaceVariant,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    foregroundColor: scheme.onSurfaceVariant,
+                  ),
                 ),
-                const SizedBox(width: 4),
-                Text(
-                  '${moment.heartCount}',
-                  style: theme.textTheme.labelMedium
-                      ?.copyWith(color: scheme.onSurfaceVariant),
-                ),
-                const SizedBox(width: 16),
-                Icon(Icons.mode_comment_outlined,
-                    size: 17, color: scheme.outline),
-                const SizedBox(width: 4),
-                Text(
-                  '${moment.commentCount}',
-                  style: theme.textTheme.labelMedium
-                      ?.copyWith(color: scheme.onSurfaceVariant),
+                TextButton.icon(
+                  onPressed: _openComments,
+                  icon: Icon(Icons.mode_comment_outlined,
+                      size: 17, color: scheme.outline),
+                  label: Text(
+                    '${moment.commentCount}',
+                    style: theme.textTheme.labelMedium
+                        ?.copyWith(color: scheme.onSurfaceVariant),
+                  ),
+                  style: TextButton.styleFrom(
+                    foregroundColor: scheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
@@ -210,7 +324,8 @@ class _MomentCard extends StatelessWidget {
   }
 
   Widget _image(
-    BuildContext context, String url, {
+    BuildContext context,
+    String url, {
     double? aspectRatio,
     double? width,
   }) {
@@ -263,15 +378,18 @@ class _MomentCard extends StatelessWidget {
     final diff = DateTime.now().difference(t);
     if (diff.inMinutes < 1) return context.tr('moments_time_now');
     if (diff.inMinutes < 60) {
-      return context.tr('moments_time_minutes')
+      return context
+          .tr('moments_time_minutes')
           .replaceAll('{count}', '${diff.inMinutes}');
     }
     if (diff.inHours < 24) {
-      return context.tr('moments_time_hours')
+      return context
+          .tr('moments_time_hours')
           .replaceAll('{count}', '${diff.inHours}');
     }
     if (diff.inDays < 7) {
-      return context.tr('moments_time_days')
+      return context
+          .tr('moments_time_days')
           .replaceAll('{count}', '${diff.inDays}');
     }
     return '${t.day.toString().padLeft(2, '0')}.${t.month.toString().padLeft(2, '0')}.${t.year}';
