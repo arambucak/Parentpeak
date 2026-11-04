@@ -64,11 +64,36 @@ platform :android do
   # ── Google Play Beta Upload ───────────────────────────────────────────────
   desc "Upload AAB to Google Play internal testing"
   lane :beta do
-    sh("cd .. && flutter build appbundle --release")
+    # Release-Build mit den nötigen dart-defines, aber OHNE den (seit #241
+    # serverseitig wertlosen) BACKEND_API_TOKEN und ohne Gemini-API-Key.
+    # Backend-URL fest auf die offizielle Domain. Übrige nicht-geheime Werte
+    # aus der lokalen .env (Stripe-Key, Gemini-Modellname); fehlende URLs/
+    # Kontaktangaben fallen auf die Defaults in APIConfig zurück.
+    env = {}
+    env_path = File.expand_path("../.env", __dir__)
+    if File.exist?(env_path)
+      File.foreach(env_path) do |line|
+        line = line.strip
+        next if line.empty? || line.start_with?("#") || !line.include?("=")
+        k, v = line.split("=", 2)
+        env[k.strip] = v.strip.gsub(/\A["']|["']\z/, "")
+      end
+    end
+
+    defines = []
+    defines << "--dart-define=BACKEND_BASE_URL=https://api.parentpeak.com"
+    %w[STRIPE_PUBLISHABLE_KEY GEMINI_MODEL_NAME PRIVACY_POLICY_URL
+       TERMS_OF_SERVICE_URL CONTACT_EMAIL CONTACT_SUPPORT_URL].each do |key|
+      value = env[key]
+      defines << "--dart-define=#{key}=#{value}" if value && !value.empty?
+    end
+
+    sh("cd .. && flutter build appbundle --release #{defines.join(' ')}")
 
     upload_to_play_store(
       track: "internal",
-      aab: "../build/app/outputs/bundle/release/app-release.aab",
+      aab: File.expand_path("../build/app/outputs/bundle/release/app-release.aab", __dir__),
+      json_key: File.expand_path("~/ParentPeak-Keys/play-service-account.json"),
       metadata_path: "./metadata/android",
       skip_upload_apk: true,
       skip_upload_metadata: true,
@@ -87,6 +112,7 @@ platform :android do
       track: "internal",
       track_promote_to: "production",
       aab: "../build/app/outputs/bundle/release/app-release.aab",
+      json_key: File.expand_path("~/ParentPeak-Keys/play-service-account.json"),
       metadata_path: "./metadata/android",
       skip_upload_apk: true,
       skip_upload_aab: true,
