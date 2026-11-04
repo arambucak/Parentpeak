@@ -29,15 +29,11 @@ import 'package:parentpeak/ui/widgets/playmate_profile_status.dart';
 import 'package:parentpeak/ui/widgets/playmate_discovery_error.dart';
 import 'package:parentpeak/ui/widgets/playmate_discovery_empty_state.dart';
 import 'package:parentpeak/ui/widgets/network/family_avatar.dart';
-import 'package:parentpeak/ui/widgets/network/family_card.dart';
-import 'package:parentpeak/ui/widgets/network/info_chip.dart';
-import 'package:parentpeak/ui/widgets/network/network_actions.dart';
 import 'package:parentpeak/ui/widgets/network/safety_menu.dart';
 import 'package:parentpeak/ui/widgets/network/family_swipe_stack.dart';
 import 'package:parentpeak/ui/widgets/network/moments_feed.dart';
 import 'package:parentpeak/ui/moment_compose_screen.dart';
 import 'package:parentpeak/ui/widgets/network/match_celebration_sheet.dart';
-import 'package:parentpeak/ui/widgets/network/network_empty_state.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/ui/match_conversation_screen.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
@@ -135,7 +131,6 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
 
   // Matches-Tab: gegenseitige Matches + eigene offene Anfragen (/interest).
   ParentMatchingInterest _interest = const ParentMatchingInterest();
-  bool _loadingInterest = false;
 
   // Chats-Tab: Messenger-Übersicht
   List<ConversationSummary> _conversations = [];
@@ -1731,180 +1726,6 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
     );
   }
 
-  /// Karte einer echten gematchten Familie mit Verbinden-Aktion.
-  // ignore: unused_element
-  Widget _matchCard(ThemeData theme, MatchResult m) {
-    final p = m.profile;
-    final kids = p.childAges.isEmpty
-        ? ''
-        : '\u{1F9D2} ${p.childAges.map((tag) => networkChildAgeLabel(languageService.currentLanguage, tag)).join(' \u{2022} ')}';
-    final distanceKm = m.breakdown['distanceKm'];
-    final sameCityInMeta =
-        distanceKm == null && m.breakdown['locationLabel'] == 'same_city';
-    final reasonLabels = networkMatchReasonLabels(
-      languageService.currentLanguage,
-      (m.breakdown['reasons'] as List? ?? const []).map(
-        (reason) => reason.toString(),
-      ),
-      sameCityInMeta: sameCityInMeta,
-    );
-    final meta = <String>[
-      if (distanceKm != null) '\u{1F4CD} $distanceKm km',
-      if (sameCityInMeta) _t('network_copy_same_city'),
-      if (p.languages.isNotEmpty)
-        p.languages
-            .take(3)
-            .map(
-              (code) => networkWizardOptionLabel(
-                languageService.currentLanguage,
-                'language',
-                code,
-                code,
-              ),
-            )
-            .join(', '),
-    ].join('  \u{2022}  ');
-    final tags = <String>[
-      ...p.valuesFocus
-          .take(2)
-          .map(
-            (code) => networkWizardOptionLabel(
-              languageService.currentLanguage,
-              'values',
-              code,
-              code,
-            ),
-          ),
-      ...p.interests
-          .take(2)
-          .map(
-            (code) => networkWizardOptionLabel(
-              languageService.currentLanguage,
-              'looking',
-              code,
-              code,
-            ),
-          ),
-    ];
-
-    return FamilyCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              FamilyAvatar(name: p.name, size: FamilyAvatarSize.m),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      p.name,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    if (p.city.isNotEmpty)
-                      Text(
-                        p.city,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              SafetyMenu(
-                userId: m.profile.userId ?? m.profile.id,
-                userName: m.profile.name,
-                reportLabel: _t('network_report'),
-                blockLabel: _t('network_block'),
-                onBlock: () => _blockMatch(m),
-              ),
-            ],
-          ),
-          if (kids.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Text(
-              kids,
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-          if (p.bio != null && p.bio!.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            Text(
-              p.bio!,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                height: 1.3,
-              ),
-            ),
-          ],
-          if (tags.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: tags.map((t) => InfoChip(label: t)).toList(),
-            ),
-          ],
-          if (reasonLabels.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: reasonLabels
-                  .map(
-                    (label) => Text(
-                      label,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.primary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  )
-                  .toList(),
-            ),
-          ],
-          if (meta.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              meta,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.outline,
-              ),
-            ),
-          ],
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: SecondaryAction(
-                  label: _t('network_not_now'),
-                  icon: Icons.close_rounded,
-                  onPressed: () => _reactToMatch(m, 'pass'),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: PrimaryAction(
-                  label: _t('network_interested'),
-                  icon: Icons.favorite_rounded,
-                  onPressed: () => _reactToMatch(m, 'like'),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   /// Findet das MatchResult zu einer Owner-ID (Karten-ID im Wisch-Stack).
   MatchResult? _matchById(String id) {
     for (final m in _matches) {
@@ -1920,7 +1741,7 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
   }
 
   /// Uebersetzt ein MatchResult in die (bereits lokalisierten) Darstellungs-
-  /// daten der grossen Wisch-Karte. Gleiche Logik wie die fruehere _matchCard.
+  /// daten der grossen Wisch-Karte.
   FamilySwipeCardData _toSwipeCard(MatchResult m) {
     final p = m.profile;
     final kids = p.childAges.isEmpty
@@ -2077,143 +1898,16 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
   // ═══════════════════════════════════════════════════════════════════════════
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // TAB 2: MATCHES (gegenseitiges Interesse + bestehende Verbindungen)
+  // MATCHES: Daten fuer verbundene Familien und das Verbunden-Sheet
   // ═══════════════════════════════════════════════════════════════════════════
-  // Der eigentliche Match-Fluss (gegenseitiges "Interessiert") folgt in den
-  // Paketen c/d/e. Bis dahin zeigt dieser Tab einen ruhigen Leerzustand und
-  // die bereits vorhandenen Verbindungen (eingehende Anfragen + Freundesliste),
-  // damit keine Funktion aus dem alten Netzwerk-Tab verloren geht.
   /// Laedt matched + outgoing vom Server (/parent-matching/interest).
   Future<void> _loadInterest() async {
     if (_profileStatus != PlaymateProfileStatus.active) return;
-    if (mounted) setState(() => _loadingInterest = true);
     final interest = await _matching.fetchInterest();
     if (!mounted) return;
     setState(() {
       _interest = interest;
-      _loadingInterest = false;
     });
-  }
-
-  // ignore: unused_element
-  Widget _matchesTab(ThemeData theme) {
-    final matched = _interest.matched;
-    final outgoing = _interest.outgoing;
-    final hasInterest = matched.isNotEmpty || outgoing.isNotEmpty;
-    final hasConnections = FriendshipService.instance.incoming.isNotEmpty ||
-        FriendshipService.instance.friends.isNotEmpty;
-    return RefreshIndicator(
-      onRefresh: () async {
-        await _loadInterest();
-        await FriendshipService.instance.load();
-      },
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
-        children: [
-          if (_loadingInterest && !hasInterest)
-            const Padding(
-              padding: EdgeInsets.all(24),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-          if (matched.isNotEmpty) ...[
-            _matchesSectionTitle(theme, _t('network_matches_new')),
-            const SizedBox(height: 10),
-            ...matched.map((p) => _interestCard(theme, p, matched: true)),
-            const SizedBox(height: 20),
-          ],
-          if (outgoing.isNotEmpty) ...[
-            _matchesSectionTitle(theme, _t('network_matches_outgoing')),
-            const SizedBox(height: 10),
-            ...outgoing.map((p) => _interestCard(theme, p, matched: false)),
-            const SizedBox(height: 20),
-          ],
-          if (!hasInterest && !hasConnections && !_loadingInterest)
-            NetworkEmptyState(
-              emoji: '\u{1F91D}',
-              title: _t('network_matches_empty_title'),
-              description: _t('network_matches_empty_body'),
-              actionLabel: _t('network_copy_invite_playmates'),
-              onAction: () => setState(() => _index = 0),
-              actionIcon: Icons.explore_rounded,
-            ),
-          // Bestehende Verbindungen + Einladen (Link/QR) bleiben erhalten.
-          _netzwerkTab(theme),
-        ],
-      ),
-    );
-  }
-
-  Widget _matchesSectionTitle(ThemeData theme, String title) {
-    return Text(
-      title,
-      style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
-    );
-  }
-
-  /// Karte in der Matches-Liste: matched (Chat oeffnen) oder outgoing
-  /// (Anfrage, Zuruckziehen).
-  Widget _interestCard(ThemeData theme, ParentMatchingProfile p,
-      {required bool matched}) {
-    final kids = p.childAges.isEmpty
-        ? ''
-        : p.childAges
-            .map((t) => networkChildAgeLabel(languageService.currentLanguage, t))
-            .join(' \u{2022} ');
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: FamilyCard(
-        child: Row(
-          children: [
-            FamilyAvatar(name: p.name, size: FamilyAvatarSize.m),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    p.name,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  if (p.city.isNotEmpty || kids.isNotEmpty)
-                    Text(
-                      [if (p.city.isNotEmpty) p.city, if (kids.isNotEmpty) kids]
-                          .join('  \u{2022}  '),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            matched
-                ? FilledButton(
-                    onPressed: () => _openMatchChat(p),
-                    style: FilledButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(_t('network_match_open_chat')),
-                  )
-                : OutlinedButton(
-                    onPressed: () => _withdrawInterest(p),
-                    style: OutlinedButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: Text(_t('network_withdraw')),
-                  ),
-          ],
-        ),
-      ),
-    );
   }
 
   /// Oeffnet den Freundes-Chat zu einem gematchten Profil. Bei einem Match
@@ -2226,26 +1920,6 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
     if (me.isEmpty || other.isEmpty) return;
     final roomId = (<String>[me, other]..sort()).join('__');
     await _openConversation(roomId: roomId, title: p.name, isGroup: false);
-  }
-
-  /// Eigene offene Anfrage zuruckziehen: 'pass' ueberschreibt das 'like'.
-  Future<void> _withdrawInterest(ParentMatchingProfile p) async {
-    final uid = AuthService.instance.currentUser?.uid;
-    setState(() {
-      _interest = ParentMatchingInterest(
-        matched: _interest.matched,
-        outgoing:
-            _interest.outgoing.where((x) => x.id != p.id).toList(),
-      );
-    });
-    await _matching.sendAction(profileId: p.id, action: 'pass', userId: uid);
-  }
-
-  Widget _netzwerkTab(ThemeData theme) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
-      child: _netzwerkSections(theme),
-    );
   }
 
   Widget _netzwerkSections(ThemeData theme) {
