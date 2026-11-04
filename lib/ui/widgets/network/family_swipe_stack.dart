@@ -284,6 +284,7 @@ class _FamilySwipeStackState extends State<FamilySwipeStack>
           Expanded(
             child: LayoutBuilder(
               builder: (context, constraints) => SingleChildScrollView(
+                key: ValueKey(card.id),
                 primary: false,
                 child: ConstrainedBox(
                   constraints: BoxConstraints(minHeight: constraints.maxHeight),

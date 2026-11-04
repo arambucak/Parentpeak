@@ -262,4 +262,59 @@ void main() {
     expect(passed, ['family-1', 'family-1']);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('the next family starts with details scrolled to the top',
+      (tester) async {
+    Widget host(String id) => MaterialApp(
+          home: Scaffold(
+            body: FamilySwipeStack(
+              cards: [
+                FamilySwipeCardData(
+                  id: id,
+                  name: 'Sommer',
+                  city: 'Berlin',
+                  kids: '3 Jahre',
+                  bio: 'Wir sind gerne draussen und freuen uns '
+                      'auf gemeinsame Spielplatz-Nachmittage.',
+                  tags: const [
+                    'Respekt',
+                    'Empathie',
+                    'Spielplatz',
+                    'Ausfluege'
+                  ],
+                  reasons: const ['In deiner Stadt'],
+                  meta: '2 km',
+                ),
+              ],
+              cardHeight: 420,
+              likeLabel: 'Interessiert',
+              passLabel: 'Nicht jetzt',
+              onLike: (_) {},
+              onPass: (_) {},
+            ),
+          ),
+        );
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(host('first'));
+    await tester.drag(
+      find.byKey(const ValueKey('first')),
+      const Offset(0, -180),
+    );
+    await tester.pumpAndSettle();
+    ScrollPosition position(String id) => tester
+        .state<ScrollableState>(
+          find.descendant(
+            of: find.byKey(ValueKey(id)),
+            matching: find.byType(Scrollable),
+          ),
+        )
+        .position;
+    expect(position('first').pixels, greaterThan(0));
+    await tester.pumpWidget(host('next'));
+    expect(position('next').pixels, 0);
+    expect(tester.takeException(), isNull);
+  });
 }
