@@ -13458,6 +13458,66 @@ async function sendEmail({ to, subject, html, text }) {
   return false;
 }
 
+// ── Firebase-Aktionslink ohne Admin-SDK ──────────────────────────────────────
+// Das Admin-SDK (generatePasswordResetLink / generateEmailVerificationLink)
+// scheitert seit der Abschaltung von Firebase Dynamic Links mit "INTERNAL
+// ASSERT FAILED". Wir holen den Aktionscode deshalb direkt von der Identity-
+// Toolkit-API: accounts:sendOobCode mit returnOobLink verschickt KEINE Mail,
+// liefert aber Link + oobCode. Gibt null zurueck, wenn die Adresse unbekannt ist
+// (Firebase antwortet dann mit 200 ohne Link, um Konten nicht zu verraten).
+let firebaseActionCredential = null;
+async function generateFirebaseActionLink(requestType, email) {
+  const raw = (process.env.FIREBASE_SERVICE_ACCOUNT_JSON || '').trim();
+  if (!raw) {
+    throw Object.assign(new Error('Service account not configured'), { code: 'auth/not-configured' });
+  }
+  const serviceAccount = JSON.parse(raw);
+  if (!firebaseActionCredential) {
+    firebaseActionCredential = require('firebase-admin/app').cert(serviceAccount);
+  }
+  const { access_token: accessToken } = await firebaseActionCredential.getAccessToken();
+  const response = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/projects/${encodeURIComponent(serviceAccount.project_id)}/accounts:sendOobCode`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ requestType, email, returnOobLink: true }),
+      signal: AbortSignal.timeout(8000),
+    },
+  );
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message = String(body?.error?.message || '');
+    const code = message.startsWith('EMAIL_NOT_FOUND') ? 'auth/user-not-found' : 'auth/internal-error';
+    throw Object.assign(new Error(message || `HTTP ${response.status}`), { code });
+  }
+  return typeof body.oobLink === 'string' && body.oobLink ? body.oobLink : null;
+}
+
+// ── Versandbegrenzung fuer Auth-Mails ────────────────────────────────────────
+// /auth/send-password-reset ist ohne Login erreichbar. Ohne Limit liessen sich
+// ueber die Route beliebig viele Mails an fremde Adressen ausloesen. Begrenzung
+// pro Schluessel (Adresse bzw. Nutzer) und ein globaler Deckel pro Stunde.
+const authMailHits = new Map();
+function allowAuthMail(key, limit, windowMs = 60 * 60 * 1000, now = Date.now()) {
+  const recent = (authMailHits.get(key) || []).filter(t => now - t < windowMs);
+  if (recent.length >= limit) {
+    authMailHits.set(key, recent);
+    return false;
+  }
+  recent.push(now);
+  authMailHits.set(key, recent);
+  if (authMailHits.size > 5000) {
+    for (const [k, hits] of authMailHits) {
+      if (!hits.some(t => now - t < windowMs)) authMailHits.delete(k);
+    }
+  }
+  return true;
+}
+
 /** Build a custom action URL pointing to our handler, preserving oobCode + mode */
 function buildCustomActionUrl(firebaseLink, mode) {
   const oobCode = new URL(firebaseLink).searchParams.get('oobCode');
@@ -13567,8 +13627,9 @@ function buildVerificationEmailText(displayName, actionUrl) {
 /**
  * POST /auth/send-password-reset
  * Body: { email: string }
- * Generates a Firebase password reset link via Admin SDK and sends it
- * through the configured email provider. User existence is never disclosed.
+ * Holt einen Firebase-Aktionscode (Identity-Toolkit-API) und verschickt ihn als
+ * gebrandete Mail ueber den konfigurierten Provider (Resend). Ob ein Konto
+ * existiert, wird nie verraten. Begrenzt auf 3 Mails/Stunde je Adresse.
  */
 app.post('/auth/send-password-reset', async (req, res) => {
   const email = typeof req.body?.email === 'string'
@@ -13585,9 +13646,15 @@ app.post('/auth/send-password-reset', async (req, res) => {
       return res.status(503).json({ error: 'E-Mail-Versand ist derzeit nicht verfügbar' });
     }
 
-    const firebaseLink = await firebaseAdmin.auth().generatePasswordResetLink(email, {
-      url: ACTION_HANDLER_BASE,
-    });
+    if (!allowAuthMail(`reset:${email}`, 3) || !allowAuthMail('reset:*', 300)) {
+      return res.status(429).json({ error: 'Zu viele Versuche. Bitte später erneut versuchen.' });
+    }
+
+    const firebaseLink = await generateFirebaseActionLink('PASSWORD_RESET', email);
+    if (!firebaseLink) {
+      // Unbekannte Adresse: nichts senden, nichts verraten.
+      return res.json({ success: true });
+    }
     const actionUrl = buildCustomActionUrl(firebaseLink, 'resetPassword');
 
     const sent = await sendEmail({
@@ -13633,9 +13700,12 @@ app.post('/auth/send-verification-email', async (req, res) => {
       return res.json({ success: true, already_verified: true });
     }
 
-    const firebaseLink = await firebaseAdmin.auth().generateEmailVerificationLink(decoded.email, {
-      url: ACTION_HANDLER_BASE,
-    });
+    if (!allowAuthMail(`verify:${decoded.uid || decoded.email}`, 5)) {
+      return res.status(429).json({ error: 'Zu viele Versuche. Bitte später erneut versuchen.' });
+    }
+
+    const firebaseLink = await generateFirebaseActionLink('VERIFY_EMAIL', decoded.email);
+    if (!firebaseLink) throw new Error('Kein Aktionslink erhalten');
     const actionUrl   = buildCustomActionUrl(firebaseLink, 'verifyEmail');
     const displayName = decoded.name || '';
 
