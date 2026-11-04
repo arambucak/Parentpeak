@@ -15,6 +15,10 @@ Umsetzungsstand 2026-11-04 (die Analyse unten bleibt historisch):
 - Die Kartenhoehe nutzt die verfuegbare Hoehe minus 110 Pixel, begrenzt auf
   420 bis 640 Pixel; kleine Fenster bleiben scrollbar. Lade-, Fehler- und
   Einladungs-Leerzustand bleiben erhalten.
+- Der alte, nicht mehr navigierte Matches-Tab samt seinen Karten und
+  Zurueckziehen-Aktion ist entfernt. Gemeinsame Netzwerkbereiche unter Meine
+  Familie, Interest-Laden fuer verbundene Familien und das Lade-Skeleton
+  bleiben erhalten; historische Uebersetzungsschluessel bleiben bestehen.
 
 Kennzeichnung in diesem Dokument:
 
