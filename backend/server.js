@@ -10599,6 +10599,9 @@ app.delete('/api/account/:userId', async (req, res) => {
   if (!userId) return res.status(400).json({ error: 'userId erforderlich' });
   if (!(await authorizeAccountOwner(req, res, userId))) return;
   const deleted = {};
+  // Adresse fuer die Bestaetigungsmail sichern, solange das Konto noch existiert.
+  let accountContact = null;
+  try { accountContact = await lookupAccountContact(userId); } catch (_) {}
   try {
     await ensureSocialSchemaReady();
     // Zugehoerige Freundes-Codes dieses Nutzers ermitteln (fuer code-basierte Tabellen).
@@ -10710,6 +10713,15 @@ app.delete('/api/account/:userId', async (req, res) => {
       } catch (e) {
         deleted.momentMedia = `error: ${e?.message || e}`;
       }
+    }
+
+    // Bestaetigungsmail (auch als Sicherheitssignal). Best effort: Ein Mailfehler
+    // darf die Loeschung nie scheitern lassen.
+    try {
+      deleted.confirmationEmail = await sendAccountDeletedEmailWithTimeout(userId, accountContact);
+    } catch (mailError) {
+      deleted.confirmationEmail = 'failed';
+      console.error('❌ Konto-Loeschung: Bestaetigungsmail fehlgeschlagen:', mailError?.code || mailError?.name || 'unknown');
     }
 
     return res.json({ ok: true, userId, codes, deleted });
@@ -13404,6 +13416,7 @@ app.get('/auth/action.js', (_req, res) => {
 const ACTION_HANDLER_BASE = process.env.AUTH_ACTION_URL || 'https://parentpeak.onrender.com/auth/action';
 const SMTP_FROM_NAME  = process.env.SMTP_FROM_NAME  || 'ParentPeak';
 const SMTP_FROM_EMAIL = process.env.SMTP_FROM_EMAIL || (process.env.SMTP_USER || 'noreply@parentpeak.app');
+const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'support@parentpeak.com';
 
 /** Lazy-create the nodemailer transporter (returns null if SMTP not configured) */
 function createMailTransporter() {
@@ -13543,7 +13556,9 @@ const EMAIL_STYLE = `
 `;
 
 function buildAuthEmail({ preview, title, intro, actionUrl, actionLabel, note }) {
-  const safeActionUrl = escapeEmailHtml(actionUrl);
+  // Ohne actionUrl (z. B. Loeschbestaetigung) entfallen Button und Link-Hinweis.
+  const hasAction = Boolean(actionUrl);
+  const safeActionUrl = hasAction ? escapeEmailHtml(actionUrl) : '';
   const logoUrl = escapeEmailHtml(new URL('/auth/brand-logo.png', ACTION_HANDLER_BASE).href);
   return `<!DOCTYPE html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title></head>
@@ -13561,18 +13576,18 @@ function buildAuthEmail({ preview, title, intro, actionUrl, actionLabel, note })
           <p style="font-size:12px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#5E746C;margin:0 0 12px;">Für dich und deine Familie</p>
           <h1 style="font-size:27px;line-height:1.25;letter-spacing:-0.7px;color:#153E5A;margin:0 0 20px;">${title}</h1>
           <div style="font-size:16px;color:#4B606B;margin:0 0 24px;">${intro}</div>
-          <table role="presentation" cellpadding="0" cellspacing="0"><tr><td bgcolor="#153E5A" style="border-radius:12px;">
+          ${hasAction ? `<table role="presentation" cellpadding="0" cellspacing="0"><tr><td bgcolor="#153E5A" style="border-radius:12px;">
             <a href="${safeActionUrl}" style="display:inline-block;padding:15px 24px;border:1px solid #153E5A;border-radius:12px;color:#FFFFFF;font-size:16px;font-weight:700;text-decoration:none;">${actionLabel}</a>
           </td></tr></table>
-          <p style="font-size:13px;color:#586C76;margin:20px 0 24px;">Der Link ist nur begrenzte Zeit gültig und kann einmal verwendet werden.</p>
+          <p style="font-size:13px;color:#586C76;margin:20px 0 24px;">Der Link ist nur begrenzte Zeit gültig und kann einmal verwendet werden.</p>` : ''}
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FBF6EB;border-radius:12px;border:1px solid #EEE4CF;">
             <tr><td style="padding:16px;font-size:14px;color:#625844;">${note}</td></tr>
           </table>
           <p style="font-size:15px;margin:24px 0 0;color:#4B606B;">Herzliche Grüße<br><strong style="color:#153E5A;">Dein ParentPeak-Team</strong></p>
-          <p style="font-size:12px;line-height:1.6;color:#586C76;margin:24px 0 0;border-top:1px solid #E5E8E7;padding-top:20px;">
+          ${hasAction ? `<p style="font-size:12px;line-height:1.6;color:#586C76;margin:24px 0 0;border-top:1px solid #E5E8E7;padding-top:20px;">
             Der Button funktioniert nicht? Kopiere diesen Link in deinen Browser:<br>
             <a href="${safeActionUrl}" style="color:#245C72;word-break:break-all;overflow-wrap:anywhere;">${safeActionUrl}</a>
-          </p>
+          </p>` : ''}
         </td></tr>
       </table>
       <p style="font-size:12px;color:#586C76;margin:20px 0 0;">ParentPeak · Ein bisschen mehr Leichtigkeit für Familien.</p>
@@ -13622,6 +13637,68 @@ function buildPasswordResetEmailText(actionUrl) {
 function buildVerificationEmailText(displayName, actionUrl) {
   const greeting = displayName.trim() ? `Hallo ${displayName.trim()},` : 'Hallo,';
   return `${greeting}\n\nFamilie ist voller kleiner und großer Momente. Schön, dass wir dich dabei begleiten dürfen.\n\nEin kleiner Schritt fehlt noch: Bitte bestätige deine E-Mail-Adresse, um deine Anmeldung in unserer Eltern-Community abzuschließen:\n${actionUrl}\n\nDer Link ist nur begrenzte Zeit gültig und kann einmal verwendet werden.\n\nWenn du kein ParentPeak-Konto erstellt hast, kannst du diese Nachricht ignorieren.\n\nHerzliche Grüße\nDein ParentPeak-Team\nGemeinsam gut durch den Familienalltag.`;
+}
+
+function buildAccountDeletedEmail(displayName) {
+  const name = typeof displayName === 'string' ? displayName.trim() : '';
+  const greeting = name ? `Hallo ${escapeEmailHtml(name)},` : 'Hallo,';
+  const support = escapeEmailHtml(SUPPORT_EMAIL);
+  return buildAuthEmail({
+    preview: 'Dein ParentPeak-Konto und die dazugehörigen Daten wurden gelöscht.',
+    title: 'Dein Konto wurde gelöscht',
+    intro: `${greeting}<br><br>wie gewünscht haben wir dein ParentPeak-Konto und die dazugehörigen Daten gelöscht. Danke, dass du ein Stück des Weges mit uns gegangen bist.<br><br>Falls du einmal zurückkommen möchtest: Du bist jederzeit herzlich willkommen. Ein neues Konto ist schnell erstellt.`,
+    actionUrl: null,
+    actionLabel: '',
+    note: `<strong>Das warst nicht du?</strong><br>Dann schreib uns bitte sofort an <a href="mailto:${support}" style="color:#245C72;">${support}</a>, damit wir dir helfen können.`,
+  });
+}
+
+function buildAccountDeletedEmailText(displayName) {
+  const name = typeof displayName === 'string' ? displayName.trim() : '';
+  const greeting = name ? `Hallo ${name},` : 'Hallo,';
+  return `${greeting}\n\nwie gewünscht haben wir dein ParentPeak-Konto und die dazugehörigen Daten gelöscht. Danke, dass du ein Stück des Weges mit uns gegangen bist.\n\nFalls du einmal zurückkommen möchtest: Du bist jederzeit herzlich willkommen. Ein neues Konto ist schnell erstellt.\n\nDas warst nicht du? Dann schreib uns bitte sofort an ${SUPPORT_EMAIL}, damit wir dir helfen können.\n\nHerzliche Grüße\nDein ParentPeak-Team\nGemeinsam gut durch den Familienalltag.`;
+}
+
+// Adresse + Name VOR der Loeschung sichern: Die App loescht den Firebase-Nutzer
+// erst NACH dem Backend-Aufruf, ab dann ist die Adresse nicht mehr abrufbar.
+async function lookupAccountContact(userId) {
+  if (!firebaseAdmin) return null;
+  const user = await firebaseAdmin.auth().getUser(userId);
+  const email = typeof user?.email === 'string' ? user.email.trim().toLowerCase() : '';
+  if (!email) return null;
+  return {
+    email,
+    name: typeof user.displayName === 'string' ? user.displayName.trim() : '',
+  };
+}
+
+// Bestaetigungsmail an die Adresse des Kontos (nie an eine fremde). Hoechstens
+// eine pro Konto und Tag: Nach 'requires-recent-login' wiederholt die App die
+// Loeschung, das soll keine zweite Mail ausloesen.
+async function sendAccountDeletedEmail(userId, contact) {
+  if (!contact || !contact.email) return 'skipped';
+  if (!allowAuthMail(`deleted:${userId}`, 1, 24 * 60 * 60 * 1000)) return 'skipped';
+  const sent = await sendEmail({
+    to: contact.email,
+    subject: 'Dein ParentPeak-Konto wurde gelöscht',
+    html: buildAccountDeletedEmail(contact.name),
+    text: buildAccountDeletedEmailText(contact.name),
+  });
+  return sent ? 'sent' : 'failed';
+}
+
+// Wie oben, aber mit Zeitlimit: Ein langsamer Mailanbieter darf die
+// Konto-Loeschung (DSGVO) nicht aufhalten.
+async function sendAccountDeletedEmailWithTimeout(userId, contact, timeoutMs = 6000) {
+  let timer;
+  try {
+    return await Promise.race([
+      sendAccountDeletedEmail(userId, contact),
+      new Promise(resolve => { timer = setTimeout(() => resolve('timeout'), timeoutMs); }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /**
