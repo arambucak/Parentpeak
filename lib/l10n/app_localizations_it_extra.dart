@@ -174,6 +174,12 @@ const appLocalizationsItExtra = <String, String>{
   'auth_email_confirm_instructions':
       'Tocca il link nell\'e-mail. Dopodiché potrai accedere.',
   'auth_email_confirm_title': 'Conferma la tua e-mail 📬',
+  'auth_verify_dialog_title': 'Che bello averti qui!',
+  'auth_verify_dialog_subtitle': 'Ancora un piccolo passo e si parte. Abbiamo inviato un\'e-mail a:',
+  'auth_verify_step_1': 'Apri l\'e-mail di ParentPeak.',
+  'auth_verify_step_2': 'Tocca il pulsante nell\'e-mail.',
+  'auth_verify_step_3': 'Torna qui e accedi.',
+  'auth_verify_spam_hint': 'Non è arrivato niente? Dai un\'occhiata alla cartella spam. A volte succede.',
   'auth_email_invalid': 'Inserisci un indirizzo e-mail valido.',
   'auth_email_label': 'E-mail',
   'auth_email_required': 'L\'e-mail è obbligatoria.',

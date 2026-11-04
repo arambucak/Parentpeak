@@ -167,6 +167,12 @@ const appLocalizationsArExtra = <String, String>{
   'auth_email_confirm_instructions':
       'اضغط على الرابط في البريد الإلكتروني. بعد ذلك يمكنك تسجيل الدخول.',
   'auth_email_confirm_title': 'أكِّد بريدك الإلكتروني 📬',
+  'auth_verify_dialog_title': 'سعداء بوجودك معنا!',
+  'auth_verify_dialog_subtitle': 'خطوة صغيرة واحدة فقط ونبدأ. أرسلنا رسالة إلى:',
+  'auth_verify_step_1': 'افتح رسالة ParentPeak.',
+  'auth_verify_step_2': 'اضغط على الزر في الرسالة.',
+  'auth_verify_step_3': 'عُد إلى هنا وسجّل الدخول.',
+  'auth_verify_spam_hint': 'لم يصل شيء؟ ألقِ نظرة على مجلد الرسائل غير المرغوب فيها. يحدث ذلك أحياناً.',
   'auth_email_invalid': 'يرجى إدخال عنوان بريد إلكتروني صالح.',
   'auth_email_label': 'البريد الإلكتروني',
   'auth_email_required': 'البريد الإلكتروني مطلوب.',

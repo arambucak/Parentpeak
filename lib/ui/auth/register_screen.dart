@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/logic/auth_service.dart';
+import 'package:parentpeak/ui/auth/email_verification_dialog.dart';
 
 class RegisterScreen extends StatefulWidget {
   final VoidCallback? onRegisterSuccess;
@@ -68,7 +69,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         await showDialog<void>(
           context: context,
           barrierDismissible: false,
-          builder: (_) => _EmailVerificationDialog(
+          builder: (_) => EmailVerificationDialog(
             email: _emailCtrl.text.trim().toLowerCase(),
             emailSent: result.verificationEmailSent ?? true,
             onDone: () {
@@ -627,97 +628,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _EmailVerificationDialog extends StatefulWidget {
-  const _EmailVerificationDialog({
-    required this.email,
-    required this.emailSent,
-    required this.onDone,
-  });
-  final String email;
-  final bool emailSent;
-  final VoidCallback onDone;
-
-  @override
-  State<_EmailVerificationDialog> createState() =>
-      _EmailVerificationDialogState();
-}
-
-class _EmailVerificationDialogState extends State<_EmailVerificationDialog> {
-  bool _resent = false;
-  bool _sendFailed = false;
-  bool _sending = false;
-
-  Future<void> _resend() async {
-    setState(() {
-      _sending = true;
-      _resent = false;
-    });
-    final sent =
-        await AuthService.instance.resendVerificationEmail(widget.email);
-    if (mounted) {
-      setState(() {
-        _sending = false;
-        _resent = sent;
-        _sendFailed = !sent;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: Text(context.tr('auth_email_confirm_title')),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            widget.emailSent
-                ? context.tr('auth_email_sent',
-                    values: {'email': widget.email})
-                : context.tr('auth_email_delivery_failed'),
-          ),
-          if (_sendFailed) ...[
-            const SizedBox(height: 10),
-            Text(
-              context.tr('auth_email_delivery_failed'),
-              style: const TextStyle(color: Color(0xFF8C3E28), fontSize: 13),
-            ),
-          ],
-          const SizedBox(height: 12),
-          Text(
-            context.tr('auth_email_confirm_instructions'),
-            style: const TextStyle(fontSize: 13, color: Colors.black54),
-          ),
-          if (_resent) ...[
-            const SizedBox(height: 10),
-            Text(
-              context.tr('auth_email_resent'),
-              style: const TextStyle(color: Color(0xFF059669), fontSize: 13),
-            ),
-          ],
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: _sending ? null : _resend,
-          child: _sending
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2))
-              : Text(context.tr('auth_resend_link')),
-        ),
-        FilledButton(
-          onPressed: widget.onDone,
-          child: Text(context.tr('auth_to_login')),
-        ),
-      ],
     );
   }
 }

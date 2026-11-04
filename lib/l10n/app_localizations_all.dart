@@ -3248,6 +3248,12 @@ class AppStringsManager {
           '{provider}-Login kommt in der nächsten Version.',
       'auth_url_open_failed': 'Konnte {url} nicht öffnen.',
       'auth_email_confirm_title': 'E-Mail bestätigen 📬',
+      'auth_verify_dialog_title': 'Schön, dass du da bist!',
+      'auth_verify_dialog_subtitle': 'Nur noch ein kleiner Schritt, dann kann es losgehen. Wir haben dir eine E-Mail geschickt an:',
+      'auth_verify_step_1': 'Öffne die E-Mail von ParentPeak.',
+      'auth_verify_step_2': 'Tippe auf den Button in der E-Mail.',
+      'auth_verify_step_3': 'Komm zurück und melde dich an.',
+      'auth_verify_spam_hint': 'Nichts angekommen? Wirf bitte einen Blick in den Spam-Ordner. Das passiert manchmal.',
       'auth_email_sent':
           'Eine Bestätigungs-E-Mail geht an\n{email}.\nBitte prüfe auch deinen Spam-Ordner.',
       'auth_email_delivery_failed':
@@ -6118,6 +6124,12 @@ class AppStringsManager {
           '{provider} sign-in is coming in the next version.',
       'auth_url_open_failed': 'Could not open {url}.',
       'auth_email_confirm_title': 'Confirm your email 📬',
+      'auth_verify_dialog_title': 'Great to have you here!',
+      'auth_verify_dialog_subtitle': 'Just one small step and you\'re ready to go. We\'ve sent an email to:',
+      'auth_verify_step_1': 'Open the email from ParentPeak.',
+      'auth_verify_step_2': 'Tap the button in the email.',
+      'auth_verify_step_3': 'Come back and log in.',
+      'auth_verify_spam_hint': 'Nothing there? Please take a quick look in your spam folder. It happens sometimes.',
       'auth_email_sent':
           'A confirmation email is on its way to\n{email}.\nPlease also check your spam folder.',
       'auth_email_delivery_failed':
@@ -16262,6 +16274,12 @@ class AppStringsManager {
           'Têketina {provider} di guhertoya bê de tê.',
       'auth_url_open_failed': '{url} nehat vekirin.',
       'auth_email_confirm_title': 'E-nameyê piştrast bike 📬',
+      'auth_verify_dialog_title': 'Spas ku tu li vir î!',
+      'auth_verify_dialog_subtitle': 'Tenê gaveke biçûk maye û em dest pê dikin. Me e-nameyek şand bo:',
+      'auth_verify_step_1': 'E-nameya ParentPeak veke.',
+      'auth_verify_step_2': 'Li ser bişkojka di e-nameyê bitikîne.',
+      'auth_verify_step_3': 'Vegere vir û têkeve.',
+      'auth_verify_spam_hint': 'Tiştek nehat? Li peldanka spamê binêre. Carinan wisa çêdibe.',
       'auth_email_sent':
           'E-nameya piştrastkirinê ji bo\n{email}\nbi rê ket. Qutiya spamê jî kontrol bike.',
       'auth_email_delivery_failed':
@@ -22876,6 +22894,12 @@ class AppStringsManager {
           '{provider} ile giriş sonraki sürümde geliyor.',
       'auth_url_open_failed': '{url} açılamadı.',
       'auth_email_confirm_title': 'E-posta adresini doğrula 📬',
+      'auth_verify_dialog_title': 'Aramızda olmana sevindik!',
+      'auth_verify_dialog_subtitle': 'Küçük bir adım kaldı, sonra başlıyoruz. Şu adrese bir e-posta gönderdik:',
+      'auth_verify_step_1': 'ParentPeak\'ten gelen e-postayı aç.',
+      'auth_verify_step_2': 'E-postadaki düğmeye dokun.',
+      'auth_verify_step_3': 'Buraya dön ve giriş yap.',
+      'auth_verify_spam_hint': 'Hiçbir şey gelmedi mi? Spam klasörüne göz at. Bazen böyle olur.',
       'auth_email_sent':
           'Doğrulama e-postası\n{email}\nadresine gönderiliyor. Lütfen spam klasörünü de kontrol et.',
       'auth_email_delivery_failed':

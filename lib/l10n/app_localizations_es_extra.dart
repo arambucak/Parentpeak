@@ -177,6 +177,12 @@ const appLocalizationsEsExtra = <String, String>{
   'auth_email_confirm_instructions':
       'Pulsa el enlace del correo. Después podrás iniciar sesión.',
   'auth_email_confirm_title': 'Confirma tu correo 📬',
+  'auth_verify_dialog_title': '¡Qué alegría tenerte aquí!',
+  'auth_verify_dialog_subtitle': 'Solo un pequeño paso más y listo. Hemos enviado un correo a:',
+  'auth_verify_step_1': 'Abre el correo de ParentPeak.',
+  'auth_verify_step_2': 'Pulsa el botón del correo.',
+  'auth_verify_step_3': 'Vuelve aquí e inicia sesión.',
+  'auth_verify_spam_hint': '¿No ha llegado nada? Echa un vistazo a la carpeta de spam. A veces ocurre.',
   'auth_email_invalid': 'Introduce una dirección de correo válida.',
   'auth_email_label': 'Correo electrónico',
   'auth_email_required': 'El correo es obligatorio.',
