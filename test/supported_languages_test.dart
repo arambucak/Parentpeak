@@ -162,6 +162,7 @@ void main() {
           'category_sport',
           'chat_btn',
           'chat_spam',
+          'chat_threads_title',
           'contacts',
           'duration_1_min',
           'duration_2_min',
