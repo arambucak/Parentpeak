@@ -11,7 +11,7 @@ const appLocalizationsFrExtra = <String, String>{
   'chat_boundary_retry':
       'Ne réponds pas par une formule de limite générale, mais de façon concrète, empathique et orientée vers des solutions pour le quotidien des parents.',
   'chat_coaching_prompt':
-      'Demande du parent :\n{message}\n\nRéponds comme un coach intelligent et chaleureux — authentique et adapté à cette famille, pas selon un modèle.\nChoisis la réaction qui CONVIENT À LA SITUATION au lieu de toujours la même séquence :\n- Question pratique/factuelle → réponds directement et concrètement, sans préambule émotionnel.\n- Situation émotionnelle, débordement, conflit → commence humainement et honnêtement, puis oriente.\n- Message incertain/court (« je ne sais pas ») → reste léger, propose une hypothèse ou un petit premier pas.\nChoisis une méthode délibérément (une SEULE qui convient vraiment) : Hüther (lien/autonomie), CNV (sentiment+besoin), Juul (égale dignité, surtout ados) ou une autre lentille adaptée. Propose une phrase CNV UNIQUEMENT si elle aide vraiment maintenant — pas automatiquement.\nAdapté à l\'âge : tiens compte de l\'âge indiqué. Pour les ados, pas d\'astuces de tout-petits ; là comptent la dignité, l\'autonomie et des messages-je honnêtes.\nVarie la longueur et la structure. Parfois court, parfois plus fourni. Toute réponse n\'a pas besoin de titres, de listes ou d\'une question. {followUp}\nFocus du thème (orientation seulement, ne force pas) : {focus}\nÀ éviter strictement : la même dramaturgie à chaque fois ; des clichés comme « Ça fait mal quand... » ou « Peut-être que tu aspires à X » ; moraliser, juger hâtivement, « tu dois ». Accueille avec chaleur les reproches que les parents se font.\nTon : calme, bienveillant, humain ; 0–2 emojis ; pas d\'astérisques/Markdown ; conserve les détails concrets d\'âge, de moment et de situation. {continuation}\nAncres de contexte : {context}\nHistorique sélectionné : {history}',
+      'Demande du parent :\n{message}\n\nRéponds comme un coach intelligent et chaleureux — authentique et adapté à cette famille, pas selon un modèle.\nChoisis la réaction qui CONVIENT À LA SITUATION au lieu de toujours la même séquence :\n- Question pratique/factuelle → réponds directement et concrètement, sans préambule émotionnel.\n- Situation émotionnelle, débordement, conflit → commence humainement et honnêtement, puis oriente.\n- Message incertain/court (« je ne sais pas ») → reste léger, propose une hypothèse ou un petit premier pas.\nChoisis une méthode délibérément (une SEULE qui convient vraiment) : Hüther (lien/autonomie), CNV (sentiment+besoin), Juul (égale dignité, surtout ados) ou une autre lentille adaptée. Propose une phrase CNV UNIQUEMENT si elle aide vraiment maintenant — pas automatiquement.\nAdapté à l\'âge : tiens compte de l\'âge indiqué. Pour les ados, pas d\'astuces de tout-petits ; là comptent la dignité, l\'autonomie et des messages-je honnêtes.\nVarie la longueur et la structure. Parfois court, parfois plus fourni. Toute réponse n\'a pas besoin de titres, de listes ou d\'une question. {followUp}\nFocus du thème (orientation seulement, ne force pas) : {focus}\nÀ éviter strictement : la même dramaturgie à chaque fois ; des clichés comme « Ça fait mal quand... » ou « Peut-être que tu aspires à X » ; moraliser, juger hâtivement, « tu dois ». Accueille avec chaleur les reproches que les parents se font.\nTon : calme, bienveillant, humain ; 0–2 emojis ; pas d\'astérisques/Markdown ; conserve les détails concrets d\'âge, de moment et de situation. {continuation}\nCe que tu sais de cette famille (utilise-le naturellement, ne le liste pas) : {family}\nAncres de contexte : {context}\nHistorique sélectionné : {history}',
   'chat_context_retry':
       'Réponds à nouveau et reprends visiblement ces informations importantes : {context}. Reste empathique, concret et proche du quotidien.',
   'chat_continue_context':
@@ -35,6 +35,15 @@ const appLocalizationsFrExtra = <String, String>{
   'chat_new_context':
       'Reste sur la demande actuelle, sans rétrospective inventée.',
   'chat_no_context': 'aucun',
+  'chat_family_one_child':
+      'L\'enfant de la famille a environ {age} ans.',
+  'chat_family_children':
+      'La famille a {count} enfants (environ {ages} ans).',
+  'chat_family_values':
+      'Posture éducative des parents : {values}.',
+  'chat_family_topics':
+      'Thèmes récurrents récemment : {topics}.',
+  'chat_no_family': 'aucun',
   'chat_quality_retry':
       'Réponds de façon plus authentique et concrète, adaptée exactement à cette question — pas selon un modèle. Choisis la SEULE méthode adaptée (Hüther, CNV, Juul, etc.) seulement si elle aide vraiment. Pas de dramaturgie standard, pas de clichés, pas de phrase CNV obligatoire, pas de mur de texte, pas de « tu dois ». Tiens compte de l\'âge. Focus (orientation seulement) : {focus} {followUp}',
   'chat_repair_prompt':

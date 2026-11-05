@@ -1,7 +1,8 @@
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 
 class ChatPromptPolicy {
-  static String text(String language, String key, [Map<String, String> values = const {}]) {
+  static String text(String language, String key,
+      [Map<String, String> values = const {}]) {
     return AppStringsManager.getString(language, key).replaceAllMapped(
       RegExp(r'\{(\w+)\}'),
       (match) => values[match.group(1)] ?? match.group(0)!,
@@ -31,14 +32,24 @@ class ChatPromptPolicy {
     required bool needsFollowUp,
     required List<String> context,
     required List<String> history,
-  }) => text(language, 'chat_coaching_prompt', {
-    'message': message,
-    'focus': focus(topic, language),
-    'followUp': followUp(language, needsFollowUp),
-    'continuation': text(language, history.isEmpty ? 'chat_new_context' : 'chat_continue_context'),
-    'context': context.isEmpty ? text(language, 'chat_no_context') : context.join(', '),
-    'history': history.isEmpty ? text(language, 'chat_no_context') : history.join(', '),
-  });
+    String family = '',
+  }) =>
+      text(language, 'chat_coaching_prompt', {
+        'message': message,
+        'focus': focus(topic, language),
+        'followUp': followUp(language, needsFollowUp),
+        'continuation': text(language,
+            history.isEmpty ? 'chat_new_context' : 'chat_continue_context'),
+        'context': context.isEmpty
+            ? text(language, 'chat_no_context')
+            : context.join(', '),
+        'history': history.isEmpty
+            ? text(language, 'chat_no_context')
+            : history.join(', '),
+        'family': family.trim().isEmpty
+            ? text(language, 'chat_no_family')
+            : family.trim(),
+      });
 
   static String quality(String language, String topic, bool needsFollowUp) =>
       text(language, 'chat_quality_retry', {
@@ -47,7 +58,11 @@ class ChatPromptPolicy {
       });
 
   static String fallback(String topic, String language) {
-    final suffix = topic == 'Schlaf' ? 'sleep' : topic == 'Trotz und Wut' ? 'anger' : 'general';
+    final suffix = topic == 'Schlaf'
+        ? 'sleep'
+        : topic == 'Trotz und Wut'
+            ? 'anger'
+            : 'general';
     return '${text(language, 'chat_fallback_label')}\n\n${text(language, 'chat_fallback_$suffix')}';
   }
 

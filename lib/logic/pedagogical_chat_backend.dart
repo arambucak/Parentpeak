@@ -7,20 +7,52 @@ import 'package:parentpeak/logic/chat_memory_consent.dart';
 import 'package:parentpeak/logic/privacy_sanitizer.dart';
 import 'package:parentpeak/logic/chat_context_policy.dart';
 import 'package:parentpeak/logic/crisis_support.dart';
+import 'package:parentpeak/logic/family_context_builder.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
+import 'package:parentpeak/models/family_profile_model.dart';
 
 class PedagogicalChatBackend {
   PedagogicalChatBackend({
     GeminiAIService? geminiService,
     ChatAiConsent? consent,
     ChatAccountStore? accountStore,
+    FamilyContextBuilder? familyContextBuilder,
+    Future<FamilyMatchProfile?> Function()? loadFamilyProfile,
+    Future<List<String>> Function()? loadTopTopics,
   })  : _geminiService = geminiService,
         consent = consent ?? ChatAiConsent.instance,
-        accountStore = accountStore ?? ChatAccountStore.instance;
+        accountStore = accountStore ?? ChatAccountStore.instance,
+        _familyContextBuilder =
+            familyContextBuilder ?? const FamilyContextBuilder(),
+        _loadFamilyProfile =
+            loadFamilyProfile ?? (() => FamilyMatchProfile.load()),
+        _loadTopTopics = loadTopTopics;
 
   final GeminiAIService? _geminiService;
   final ChatAiConsent consent;
   final ChatAccountStore accountStore;
+  final FamilyContextBuilder _familyContextBuilder;
+  final Future<FamilyMatchProfile?> Function() _loadFamilyProfile;
+  final Future<List<String>> Function()? _loadTopTopics;
+
+  /// Baut den datensparsamen Familienkontext (Alter/Werte/Themen) für den
+  /// Coaching-Prompt. Best-effort — bei jedem Fehler leerer String, damit die
+  /// Beratung nie an fehlendem Kontext scheitert.
+  Future<String> _loadFamilyContext(String languageCode) async {
+    try {
+      final profile = await _loadFamilyProfile();
+      final topicsLoader = _loadTopTopics;
+      final topics =
+          topicsLoader == null ? const <String>[] : await topicsLoader();
+      return _familyContextBuilder.build(
+        profile: profile,
+        languageCode: languageCode,
+        topTopics: topics,
+      );
+    } catch (error) {
+      return '';
+    }
+  }
 
   static const List<String> _violentKeywords = [
     'schlagen',
@@ -303,6 +335,12 @@ class PedagogicalChatBackend {
     final contextAnchors = _extractContextAnchors(safeMessage);
     final historyAnchors = _extractHistoryAnchors(preparedHistory);
     final needsFollowUpQuestion = _shouldAskSingleFollowUpQuestion(message);
+    // Phase 2: Der Coach kennt die Familie. Kind-Alter + Erziehungswerte +
+    // wiederkehrende Themen aus lokalen, kontogetrennten Quellen (kein Name,
+    // keine Serverdaten). Best-effort: Fehler hier dürfen den Chat nie
+    // blockieren.
+    final familyContext = await _loadFamilyContext(languageCode);
+    guard();
     final coachingPrompt = ChatPromptPolicy.coaching(
       language: languageCode,
       message: safeMessage,
@@ -310,6 +348,7 @@ class PedagogicalChatBackend {
       needsFollowUp: needsFollowUpQuestion,
       context: contextAnchors,
       history: historyAnchors,
+      family: familyContext,
     );
     preparedHistory.add({'role': 'user', 'content': coachingPrompt});
 

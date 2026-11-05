@@ -539,10 +539,23 @@ class _ChatScreenState extends State<ChatScreen> {
         _chatBackend = widget.chatBackend;
       } else {
         _geminiService = GeminiAIService();
+        final store = _store;
         _chatBackend = PedagogicalChatBackend(
           geminiService: _geminiService,
           consent: _consent,
-          accountStore: _store,
+          accountStore: store,
+          // Phase 2: wiederkehrende Gesprächsthemen (kontogetrennt) als
+          // weicher Langzeitkontext für den Coach. Best-effort.
+          loadTopTopics: () async {
+            try {
+              final counts = await store.read(store.ticket);
+              final sorted = counts.entries.toList()
+                ..sort((a, b) => b.value.compareTo(a.value));
+              return [for (final e in sorted.take(3)) e.key];
+            } catch (_) {
+              return const <String>[];
+            }
+          },
         );
       }
       setState(() {
