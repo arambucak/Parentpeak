@@ -23,6 +23,7 @@ import 'package:parentpeak/ui/eltern_netzwerk_screen.dart';
 import 'package:parentpeak/ui/auth/paywall_screen.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/ui/widgets/home/context_home_card.dart';
+import 'package:parentpeak/ui/widgets/home/accent_surface.dart';
 import 'package:parentpeak/services/mood_history_service.dart';
 import 'package:parentpeak/ui/wochenrueckblick_screen.dart';
 import 'package:parentpeak/ui/ritual_ruhe_screen.dart';
@@ -252,16 +253,21 @@ class _HomeScreenState extends State<HomeScreen>
     if (mounted) setState(() => _customTileOrderIds = []);
     try {
       final data = await _accounts.read(ticket);
-      if (!mounted || request != _orderRequest || !_accounts.isCurrent(ticket)) return;
-      setState(() => _customTileOrderIds = List<String>.from(data[_tileOrderStorageKey] ?? []));
+      if (!mounted ||
+          request != _orderRequest ||
+          !_accounts.isCurrent(ticket)) {
+        return;
+      }
+      setState(() => _customTileOrderIds =
+          List<String>.from(data[_tileOrderStorageKey] ?? []));
     } on ProfileAccountChanged {
       // A new account reloads its own order.
     } catch (error) {
       debugPrint('Account tile order load failed: $error');
       if (mounted && _accounts.isCurrent(ticket)) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(AppStringsManager.getString(
-              languageService.currentLanguage, 'profile_account_failed'))));
+            content: Text(AppStringsManager.getString(
+                languageService.currentLanguage, 'profile_account_failed'))));
       }
     }
   }
@@ -288,8 +294,8 @@ class _HomeScreenState extends State<HomeScreen>
       await _accounts.write(ticket, {_tileOrderStorageKey: updated});
       if (mounted && _accounts.isCurrent(ticket)) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('"${action.label}" ${AppStringsManager.getString(
-              languageService.currentLanguage, 'tile_moved_up')}'),
+          content: Text(
+              '"${action.label}" ${AppStringsManager.getString(languageService.currentLanguage, 'tile_moved_up')}'),
           duration: const Duration(seconds: 2),
         ));
       }
@@ -300,8 +306,8 @@ class _HomeScreenState extends State<HomeScreen>
       await _restoreTileOrder();
       if (mounted && _accounts.isCurrent(ticket)) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(AppStringsManager.getString(
-              languageService.currentLanguage, 'profile_account_failed'))));
+            content: Text(AppStringsManager.getString(
+                languageService.currentLanguage, 'profile_account_failed'))));
       }
     }
   }
@@ -318,7 +324,8 @@ class _HomeScreenState extends State<HomeScreen>
     }
 
     try {
-      await _accounts.update(ticket, (data) => data.remove(_tileOrderStorageKey));
+      await _accounts.update(
+          ticket, (data) => data.remove(_tileOrderStorageKey));
       if (mounted && _accounts.isCurrent(ticket)) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(AppStringsManager.getString(
@@ -333,8 +340,8 @@ class _HomeScreenState extends State<HomeScreen>
       await _restoreTileOrder();
       if (mounted && _accounts.isCurrent(ticket)) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(AppStringsManager.getString(
-              languageService.currentLanguage, 'profile_account_failed'))));
+            content: Text(AppStringsManager.getString(
+                languageService.currentLanguage, 'profile_account_failed'))));
       }
     }
   }
@@ -1166,16 +1173,23 @@ class _HomeScreenState extends State<HomeScreen>
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFF5F3FF), Color(0xFFEDE9FE)],
+            gradient: LinearGradient(
+              colors: AccentSurface.cardGradient(context,
+                  lightStart: const Color(0xFFF5F3FF),
+                  lightEnd: const Color(0xFFEDE9FE),
+                  accent: const Color(0xFF8B5CF6)),
             ),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-                color: const Color(0xFF8B5CF6).withValues(alpha: 0.12)),
+                color: AccentSurface.cardBorder(
+                    context, const Color(0xFF8B5CF6),
+                    lightAlpha: 0.12)),
           ),
           child: Row(children: [
-            const Icon(Icons.self_improvement_rounded,
-                color: Color(0xFF7C3AED), size: 20),
+            Icon(Icons.self_improvement_rounded,
+                color:
+                    AccentSurface.accentColor(context, const Color(0xFF7C3AED)),
+                size: 20),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -1185,18 +1199,22 @@ class _HomeScreenState extends State<HomeScreen>
                       AppStringsManager.getString(
                           languageService.currentLanguage,
                           'your_weekly_review'),
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF6B21A8))),
+                          color: AccentSurface.onSurface(context,
+                              lightText: const Color(0xFF6B21A8),
+                              accent: const Color(0xFF8B5CF6)))),
                   Text(
                       AppStringsManager.getString(
                           languageService.currentLanguage,
                           'home_weekly_review_question'),
                       style: TextStyle(
                           fontSize: 11,
-                          color:
-                              const Color(0xFF7C3AED).withValues(alpha: 0.7))),
+                          color: AccentSurface.onSurfaceMuted(context,
+                              lightText: const Color(0xFF7C3AED)
+                                  .withValues(alpha: 0.7),
+                              accent: const Color(0xFF8B5CF6)))),
                 ],
               ),
             ),
@@ -1225,16 +1243,21 @@ class _HomeScreenState extends State<HomeScreen>
               Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.1)),
         ),
         child: Row(children: [
-          const Icon(Icons.explore_rounded, color: Color(0xFF8B5CF6), size: 20),
+          Icon(Icons.explore_rounded,
+              color:
+                  AccentSurface.accentColor(context, const Color(0xFF8B5CF6)),
+              size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
                 AppStringsManager.getString(
                     languageService.currentLanguage, 'events_near_you'),
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF6B21A8))),
+                    color: AccentSurface.onSurface(context,
+                        lightText: const Color(0xFF6B21A8),
+                        accent: const Color(0xFF8B5CF6)))),
           ),
           Icon(Icons.chevron_right_rounded, color: Colors.grey[400], size: 20),
         ]),

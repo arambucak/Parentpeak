@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/main.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/ui/widgets/home/accent_surface.dart';
 
 /// Kontextbasierte Home-Card — zeigt unterschiedliche Inhalte je nach Tageszeit.
 ///
@@ -545,17 +546,26 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
 
   // ─── MORGENS: "Dein Tag" ──────────────────────────────────────────────────
   Widget _morningCard(ThemeData theme) {
+    const accent = Color(0xFFF59E0B);
+    final onSurface = AccentSurface.onSurface(context,
+        lightText: const Color(0xFF92400E), accent: accent);
+    final accentCol =
+        AccentSurface.accentColor(context, const Color(0xFFD97706));
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFFFFFBEB), Color(0xFFFEF3C7)],
+          colors: AccentSurface.cardGradient(context,
+              lightStart: const Color(0xFFFFFBEB),
+              lightEnd: const Color(0xFFFEF3C7),
+              accent: accent),
         ),
         borderRadius: BorderRadius.circular(22),
-        border:
-            Border.all(color: const Color(0xFFFBBF24).withValues(alpha: 0.3)),
+        border: Border.all(
+            color: AccentSurface.cardBorder(context, const Color(0xFFFBBF24),
+                lightAlpha: 0.3)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
@@ -577,21 +587,20 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.7),
+                color: AccentSurface.chipSurface(context, lightAlpha: 0.7),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(children: [
-                const Icon(Icons.calendar_today_rounded,
-                    size: 16, color: Color(0xFFD97706)),
+                Icon(Icons.calendar_today_rounded, size: 16, color: accentCol),
                 const SizedBox(width: 8),
                 Expanded(
                     child: Text(_nextEvent!,
-                        style: theme.textTheme.bodyMedium
-                            ?.copyWith(fontWeight: FontWeight.w600),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600, color: onSurface),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis)),
-                const Icon(Icons.arrow_forward_ios_rounded,
-                    size: 12, color: Color(0xFFD97706)),
+                Icon(Icons.arrow_forward_ios_rounded,
+                    size: 12, color: accentCol),
               ]),
             ),
           ),
@@ -599,29 +608,27 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
         ],
         Text('\u{1F4A1} $_tip',
             style: theme.textTheme.bodyMedium
-                ?.copyWith(color: const Color(0xFF92400E), height: 1.4)),
+                ?.copyWith(color: onSurface, height: 1.4)),
         const SizedBox(height: 8),
         GestureDetector(
           onTap: () => setState(() => _showMaterials = !_showMaterials),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.6),
+              color: AccentSurface.chipSurface(context),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(children: [
               Text('\u{23F1}\u{FE0F} $_tipDuration',
                   style: theme.textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFFD97706))),
+                      fontWeight: FontWeight.w700, color: accentCol)),
               const SizedBox(width: 12),
               Expanded(
                   child: Text(
                 _showMaterials
                     ? '\u{1F9F0} $_tipMaterials'
                     : '\u{1F9F0} ${AppStringsManager.getString(languageService.currentLanguage, 'what_you_need')} \u{25BC}',
-                style: theme.textTheme.labelSmall
-                    ?.copyWith(color: const Color(0xFF92400E)),
+                style: theme.textTheme.labelSmall?.copyWith(color: onSurface),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               )),
@@ -635,9 +642,8 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
             child: Text(
                 AppStringsManager.getString(
                     languageService.currentLanguage, 'explain_more'),
-                style: theme.textTheme.bodySmall?.copyWith(
-                    color: const Color(0xFFD97706),
-                    fontWeight: FontWeight.w700)),
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: accentCol, fontWeight: FontWeight.w700)),
           ),
         ],
         const SizedBox(height: 10),
@@ -646,7 +652,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
           child: _miniButton(
             theme,
             '\u{1F3B2} ${AppStringsManager.getString(languageService.currentLanguage, 'new_activity')}',
-            const Color(0xFFD97706),
+            accentCol,
             _shuffleTip,
           ),
         ),
@@ -656,17 +662,23 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
 
   // ─── NACHMITTAGS: "Was macht ihr heute?" ──────────────────────────────────
   Widget _afternoonCard(ThemeData theme) {
+    const accent = Color(0xFF16A34A);
+    final onSurface = AccentSurface.onSurface(context,
+        lightText: const Color(0xFF166534), accent: accent);
+    final accentCol = AccentSurface.accentColor(context, accent);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFFF0FDF4), Color(0xFFDCFCE7)],
+          colors: AccentSurface.cardGradient(context,
+              lightStart: const Color(0xFFF0FDF4),
+              lightEnd: const Color(0xFFDCFCE7),
+              accent: accent),
         ),
         borderRadius: BorderRadius.circular(22),
-        border:
-            Border.all(color: const Color(0xFF16A34A).withValues(alpha: 0.2)),
+        border: Border.all(color: AccentSurface.cardBorder(context, accent)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
@@ -686,14 +698,14 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
                 Text(
                     AppStringsManager.getString(
                         languageService.currentLanguage, 'what_today_together'),
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: const Color(0xFF16A34A))),
+                    style:
+                        theme.textTheme.bodySmall?.copyWith(color: accentCol)),
               ])),
         ]),
         const SizedBox(height: 14),
         Text('\u{1F3A8} $_tip',
             style: theme.textTheme.bodyMedium
-                ?.copyWith(color: const Color(0xFF166534), height: 1.4)),
+                ?.copyWith(color: onSurface, height: 1.4)),
         const SizedBox(height: 8),
         // Dauer + Materialien (kompakt)
         GestureDetector(
@@ -701,22 +713,20 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.6),
+              color: AccentSurface.chipSurface(context),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(children: [
               Text('\u{23F1}\u{FE0F} $_tipDuration',
                   style: theme.textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF16A34A))),
+                      fontWeight: FontWeight.w700, color: accentCol)),
               const SizedBox(width: 12),
               Expanded(
                   child: Text(
                 _showMaterials
                     ? '\u{1F9F0} $_tipMaterials'
                     : '\u{1F9F0} ${AppStringsManager.getString(languageService.currentLanguage, 'what_you_need')} \u{25BC}',
-                style: theme.textTheme.labelSmall
-                    ?.copyWith(color: const Color(0xFF166534)),
+                style: theme.textTheme.labelSmall?.copyWith(color: onSurface),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               )),
@@ -729,7 +739,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
           child: _miniButton(
             theme,
             '\u{1F3B2} ${AppStringsManager.getString(languageService.currentLanguage, 'new_activity')}',
-            const Color(0xFF16A34A),
+            accentCol,
             _shuffleTip,
           ),
         ),
@@ -739,17 +749,24 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
 
   // ─── ABENDS: "Ausatmen" ───────────────────────────────────────────────────
   Widget _eveningCard(ThemeData theme) {
+    const accent = Color(0xFF8B5CF6);
+    final onSurface = AccentSurface.onSurface(context,
+        lightText: const Color(0xFF6B21A8), accent: accent);
+    final accentCol =
+        AccentSurface.accentColor(context, const Color(0xFF7C3AED));
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFFF5F3FF), Color(0xFFEDE9FE)],
+          colors: AccentSurface.cardGradient(context,
+              lightStart: const Color(0xFFF5F3FF),
+              lightEnd: const Color(0xFFEDE9FE),
+              accent: accent),
         ),
         borderRadius: BorderRadius.circular(22),
-        border:
-            Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.2)),
+        border: Border.all(color: AccentSurface.cardBorder(context, accent)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
@@ -764,8 +781,8 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
           Text(
               AppStringsManager.getString(
                   languageService.currentLanguage, 'how_was_your_day'),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                  color: const Color(0xFF6B21A8), fontWeight: FontWeight.w600)),
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(color: onSurface, fontWeight: FontWeight.w600)),
           const SizedBox(height: 10),
           Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
             _moodEmoji(
@@ -785,7 +802,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.6),
+              color: AccentSurface.chipSurface(context),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(children: [
@@ -794,9 +811,8 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
               Expanded(
                   child: Text(
                 _t('home_evening_reassurance'),
-                style: theme.textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFF6B21A8),
-                    fontStyle: FontStyle.italic),
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(color: onSurface, fontStyle: FontStyle.italic),
               )),
             ]),
           ),
@@ -833,29 +849,27 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
         const SizedBox(height: 12),
         Text('\u{1F4A1} $_tip',
             style: theme.textTheme.bodySmall
-                ?.copyWith(color: const Color(0xFF7C3AED), height: 1.3)),
+                ?.copyWith(color: accentCol, height: 1.3)),
         const SizedBox(height: 8),
         GestureDetector(
           onTap: () => setState(() => _showMaterials = !_showMaterials),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.6),
+              color: AccentSurface.chipSurface(context),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(children: [
               Text('\u{23F1}\u{FE0F} $_tipDuration',
                   style: theme.textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF7C3AED))),
+                      fontWeight: FontWeight.w700, color: accentCol)),
               const SizedBox(width: 12),
               Expanded(
                   child: Text(
                 _showMaterials
                     ? '\u{1F9F0} $_tipMaterials'
                     : '\u{1F9F0} ${AppStringsManager.getString(languageService.currentLanguage, 'what_you_need')} \u{25BC}',
-                style: theme.textTheme.labelSmall
-                    ?.copyWith(color: const Color(0xFF6B21A8)),
+                style: theme.textTheme.labelSmall?.copyWith(color: onSurface),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               )),
@@ -868,7 +882,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
           child: _miniButton(
             theme,
             '\u{1F3B2} ${AppStringsManager.getString(languageService.currentLanguage, 'new_activity')}',
-            const Color(0xFF7C3AED),
+            accentCol,
             _shuffleTip,
           ),
         ),
@@ -969,10 +983,13 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
   }
 
   Widget _momentQuestion(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+    final onSurface = AccentSurface.onSurface(context,
+        lightText: const Color(0xFF6B21A8), accent: const Color(0xFF8B5CF6));
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.75),
+        color: AccentSurface.chipSurface(context, lightAlpha: 0.75),
         borderRadius: BorderRadius.circular(14),
         border:
             Border.all(color: const Color(0xFF7C3AED).withValues(alpha: 0.15)),
@@ -984,8 +1001,8 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
           Expanded(
             child: Text(
               _t('home_best_moment_question'),
-              style: theme.textTheme.bodySmall?.copyWith(
-                  color: const Color(0xFF6B21A8), fontWeight: FontWeight.w700),
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: onSurface, fontWeight: FontWeight.w700),
             ),
           ),
         ]),
@@ -994,7 +1011,8 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
           controller: _momentCtrl,
           maxLines: 2,
           textCapitalization: TextCapitalization.sentences,
-          style: theme.textTheme.bodySmall?.copyWith(color: Colors.black87),
+          style: theme.textTheme.bodySmall
+              ?.copyWith(color: isDark ? Colors.white : Colors.black87),
           decoration: InputDecoration(
             hintText: _t('home_best_moment_hint'),
             hintStyle: theme.textTheme.bodySmall
@@ -1003,7 +1021,9 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             filled: true,
-            fillColor: const Color(0xFFF9F7FF),
+            fillColor: isDark
+                ? Colors.white.withValues(alpha: 0.06)
+                : const Color(0xFFF9F7FF),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide(
