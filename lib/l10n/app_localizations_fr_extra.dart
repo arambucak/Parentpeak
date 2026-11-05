@@ -52,6 +52,12 @@ const appLocalizationsFrExtra = <String, String>{
   'chat_thread_rename_title': 'Renommer la conversation',
   'chat_thread_rename_hint': 'Titre de la conversation',
   'more_options': 'Plus d\'options',
+  'legal_sub_privacy': 'Comment nous protégeons tes données',
+  'legal_sub_terms': 'Règles d\'utilisation',
+  'legal_sub_impressum': 'Mentions du fournisseur',
+  'legal_sub_ai': 'Comment nous utilisons l\'IA',
+  'legal_sub_export': 'Télécharger tes données',
+  'legal_sub_licenses': 'Logiciels utilisés',
   'delete_reauth_provider_body':
       'Pour supprimer définitivement ton compte, reconnecte-toi avec {provider}.',
   'delete_reauth_provider_confirm':

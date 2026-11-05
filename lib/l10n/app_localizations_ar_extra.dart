@@ -50,6 +50,12 @@ const appLocalizationsArExtra = <String, String>{
   'chat_thread_rename_title': 'إعادة تسمية المحادثة',
   'chat_thread_rename_hint': 'عنوان المحادثة',
   'more_options': 'خيارات أخرى',
+  'legal_sub_privacy': 'كيف نحمي بياناتك',
+  'legal_sub_terms': 'قواعد الاستخدام',
+  'legal_sub_impressum': 'بيانات المزوّد',
+  'legal_sub_ai': 'كيف نستخدم الذكاء الاصطناعي',
+  'legal_sub_export': 'نزّل بياناتك',
+  'legal_sub_licenses': 'البرمجيات التي نستخدمها',
   'delete_reauth_provider_body':
       'لحذف حسابك نهائيًا، يرجى تسجيل الدخول مرة أخرى عبر {provider}.',
   'delete_reauth_provider_confirm':
