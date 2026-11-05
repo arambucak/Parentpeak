@@ -52,6 +52,12 @@ const appLocalizationsEsExtra = <String, String>{
   'chat_thread_rename_title': 'Renombrar la conversación',
   'chat_thread_rename_hint': 'Título de la conversación',
   'more_options': 'Más opciones',
+  'legal_sub_privacy': 'Cómo protegemos tus datos',
+  'legal_sub_terms': 'Normas de uso',
+  'legal_sub_impressum': 'Datos del proveedor',
+  'legal_sub_ai': 'Cómo usamos la IA',
+  'legal_sub_export': 'Descargar tus datos',
+  'legal_sub_licenses': 'Software que usamos',
   'delete_reauth_provider_body':
       'Para eliminar tu cuenta de forma permanente, vuelve a iniciar sesión con {provider}.',
   'delete_reauth_provider_confirm':

@@ -3106,6 +3106,12 @@ class AppStringsManager {
       'chat_thread_rename_title': 'Gespräch umbenennen',
       'chat_thread_rename_hint': 'Titel des Gesprächs',
       'more_options': 'Weitere Optionen',
+      'legal_sub_privacy': 'Wie wir deine Daten schützen',
+      'legal_sub_terms': 'Regeln zur Nutzung',
+      'legal_sub_impressum': 'Anbieterangaben',
+      'legal_sub_ai': 'Wie wir KI einsetzen',
+      'legal_sub_export': 'Deine Daten herunterladen',
+      'legal_sub_licenses': 'Verwendete Software',
       'delete_reauth_provider_body':
           'Zum endgültigen Löschen musst du dich noch einmal mit {provider} anmelden.',
       'delete_reauth_provider_confirm':
@@ -6013,6 +6019,12 @@ class AppStringsManager {
       'chat_thread_rename_title': 'Rename conversation',
       'chat_thread_rename_hint': 'Conversation title',
       'more_options': 'More options',
+      'legal_sub_privacy': 'How we protect your data',
+      'legal_sub_terms': 'Rules of use',
+      'legal_sub_impressum': 'Provider details',
+      'legal_sub_ai': 'How we use AI',
+      'legal_sub_export': 'Download your data',
+      'legal_sub_licenses': 'Software we use',
       'delete_reauth_provider_body':
           'To permanently delete your account, please sign in again with {provider}.',
       'delete_reauth_provider_confirm':
@@ -16197,6 +16209,12 @@ class AppStringsManager {
       'chat_thread_rename_title': 'Navê axaftinê biguhere',
       'chat_thread_rename_hint': 'Sernavê axaftinê',
       'more_options': 'Vebijarkên din',
+      'legal_sub_privacy': 'Em çawa daneyên te diparêzin',
+      'legal_sub_terms': 'Rêbazên bikaranînê',
+      'legal_sub_impressum': 'Agahiyên pêşkêşkar',
+      'legal_sub_ai': 'Em çawa AI bikar tînin',
+      'legal_sub_export': 'Daneyên xwe daxîne',
+      'legal_sub_licenses': 'Nermalava ku em bikar tînin',
       'delete_reauth_provider_body':
           'Ji bo jêbirina mayînde, ji kerema xwe dîsa bi {provider} têkeve.',
       'delete_reauth_provider_confirm':
@@ -22847,6 +22865,12 @@ class AppStringsManager {
       'chat_thread_rename_title': 'Sohbeti yeniden adlandır',
       'chat_thread_rename_hint': 'Sohbet başlığı',
       'more_options': 'Diğer seçenekler',
+      'legal_sub_privacy': 'Verilerini nasıl koruyoruz',
+      'legal_sub_terms': 'Kullanım kuralları',
+      'legal_sub_impressum': 'Sağlayıcı bilgileri',
+      'legal_sub_ai': 'Yapay zekâyı nasıl kullanıyoruz',
+      'legal_sub_export': 'Verilerini indir',
+      'legal_sub_licenses': 'Kullandığımız yazılımlar',
       'delete_reauth_provider_body':
           'Hesabı kalıcı olarak silmek için lütfen {provider} ile tekrar giriş yap.',
       'delete_reauth_provider_confirm':
