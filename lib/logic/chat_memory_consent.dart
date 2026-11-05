@@ -7,10 +7,9 @@ class ChatMemoryConsentRequiredException implements Exception {
 class ChatMemoryConsent extends AccountAiConsent {
   ChatMemoryConsent({
     super.scopeProvider,
-    Future<bool> Function(String key, bool value)? persist,
+    super.persist,
   }) : super(
           storagePrefix: 'chat.memory_consent.v1',
-          persist: persist,
           requiredException: () => const ChatMemoryConsentRequiredException(),
         );
 

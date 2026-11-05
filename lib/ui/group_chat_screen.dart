@@ -16,7 +16,7 @@ import 'package:parentpeak/ui/widgets/user_avatar.dart';
 /// Mitgliederliste, Mitglieder einladen und Gruppe verlassen.
 ///
 /// Nutzt dieselben Backend-Endpunkte wie der 1:1-Chat
-/// (/friend-chat/messages mit roomId = 'group_<id>') plus /chat-groups/*.
+/// (`/friend-chat/messages` mit roomId = `group_<id>`) plus `/chat-groups/*`.
 class GroupChatScreen extends StatefulWidget {
   const GroupChatScreen({
     super.key,
@@ -27,7 +27,7 @@ class GroupChatScreen extends StatefulWidget {
     this.accountStore,
   });
 
-  /// Format: 'group_<id>'.
+  /// Format: `group_<id>`.
   final String roomId;
   final String groupName;
 
@@ -591,23 +591,24 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _chatUnavailable || _chatLoadFailed
-                ? Center(
-                    child: Text(
-                      _t(
-                        _chatUnavailable
-                            ? 'chat_access_unavailable'
-                            : 'friend_chat_request_failed',
-                      ),
-                    ),
-                  )
-                : _messages.isEmpty
-                ? _emptyState(theme)
-                : ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.all(12),
-                    itemCount: _messages.length,
-                    itemBuilder: (_, i) => _bubble(theme, _messages[i], i),
-                  ),
+                    ? Center(
+                        child: Text(
+                          _t(
+                            _chatUnavailable
+                                ? 'chat_access_unavailable'
+                                : 'friend_chat_request_failed',
+                          ),
+                        ),
+                      )
+                    : _messages.isEmpty
+                        ? _emptyState(theme)
+                        : ListView.builder(
+                            controller: _scrollController,
+                            padding: const EdgeInsets.all(12),
+                            itemCount: _messages.length,
+                            itemBuilder: (_, i) =>
+                                _bubble(theme, _messages[i], i),
+                          ),
           ),
           _composer(theme),
         ],
@@ -661,9 +662,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
-        mainAxisAlignment: m.isMe
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
+        mainAxisAlignment:
+            m.isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!m.isMe) ...[

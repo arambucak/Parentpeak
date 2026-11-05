@@ -3725,7 +3725,7 @@ class _RecipeDetailSheet extends StatelessWidget {
                               ],
                             ),
                           ))
-                      .toList(),
+                      ,
 
                   const SizedBox(height: 20),
 
@@ -3773,7 +3773,7 @@ class _RecipeDetailSheet extends StatelessWidget {
                               ],
                             ),
                           ))
-                      .toList(),
+                      ,
 
                   const SizedBox(height: 16),
                 ],
@@ -4822,7 +4822,7 @@ class _MealDetailSheet extends StatelessWidget {
                       ],
                     ),
                   );
-                }).toList(),
+                }),
               ],
               const SizedBox(height: 24),
             ],

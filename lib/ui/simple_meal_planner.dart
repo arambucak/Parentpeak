@@ -461,7 +461,7 @@ class _DayPlanCard extends StatelessWidget {
                                       ),
                                     ),
                                   ))
-                              .toList(),
+                              ,
                         ],
                       ),
                     ),

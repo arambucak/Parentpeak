@@ -9,8 +9,7 @@ class DeviceManagementScreen extends StatefulWidget {
   final Future<bool> Function(String deviceUuid, String deviceName) onRevoke;
 
   const DeviceManagementScreen(
-      {Key? key, required this.devices, required this.onRevoke})
-      : super(key: key);
+      {super.key, required this.devices, required this.onRevoke});
 
   @override
   State<DeviceManagementScreen> createState() => _DeviceManagementScreenState();

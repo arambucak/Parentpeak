@@ -9,12 +9,10 @@ class DevelopmentReportConsentRequiredException implements Exception {
 
 class DevelopmentReportConsent extends AccountAiConsent {
   DevelopmentReportConsent({
-    String Function()? scopeProvider,
-    Future<bool> Function(String key, bool value)? persist,
+    super.scopeProvider,
+    super.persist,
   }) : super(
           storagePrefix: 'dev.ai_report_consent.v1',
-          scopeProvider: scopeProvider,
-          persist: persist,
           requiredException: () =>
               const DevelopmentReportConsentRequiredException(),
         );

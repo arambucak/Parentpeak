@@ -9,6 +9,7 @@
 ///
 /// Alles läuft über den authentifizierten Backend-Proxy. Reads werfen bei
 /// Fehlern; Mutationen liefern false mit Logging fuer sichtbare UI-Fehler.
+library;
 
 import 'package:flutter/foundation.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';

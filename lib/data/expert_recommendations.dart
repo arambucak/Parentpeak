@@ -3,6 +3,7 @@
 /// Podcasts, YouTube-Kanäle, Bücher — nach Kategorie und Sprache.
 /// Links gehen auf Kanäle/Profile (nicht einzelne Folgen → veralten nicht).
 /// Jede Empfehlung hat einen empathischen Satz der sagt WARUM das jetzt hilft.
+library;
 
 enum ExpertContentType { podcast, youtube, book, article }
 

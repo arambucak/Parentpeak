@@ -9,13 +9,13 @@ class EntranceAnimation extends StatefulWidget {
   final double beginScale;
 
   const EntranceAnimation({
-    Key? key,
+    super.key,
     required this.child,
     this.duration = const Duration(milliseconds: 350),
     this.curve = Curves.easeOutCubic,
     this.delayMs = 0,
     this.beginScale = 0.85,
-  }) : super(key: key);
+  });
 
   @override
   State<EntranceAnimation> createState() => _EntranceAnimationState();
@@ -78,13 +78,13 @@ class SlideInAnimation extends StatefulWidget {
   final int delayMs;
 
   const SlideInAnimation({
-    Key? key,
+    super.key,
     required this.child,
     this.direction = SlideDirection.fromLeft,
     this.duration = const Duration(milliseconds: 400),
     this.curve = Curves.easeOutCubic,
     this.delayMs = 0,
-  }) : super(key: key);
+  });
 
   @override
   State<SlideInAnimation> createState() => _SlideInAnimationState();
@@ -155,12 +155,12 @@ class FadeInAnimation extends StatefulWidget {
   final int delayMs;
 
   const FadeInAnimation({
-    Key? key,
+    super.key,
     required this.child,
     this.duration = const Duration(milliseconds: 300),
     this.curve = Curves.easeOut,
     this.delayMs = 0,
-  }) : super(key: key);
+  });
 
   @override
   State<FadeInAnimation> createState() => _FadeInAnimationState();

@@ -8,10 +8,9 @@ class RecipeAiConsentRequiredException implements Exception {
 }
 
 class FamilyRecipeConsent extends AccountAiConsent {
-  FamilyRecipeConsent({String Function()? scopeProvider})
+  FamilyRecipeConsent({super.scopeProvider})
       : super(
           storagePrefix: 'familykueche.ai_recipe_consent.v1',
-          scopeProvider: scopeProvider,
           requiredException: () => const RecipeAiConsentRequiredException(),
         );
 
