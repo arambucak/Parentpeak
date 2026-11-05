@@ -3106,6 +3106,10 @@ class AppStringsManager {
       'chat_thread_rename_title': 'Gespräch umbenennen',
       'chat_thread_rename_hint': 'Titel des Gesprächs',
       'more_options': 'Weitere Optionen',
+      'delete_reauth_provider_body':
+          'Zum endgültigen Löschen musst du dich noch einmal mit {provider} anmelden.',
+      'delete_reauth_provider_confirm':
+          'Mit {provider} bestätigen',
       'calendar_reminder_web_hint':
           'Im Browser können wir dich nicht per Push erinnern. Für zuverlässige Erinnerungen installiere die ParentPeak-App auf deinem Handy.',
       'date_this_week': 'Diese Woche',
@@ -6009,6 +6013,10 @@ class AppStringsManager {
       'chat_thread_rename_title': 'Rename conversation',
       'chat_thread_rename_hint': 'Conversation title',
       'more_options': 'More options',
+      'delete_reauth_provider_body':
+          'To permanently delete your account, please sign in again with {provider}.',
+      'delete_reauth_provider_confirm':
+          'Confirm with {provider}',
       'calendar_reminder_web_hint':
           'In the browser we can\'t remind you via push. For reliable reminders, install the ParentPeak app on your phone.',
       'date_this_week': 'This week',
@@ -16189,6 +16197,10 @@ class AppStringsManager {
       'chat_thread_rename_title': 'Navê axaftinê biguhere',
       'chat_thread_rename_hint': 'Sernavê axaftinê',
       'more_options': 'Vebijarkên din',
+      'delete_reauth_provider_body':
+          'Ji bo jêbirina mayînde, ji kerema xwe dîsa bi {provider} têkeve.',
+      'delete_reauth_provider_confirm':
+          'Bi {provider} piştrast bike',
       'calendar_reminder_web_hint':
           'Di geroknê de em nikarin bi push bîra te bînin. Ji bo bîranînên pêbawer, sepana ParentPeak li telefona xwe saz bike.',
       'date_this_week': 'Vê hefteyê',
@@ -22835,6 +22847,10 @@ class AppStringsManager {
       'chat_thread_rename_title': 'Sohbeti yeniden adlandır',
       'chat_thread_rename_hint': 'Sohbet başlığı',
       'more_options': 'Diğer seçenekler',
+      'delete_reauth_provider_body':
+          'Hesabı kalıcı olarak silmek için lütfen {provider} ile tekrar giriş yap.',
+      'delete_reauth_provider_confirm':
+          '{provider} ile onayla',
       'calendar_reminder_web_hint':
           'Tarayıcıda seni push ile hatırlatamayız. Güvenilir hatırlatmalar için ParentPeak uygulamasını telefonuna kur.',
       'date_this_week': 'Bu hafta',

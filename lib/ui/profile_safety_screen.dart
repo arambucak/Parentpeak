@@ -1080,25 +1080,49 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
     Navigator.of(context, rootNavigator: true).pop(); // close loading
 
     if (error == 'requires-recent-login') {
-      // Firebase requires a recent login for account deletion – ask for password.
+      // Firebase verlangt eine frische Anmeldung. Der Weg hängt vom Anbieter
+      // ab: Passwort-Konten → Passwort-Dialog; Google/Apple-Konten → erneute
+      // Anbieter-Anmeldung (die haben kein Passwort).
       if (!mounted) return;
-      final password = await showDialog<String>(
-        context: context,
-        barrierDismissible: false,
-        builder: (ctx) => _ReauthDialog(theme: theme),
-      );
-      if (password == null || !mounted) return;
-
-      // Show loading again while re-authenticating + deleting
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => const Center(child: CircularProgressIndicator()),
-      );
-      error =
-          await AuthService.instance.reauthenticateAndDeleteAccount(password);
-      if (!mounted) return;
-      Navigator.of(context, rootNavigator: true).pop(); // close loading
+      final provider = AuthService.instance.primaryProviderId();
+      if (provider == 'google.com' || provider == 'apple.com') {
+        final proceed = await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => _ReauthProviderDialog(
+            theme: theme,
+            providerId: provider!,
+          ),
+        );
+        if (proceed != true || !mounted) return;
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => const Center(child: CircularProgressIndicator()),
+        );
+        error = await AuthService.instance
+            .reauthenticateWithProviderAndDeleteAccount();
+        if (!mounted) return;
+        Navigator.of(context, rootNavigator: true).pop(); // close loading
+        // Nutzer hat den Anbieter-Dialog abgebrochen → still, kein Fehler.
+        if (error == 'reauth-cancelled') return;
+      } else {
+        final password = await showDialog<String>(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => _ReauthDialog(theme: theme),
+        );
+        if (password == null || !mounted) return;
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => const Center(child: CircularProgressIndicator()),
+        );
+        error =
+            await AuthService.instance.reauthenticateAndDeleteAccount(password);
+        if (!mounted) return;
+        Navigator.of(context, rootNavigator: true).pop(); // close loading
+      }
     }
 
     if (error != null) {
@@ -1906,6 +1930,47 @@ class _ReauthDialogState extends State<_ReauthDialog> {
           },
           child: Text(_t('profile_confirm'),
               style: const TextStyle(color: Colors.white)),
+        ),
+      ],
+    );
+  }
+}
+
+/// Bestätigungsschritt für Google-/Apple-Konten, die kein Passwort haben:
+/// Statt eines Passwort-Felds muss sich der Nutzer erneut über seinen Anbieter
+/// anmelden, bevor das Konto gelöscht wird. Gibt true zurück, wenn der Nutzer
+/// fortfahren möchte.
+class _ReauthProviderDialog extends StatelessWidget {
+  final ThemeData theme;
+  final String providerId;
+  const _ReauthProviderDialog({required this.theme, required this.providerId});
+
+  @override
+  Widget build(BuildContext context) {
+    final isGoogle = providerId == 'google.com';
+    final providerName = isGoogle ? 'Google' : 'Apple';
+    return AlertDialog(
+      title: Text(_t('profile_confirm_login')),
+      content: Text(
+        _t('delete_reauth_provider_body')
+            .replaceAll('{provider}', providerName),
+        style: theme.textTheme.bodyMedium,
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: Text(_t('cancel')),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: theme.colorScheme.error,
+          ),
+          onPressed: () => Navigator.pop(context, true),
+          child: Text(
+            _t('delete_reauth_provider_confirm')
+                .replaceAll('{provider}', providerName),
+            style: const TextStyle(color: Colors.white),
+          ),
         ),
       ],
     );

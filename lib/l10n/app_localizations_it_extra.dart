@@ -52,6 +52,10 @@ const appLocalizationsItExtra = <String, String>{
   'chat_thread_rename_title': 'Rinomina la conversazione',
   'chat_thread_rename_hint': 'Titolo della conversazione',
   'more_options': 'Altre opzioni',
+  'delete_reauth_provider_body':
+      'Per eliminare l\'account in modo permanente, accedi di nuovo con {provider}.',
+  'delete_reauth_provider_confirm':
+      'Conferma con {provider}',
   'calendar_reminder_web_hint':
       'Nel browser non possiamo inviarti promemoria push. Per promemoria affidabili, installa l\'app ParentPeak sul telefono.',
   'date_this_week': 'Questa settimana',
