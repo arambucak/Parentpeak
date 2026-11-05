@@ -984,6 +984,72 @@ class AuthService with ChangeNotifier {
     return deleteAccount();
   }
 
+  /// Primäre Anmeldemethode des aktuellen Nutzers: 'password', 'google.com',
+  /// 'apple.com' oder null. Steuert, ob die Lösch-UI ein Passwort-Feld oder
+  /// einen Anbieter-Bestätigungsschritt zeigt.
+  String? primaryProviderId() {
+    if (!_firebaseReady) return null;
+    final user = _firebaseAuth?.currentUser;
+    final ids = user?.providerData.map((p) => p.providerId).toList();
+    return pickPrimaryProviderId(ids);
+  }
+
+  /// Reine, testbare Auswahl des maßgeblichen Anbieters: föderierte Anbieter
+  /// (Google/Apple) haben Vorrang vor Passwort, weil sie beim Löschen eine
+  /// andere Re-Authentifizierung brauchen. null, wenn keine Anbieter vorliegen.
+  static String? pickPrimaryProviderId(List<String>? providerIds) {
+    if (providerIds == null || providerIds.isEmpty) return null;
+    for (final id in providerIds) {
+      if (id == 'google.com' || id == 'apple.com') return id;
+    }
+    return providerIds.first;
+  }
+
+  /// Re-authentifiziert Nutzer, die sich über einen föderierten Anbieter
+  /// (Google/Apple) angemeldet haben — die haben kein Passwort — und löscht
+  /// dann das Konto. Ohne diesen Weg können SSO-Nutzer ihr Konto bei
+  /// `requires-recent-login` NICHT löschen (Google-Play-Pflicht).
+  ///
+  /// Nutzt `reauthenticateWithPopup` (Web, wo die App primär läuft) mit
+  /// Fallback auf `reauthenticateWithProvider` (native Plattformen).
+  Future<String?> reauthenticateWithProviderAndDeleteAccount() async {
+    if (!_firebaseReady) return 'Firebase nicht verfügbar.';
+    final auth = _firebaseAuth;
+    final user = auth?.currentUser;
+    if (user == null) return 'Kein Benutzer eingeloggt.';
+
+    final providerId = primaryProviderId();
+    AuthProvider? provider;
+    if (providerId == 'google.com') {
+      provider = GoogleAuthProvider()..addScope('email');
+    } else if (providerId == 'apple.com') {
+      provider = AppleAuthProvider()..addScope('email');
+    } else {
+      // Kein föderierter Anbieter → Aufrufer soll den Passwort-Weg nutzen.
+      return 'reauth-provider-unsupported';
+    }
+
+    try {
+      if (kIsWeb) {
+        await user.reauthenticateWithPopup(provider);
+      } else {
+        await user.reauthenticateWithProvider(provider);
+      }
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'popup-closed-by-user' ||
+          e.code == 'cancelled-popup-request' ||
+          e.code == 'web-context-canceled' ||
+          e.code == 'user-cancelled' ||
+          e.code == 'canceled') {
+        return 'reauth-cancelled';
+      }
+      return 'Anmeldung zur Bestätigung fehlgeschlagen: ${e.message}';
+    } catch (e) {
+      return 'Anmeldung zur Bestätigung fehlgeschlagen.';
+    }
+    return deleteAccount();
+  }
+
   @visibleForTesting
   Future<void> debugSeedSessionForTesting() async {
     if (kReleaseMode) {

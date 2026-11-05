@@ -3,14 +3,14 @@ import 'package:flutter/services.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/ui/backup_qr_scan_screen.dart';
 import 'package:parentpeak/main.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/l10n/supported_languages.dart';
-import 'package:parentpeak/logic/account_data_cleanup_service.dart';
+
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/models/trusted_device.dart';
 import 'package:parentpeak/ui/legal_info_screen.dart';
@@ -1583,52 +1583,42 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
             ),
             onPressed: () async {
               Navigator.pop(ctx);
-              final firebaseUser = FirebaseAuth.instance.currentUser;
-              final accountUserId = firebaseUser?.uid;
+              // Zentraler Löschweg: löscht Server-Daten (DSGVO) VOR dem
+              // Firebase-Delete und behandelt requires-recent-login
+              // providerspezifisch (Passwort ODER Google/Apple-Reauth).
+              var error = await AuthService.instance.deleteAccount();
+              if (!mounted) return;
 
-              // First remove server-side user data if backend is configured.
-              if (accountUserId != null && accountUserId.isNotEmpty) {
-                final cleanupService = AccountDataCleanupService();
-                final cleanupOk = await cleanupService.deleteAccountData(
-                  userId: accountUserId,
-                );
-                if (!cleanupOk) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          cleanupService.lastError ??
-                              'Server-Daten konnten nicht gelöscht werden.',
-                        ),
-                      ),
-                    );
-                  }
-                  return;
+              if (error == 'requires-recent-login') {
+                final provider = AuthService.instance.primaryProviderId();
+                if (provider == 'google.com' || provider == 'apple.com') {
+                  error = await AuthService.instance
+                      .reauthenticateWithProviderAndDeleteAccount();
+                  if (error == 'reauth-cancelled') return;
+                } else {
+                  if (!mounted) return;
+                  final theme = Theme.of(context);
+                  final password = await showDialog<String>(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (dctx) => _ReauthPasswordDialog(theme: theme),
+                  );
+                  if (password == null || !mounted) return;
+                  error = await AuthService.instance
+                      .reauthenticateAndDeleteAccount(password);
                 }
               }
 
-              // Delete account from Firebase Auth.
-              try {
-                if (firebaseUser != null) {
-                  await firebaseUser.delete();
-                }
-              } catch (e) {
-                debugPrint('Error deleting Firebase account: $e');
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                        content: Text(_t('family_delete_account_error')
-                            .replaceAll('{error}', '$e'))),
-                  );
-                }
+              if (!mounted) return;
+              if (error != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                      content: Text(_t('family_delete_account_error')
+                          .replaceAll('{error}', error))),
+                );
                 return;
               }
-              // Alle lokalen Daten löschen
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.clear();
-              await AuthService.instance.logout();
-              if (!mounted) return;
-              // Komplette Widget-Tree ersetzen
+              // Erfolg: AuthService hat ausgeloggt und Daten lokal entfernt.
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (_) => const DemoApp()),
                 (route) => false,
@@ -2865,6 +2855,69 @@ class _FamilyMember {
       avatar: (map['avatar'] as String?)?.trim().isNotEmpty == true
           ? map['avatar'] as String
           : '🧑',
+    );
+  }
+}
+
+/// Passwort-Bestätigung für die Konto-Löschung bei E-Mail/Passwort-Konten
+/// (Google/Apple-Konten laufen über die Anbieter-Reauth, nicht über dieses
+/// Feld). Eigenständig, damit es in family_profile_screen wiederverwendbar ist.
+class _ReauthPasswordDialog extends StatefulWidget {
+  final ThemeData theme;
+  const _ReauthPasswordDialog({required this.theme});
+
+  @override
+  State<_ReauthPasswordDialog> createState() => _ReauthPasswordDialogState();
+}
+
+class _ReauthPasswordDialogState extends State<_ReauthPasswordDialog> {
+  final _ctrl = TextEditingController();
+  bool _obscure = true;
+
+  String _tr(String key) =>
+      AppStringsManager.getString(languageService.currentLanguage, key);
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = widget.theme;
+    return AlertDialog(
+      title: Text(_tr('profile_confirm_login')),
+      content: TextField(
+        controller: _ctrl,
+        obscureText: _obscure,
+        autofocus: true,
+        decoration: InputDecoration(
+          labelText: _tr('auth_password_label'),
+          border: const OutlineInputBorder(),
+          suffixIcon: IconButton(
+            icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
+            onPressed: () => setState(() => _obscure = !_obscure),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, null),
+          child: Text(_tr('cancel')),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: theme.colorScheme.error,
+          ),
+          onPressed: () {
+            final pw = _ctrl.text;
+            if (pw.isNotEmpty) Navigator.pop(context, pw);
+          },
+          child: Text(_tr('profile_confirm'),
+              style: const TextStyle(color: Colors.white)),
+        ),
+      ],
     );
   }
 }

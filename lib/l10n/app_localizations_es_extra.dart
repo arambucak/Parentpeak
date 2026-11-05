@@ -52,6 +52,10 @@ const appLocalizationsEsExtra = <String, String>{
   'chat_thread_rename_title': 'Renombrar la conversación',
   'chat_thread_rename_hint': 'Título de la conversación',
   'more_options': 'Más opciones',
+  'delete_reauth_provider_body':
+      'Para eliminar tu cuenta de forma permanente, vuelve a iniciar sesión con {provider}.',
+  'delete_reauth_provider_confirm':
+      'Confirmar con {provider}',
   'calendar_reminder_web_hint':
       'En el navegador no podemos avisarte por push. Para recordatorios fiables, instala la app de ParentPeak en tu teléfono.',
   'date_this_week': 'Esta semana',
