@@ -50,6 +50,9 @@ const appLocalizationsArExtra = <String, String>{
   'chat_thread_rename_title': 'إعادة تسمية المحادثة',
   'chat_thread_rename_hint': 'عنوان المحادثة',
   'more_options': 'خيارات أخرى',
+  'date_this_week': 'هذا الأسبوع',
+  'date_earlier': 'سابقًا',
+  'chat_thread_active': 'نشط',
   'chat_quality_retry':
       'أجب بشكل أكثر أصالة وملموسية، مُفصّلًا لهذا السؤال بالذات، لا وفق قالب. اختر الطريقة الواحدة المناسبة (هوتر، التواصل اللاعنفي، يول، إلخ) فقط إذا كانت تساعد فعلًا. لا حبكة قياسية، لا عبارات مبتذلة، لا جملة تواصل لاعنفي إلزامية، لا جدار نص، لا «يجب عليك». راعِ العمر. المحور (توجيه فقط): {focus} {followUp}',
   'chat_repair_prompt':

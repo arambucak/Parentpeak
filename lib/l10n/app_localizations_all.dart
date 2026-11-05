@@ -3106,6 +3106,9 @@ class AppStringsManager {
       'chat_thread_rename_title': 'Gespräch umbenennen',
       'chat_thread_rename_hint': 'Titel des Gesprächs',
       'more_options': 'Weitere Optionen',
+      'date_this_week': 'Diese Woche',
+      'date_earlier': 'Früher',
+      'chat_thread_active': 'Aktiv',
       'chat_quality_retry':
           'Antworte echter und konkreter, zugeschnitten auf genau diese Frage – nicht nach Schema. Wähle die EINE passende Methode (Hüther, GfK, Juul o.a.), nur wenn sie wirklich hilft. Keine Standard-Dramaturgie, keine Floskeln, kein Pflicht-GfK-Satz, keine Textwand, kein „Du musst“. Gehe aufs Alter ein. Fokus (nur Orientierung): {focus} {followUp}',
       'chat_context_retry':
@@ -6004,6 +6007,9 @@ class AppStringsManager {
       'chat_thread_rename_title': 'Rename conversation',
       'chat_thread_rename_hint': 'Conversation title',
       'more_options': 'More options',
+      'date_this_week': 'This week',
+      'date_earlier': 'Earlier',
+      'chat_thread_active': 'Active',
       'chat_quality_retry':
           'Answer more genuinely and concretely, tailored to exactly this question — not by a template. Pick the ONE fitting method (Hüther, NVC, Juul etc.) only if it truly helps. No standard dramaturgy, no clichés, no mandatory NVC sentence, no wall of text, no \'you must\'. Address the age. Focus (orientation only): {focus} {followUp}',
       'chat_context_retry':
@@ -16179,6 +16185,9 @@ class AppStringsManager {
       'chat_thread_rename_title': 'Navê axaftinê biguhere',
       'chat_thread_rename_hint': 'Sernavê axaftinê',
       'more_options': 'Vebijarkên din',
+      'date_this_week': 'Vê hefteyê',
+      'date_earlier': 'Berê',
+      'chat_thread_active': 'Çalak',
       'chat_quality_retry':
           'Li gorî tam vê pirsê, ne bi şablonê, rasttir û şênbertir bibersivîne. Rêbaza ku lê tê (Hüther, NVC, Juul hwd.) TENÊ heke bi rastî alîkar be hilbijêre. Şanoya standard nîn, klîşe nîn, hevoka NVC ya pêwîst nîn, nivîsa dirêj nîn, \'divê tu\' nîn. Temen binav bike. Baldarî (tenê rênîşan): {focus} {followUp}',
       'chat_context_retry':
@@ -22820,6 +22829,9 @@ class AppStringsManager {
       'chat_thread_rename_title': 'Sohbeti yeniden adlandır',
       'chat_thread_rename_hint': 'Sohbet başlığı',
       'more_options': 'Diğer seçenekler',
+      'date_this_week': 'Bu hafta',
+      'date_earlier': 'Daha önce',
+      'chat_thread_active': 'Etkin',
       'chat_quality_retry':
           'Tam olarak bu soruya göre, kalıpla değil, daha gerçek ve somut yanıtla. Uyan TEK yöntemi (Hüther, NVC, Juul vb.) yalnızca gerçekten yardımcı oluyorsa seç. Standart kurgu yok, klişe yok, zorunlu NVC cümlesi yok, uzun metin yok, \'yapmalısın\' yok. Yaşa değin. Odak (yalnızca yön): {focus} {followUp}',
       'chat_context_retry':

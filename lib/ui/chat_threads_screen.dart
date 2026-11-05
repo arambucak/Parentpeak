@@ -4,6 +4,8 @@ import 'package:parentpeak/logic/chat_account_store.dart';
 import 'package:parentpeak/logic/chat_thread_store.dart';
 
 const Color _kBrand = Color(0xFF8B5CF6);
+const Color _kBrand2 = Color(0xFF7C3AED);
+const Color _kBg = Color(0xFFF6F3FF);
 
 /// Ergebnis der Übersicht: entweder "neues Gespräch starten" oder ein
 /// bestehendes Gespräch öffnen.
@@ -17,8 +19,10 @@ class ChatThreadsResult {
   final ChatThread? openThread;
 }
 
-/// Übersicht aller Gespräche der KI-Elternberatung: Liste mit Titel, Datum und
-/// Vorschau, plus "Neues Gespräch". Öffnen, Umbenennen und Löschen möglich.
+/// Übersicht aller Gespräche der KI-Elternberatung — warm, modern und
+/// elternfreundlich: zeitliche Gruppierung (Heute / Diese Woche / Früher),
+/// ein passendes Themen-Emoji je Gespräch, weiche Karten. Öffnen, Umbenennen
+/// und Löschen möglich.
 class ChatThreadsScreen extends StatefulWidget {
   const ChatThreadsScreen({
     super.key,
@@ -99,7 +103,8 @@ class _ChatThreadsScreenState extends State<ChatThreadsScreen> {
           controller: controller,
           autofocus: true,
           maxLength: 60,
-          decoration: InputDecoration(hintText: ctx.tr('chat_thread_rename_hint')),
+          decoration:
+              InputDecoration(hintText: ctx.tr('chat_thread_rename_hint')),
         ),
         actions: [
           TextButton(
@@ -123,62 +128,161 @@ class _ChatThreadsScreenState extends State<ChatThreadsScreen> {
     await _load();
   }
 
-  String _dateLabel(DateTime d) {
+  /// Wählt ein passendes Emoji anhand von Titel/Vorschau des Gesprächs, damit
+  /// die Liste auf einen Blick erfassbar ist.
+  String _emojiFor(ChatThread t) {
+    final s = '${t.title} ${t.preview}'.toLowerCase();
+    bool has(List<String> words) => words.any(s.contains);
+    if (has(['schlaf', 'einschlaf', 'zubett', 'bett', 'nacht', 'müde'])) {
+      return '🌙';
+    }
+    if (has(['streit', 'geschwister', 'schlag', 'haut', 'wut', 'aggress'])) {
+      return '🤝';
+    }
+    if (has(['schule', 'hausaufgab', 'lernen', 'kita', 'lehrer'])) return '🎒';
+    if (has(['handy', 'bildschirm', 'medien', 'tablet', 'tv', 'youtube'])) {
+      return '📱';
+    }
+    if (has(['essen', 'ernähr', 'picky', 'gemüse', 'kochen'])) return '🍽️';
+    if (has(['angst', 'traurig', 'gefühl', 'weint', 'trauer'])) return '💛';
+    if (has(['limit', 'erschöpft', 'überfordert', 'kraft', 'stress'])) {
+      return '🫂';
+    }
+    return '💬';
+  }
+
+  /// Gruppiert Threads zeitlich. Reihenfolge der Gruppen bleibt stabil.
+  Map<String, List<ChatThread>> _grouped() {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final that = DateTime(d.year, d.month, d.day);
-    final diff = today.difference(that).inDays;
-    if (diff == 0) return context.tr('date_today');
-    if (diff == 1) return context.tr('date_yesterday');
-    return '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
+    final groups = <String, List<ChatThread>>{};
+    for (final t in _threads) {
+      final that =
+          DateTime(t.updatedAt.year, t.updatedAt.month, t.updatedAt.day);
+      final diff = today.difference(that).inDays;
+      final key = diff <= 0
+          ? context.tr('date_today')
+          : diff == 1
+              ? context.tr('date_yesterday')
+              : diff <= 7
+                  ? context.tr('date_this_week')
+                  : context.tr('date_earlier');
+      (groups[key] ??= []).add(t);
+    }
+    return groups;
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
+      backgroundColor: _kBg,
       appBar: AppBar(
-        title: Text(context.tr('chat_threads_title')),
-        foregroundColor: _kBrand,
+        title: Text(context.tr('chat_threads_title'),
+            style: const TextStyle(fontWeight: FontWeight.w800)),
+        foregroundColor: const Color(0xFF1F2937),
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0.5,
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: () => Navigator.pop(
-                          context, const ChatThreadsResult.startNew()),
-                      icon: const Icon(Icons.add_comment_outlined),
-                      label: Text(context.tr('chat_new_conversation')),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: _kBrand,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                      ),
-                    ),
+      body: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [_kBg, Color(0xFFFCFBFF)],
+          ),
+        ),
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
+                children: [
+                  _buildNewButton(context),
+                  Expanded(
+                    child: _threads.isEmpty
+                        ? _buildEmpty(theme)
+                        : _buildGroupedList(theme),
                   ),
-                ),
-                Expanded(
-                  child: _threads.isEmpty
-                      ? _buildEmpty(theme)
-                      : ListView.separated(
-                          padding: const EdgeInsets.all(12),
-                          itemCount: _threads.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 8),
-                          itemBuilder: (context, i) =>
-                              _buildThreadCard(theme, _threads[i]),
-                        ),
+                ],
+              ),
+      ),
+    );
+  }
+
+  Widget _buildNewButton(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+      child: Material(
+        borderRadius: BorderRadius.circular(18),
+        elevation: 0,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: () =>
+              Navigator.pop(context, const ChatThreadsResult.startNew()),
+          child: Ink(
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [_kBrand, _kBrand2],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: _kBrand.withValues(alpha: 0.28),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
                 ),
               ],
             ),
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.add_comment_rounded,
+                    color: Colors.white, size: 20),
+                const SizedBox(width: 10),
+                Text(
+                  context.tr('chat_new_conversation'),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
+  }
+
+  Widget _buildGroupedList(ThemeData theme) {
+    final groups = _grouped();
+    final children = <Widget>[];
+    groups.forEach((label, threads) {
+      children.add(Padding(
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+        child: Text(
+          label.toUpperCase(),
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.outline,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.6,
+          ),
+        ),
+      ));
+      for (final t in threads) {
+        children.add(Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+          child: _buildThreadCard(theme, t),
+        ));
+      }
+    });
+    return ListView(
+        padding: const EdgeInsets.only(bottom: 24), children: children);
   }
 
   Widget _buildEmpty(ThemeData theme) {
@@ -188,13 +292,24 @@ class _ChatThreadsScreenState extends State<ChatThreadsScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('💬', style: TextStyle(fontSize: 40)),
-            const SizedBox(height: 12),
+            Container(
+              width: 76,
+              height: 76,
+              decoration: BoxDecoration(
+                color: _kBrand.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: const Text('💬', style: TextStyle(fontSize: 34)),
+            ),
+            const SizedBox(height: 16),
             Text(
               context.tr('chat_threads_empty'),
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                height: 1.5,
+              ),
             ),
           ],
         ),
@@ -206,55 +321,102 @@ class _ChatThreadsScreenState extends State<ChatThreadsScreen> {
     final isActive = thread.id == widget.activeThreadId;
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(18),
+      elevation: 0,
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () =>
-            Navigator.pop(context, ChatThreadsResult.open(thread)),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => Navigator.pop(context, ChatThreadsResult.open(thread)),
+        child: Ink(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
             border: Border.all(
               color: isActive
-                  ? _kBrand.withValues(alpha: 0.5)
-                  : theme.dividerColor.withValues(alpha: 0.3),
+                  ? _kBrand.withValues(alpha: 0.55)
+                  : const Color(0xFFECE8F7),
+              width: isActive ? 1.5 : 1,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF8B5CF6).withValues(alpha: 0.06),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
+          padding: const EdgeInsets.fromLTRB(14, 14, 6, 14),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: _kBrand.withValues(alpha: 0.09),
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                alignment: Alignment.center,
+                child: Text(_emojiFor(thread),
+                    style: const TextStyle(fontSize: 22)),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      thread.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodyLarge
-                          ?.copyWith(fontWeight: FontWeight.w700),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            thread.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF1F2937),
+                            ),
+                          ),
+                        ),
+                        if (isActive)
+                          Container(
+                            margin: const EdgeInsets.only(left: 6),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: _kBrand.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              context.tr('chat_thread_active'),
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: _kBrand,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-                    const SizedBox(height: 3),
-                    if (thread.preview.isNotEmpty)
+                    if (thread.preview.isNotEmpty) ...[
+                      const SizedBox(height: 4),
                       Text(
                         thread.preview,
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant),
+                          color: theme.colorScheme.onSurfaceVariant,
+                          height: 1.35,
+                        ),
                       ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _dateLabel(thread.updatedAt),
-                      style: theme.textTheme.labelSmall
-                          ?.copyWith(color: theme.colorScheme.outline),
-                    ),
+                    ],
                   ],
                 ),
               ),
               PopupMenuButton<String>(
                 icon: Icon(Icons.more_vert_rounded,
-                    color: theme.colorScheme.outline),
+                    color: theme.colorScheme.outline, size: 20),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
                 onSelected: (v) {
                   if (v == 'rename') _rename(thread);
                   if (v == 'delete') _delete(thread);
@@ -271,7 +433,8 @@ class _ChatThreadsScreenState extends State<ChatThreadsScreen> {
                   PopupMenuItem(
                     value: 'delete',
                     child: Row(children: [
-                      const Icon(Icons.delete_outline_rounded, size: 20),
+                      const Icon(Icons.delete_outline_rounded,
+                          size: 20, color: Color(0xFFDC2626)),
                       const SizedBox(width: 10),
                       Text(context.tr('delete')),
                     ]),

@@ -52,6 +52,9 @@ const appLocalizationsItExtra = <String, String>{
   'chat_thread_rename_title': 'Rinomina la conversazione',
   'chat_thread_rename_hint': 'Titolo della conversazione',
   'more_options': 'Altre opzioni',
+  'date_this_week': 'Questa settimana',
+  'date_earlier': 'Prima',
+  'chat_thread_active': 'Attivo',
   'chat_quality_retry':
       'Rispondi in modo più autentico e concreto, su misura proprio per questa domanda, non con un modello. Scegli l\'UNICO metodo adatto (Hüther, CNV, Juul, ecc.) solo se aiuta davvero. Niente drammaturgia standard, niente frasi fatte, niente frase di CNV obbligatoria, niente muro di testo, niente «devi». Considera l\'età. Focus (solo orientamento): {focus} {followUp}',
   'chat_repair_prompt':
