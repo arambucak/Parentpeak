@@ -78,13 +78,13 @@ void main() {
     memoryCalls = [];
     aiResponse = (_) async => http.Response(jsonEncode({'text': _answer}), 200);
     memoryResponse = (request) async => http.Response(
-      request.url.path == '/ai/settings'
-          ? '{"enabled":false}'
-          : uid == 'a'
-          ? '{"items":[{"id":"child-a","name":"Private child","memoryItems":[]}]}'
-          : '{"items":[]}',
-      200,
-    );
+          request.url.path == '/ai/settings'
+              ? '{"enabled":false}'
+              : uid == 'a'
+                  ? '{"items":[{"id":"child-a","name":"Private child","memoryItems":[]}]}'
+                  : '{"items":[]}',
+          200,
+        );
     configure();
   });
   tearDown(() => store.dispose());
@@ -136,37 +136,55 @@ void main() {
   }
 
   for (final tip in [false, true]) {
-    testWidgets('${tip ? 'tip' : 'normal'} initial message respects the same daily limit', (tester) async {
+    testWidgets(
+        '${tip ? 'tip' : 'normal'} initial message respects the same daily limit',
+        (tester) async {
       final now = DateTime.now();
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('ai_rate.date', '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}');
+      await prefs.setString('ai_rate.date',
+          '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}');
       await prefs.setInt('ai_rate.daily_count', AIRateLimiter.dailyLimit);
       await consent.grant(store.scope);
-      await mount(tester, ChatScreen(
-        chatBackend: backend, memoryService: memory,
-        initialMessage: tip ? '___TIP_EXPAND___$_question' : _question,
-      ));
+      await mount(
+          tester,
+          ChatScreen(
+            chatBackend: backend,
+            memoryService: memory,
+            initialMessage: tip ? '___TIP_EXPAND___$_question' : _question,
+          ));
       expect(calls, isEmpty);
-      expect(find.text(AppStringsManager.getString('en', 'chat_daily_limit').replaceAll('{limit}', '${AIRateLimiter.dailyLimit}'), findRichText: true), findsOneWidget);
+      expect(
+          find.text(
+              AppStringsManager.getString('en', 'chat_daily_limit')
+                  .replaceAll('{limit}', '${AIRateLimiter.dailyLimit}'),
+              findRichText: true),
+          findsOneWidget);
       expect(find.byType(TextField), findsOneWidget);
     });
   }
 
-  testWidgets('tip expansion records exactly one request and invents no age', (tester) async {
+  testWidgets('tip expansion records exactly one request and invents no age',
+      (tester) async {
     await consent.grant(store.scope);
-    await mount(tester, ChatScreen(
-      chatBackend: backend, memoryService: memory,
-      initialMessage: '___TIP_EXPAND___$_question',
-    ));
+    await mount(
+        tester,
+        ChatScreen(
+          chatBackend: backend,
+          memoryService: memory,
+          initialMessage: '___TIP_EXPAND___$_question',
+        ));
     expect(calls, hasLength(1));
     expect(AIRateLimiter.todayCount(), 1);
     final payload = calls.single.body;
     expect(payload, isNot(contains('3 Jahre')));
     expect(payload, contains('Alter ist nicht bekannt'));
     expect(payload.split(_question).length - 1, 1);
-    expect(find.text(AppStringsManager.getString('en', 'chat_history_budget')
-      .replaceAll('{rounds}', '${ChatContextPolicy.maxHistoryRounds}')
-      .replaceAll('{characters}', '${ChatContextPolicy.maxHistoryCharacters}')), findsOneWidget);
+    expect(
+        find.text(AppStringsManager.getString('en', 'chat_history_budget')
+            .replaceAll('{rounds}', '${ChatContextPolicy.maxHistoryRounds}')
+            .replaceAll(
+                '{characters}', '${ChatContextPolicy.maxHistoryCharacters}')),
+        findsOneWidget);
   });
 
   testWidgets(
@@ -176,9 +194,8 @@ void main() {
       await send(tester);
       expect(find.text(_answer, findRichText: true), findsOneWidget);
       await tester.enterText(find.byType(TextField), 'Private unsent text');
-      final controller = tester
-          .widget<TextField>(find.byType(TextField))
-          .controller!;
+      final controller =
+          tester.widget<TextField>(find.byType(TextField)).controller!;
       await switchAccount(tester, null);
       expect(controller.text, isEmpty);
       expect(find.text(_question), findsNothing);
@@ -219,7 +236,10 @@ void main() {
     aiResponse = (_) => pending.future;
     await chat(tester);
     await send(tester, settle: false);
-    await tester.tap(find.byIcon(Icons.delete_outline_rounded).first);
+    // Löschen liegt jetzt im Überlauf-Menü (Platz für die Chat-Icons).
+    await tester.tap(find.byIcon(Icons.more_vert_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.delete_outline_rounded).last);
     await tester.pumpAndSettle();
     await tester.tap(
       find.descendant(
@@ -239,9 +259,8 @@ void main() {
     'old keyboard callback cannot submit private text in a new account',
     (tester) async {
       await chat(tester);
-      final callback = tester
-          .widget<TextField>(find.byType(TextField))
-          .onSubmitted!;
+      final callback =
+          tester.widget<TextField>(find.byType(TextField)).onSubmitted!;
       uid = 'b';
       await consent.grant('account.b');
       store.synchronize();
@@ -399,7 +418,9 @@ void main() {
     (tester) async {
       await chat(tester);
       await send(tester);
-      await tester.tap(find.byIcon(Icons.insights_rounded));
+      await tester.tap(find.byIcon(Icons.more_vert_rounded));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.insights_rounded).last);
       await tester.pumpAndSettle();
       expect(find.byIcon(Icons.restart_alt_rounded), findsOneWidget);
       await switchAccount(tester, null);
@@ -413,9 +434,10 @@ void main() {
     (tester) async {
       await memoryConsent.grant(store.scope);
       memoryResponse = (request) async => http.Response(
-        request.url.path == '/ai/settings'
-            ? '{"enabled":true,"consentVersion":"chat-memory-v1"}'
-            : '{"items":[{"id":"child-a","name":"Private child","memoryItems":[]}]}', 200);
+          request.url.path == '/ai/settings'
+              ? '{"enabled":true,"consentVersion":"chat-memory-v1"}'
+              : '{"items":[{"id":"child-a","name":"Private child","memoryItems":[]}]}',
+          200);
       await mount(tester, AiMemorySettingsScreen(service: memory));
       expect(find.text('Private child'), findsOneWidget);
       await tester.tap(find.byIcon(Icons.add_circle_outline));
@@ -452,7 +474,9 @@ void main() {
     await chat(tester);
     await send(tester);
     fail = true;
-    await tester.tap(find.byIcon(Icons.insights_rounded));
+    await tester.tap(find.byIcon(Icons.more_vert_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.insights_rounded).last);
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.restart_alt_rounded));
     await tester.pumpAndSettle();
@@ -472,7 +496,9 @@ void main() {
       memoryResponse = (request) async {
         if (request.url.path == '/ai/settings') {
           return http.Response(
-            uid == 'a' ? '{"enabled":true,"consentVersion":"chat-memory-v1"}' : '{"enabled":false}',
+            uid == 'a'
+                ? '{"enabled":true,"consentVersion":"chat-memory-v1"}'
+                : '{"enabled":false}',
             200,
           );
         }
@@ -503,13 +529,13 @@ void main() {
     'memory detail closes on account switch and never deletes old items',
     (tester) async {
       memoryResponse = (request) async => http.Response(
-        request.url.path.endsWith('/memory')
-            ? '{"items":[{"id":"item-a","category":"health","key":"allergy","value":"Private allergy","status":"confirmed"}]}'
-            : request.url.path == '/ai/settings'
-            ? '{"enabled":false}'
-            : '{"items":[{"id":"child-a","name":"Private child","memoryItems":[]}]}',
-        200,
-      );
+            request.url.path.endsWith('/memory')
+                ? '{"items":[{"id":"item-a","category":"health","key":"allergy","value":"Private allergy","status":"confirmed"}]}'
+                : request.url.path == '/ai/settings'
+                    ? '{"enabled":false}'
+                    : '{"items":[{"id":"child-a","name":"Private child","memoryItems":[]}]}',
+            200,
+          );
       await mount(tester, AiMemorySettingsScreen(service: memory));
       await tester.tap(find.text('Private child'));
       await tester.pumpAndSettle();

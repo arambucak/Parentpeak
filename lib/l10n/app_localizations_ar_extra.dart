@@ -42,6 +42,14 @@ const appLocalizationsArExtra = <String, String>{
   'chat_family_topics':
       'مواضيع متكررة مؤخرًا: {topics}.',
   'chat_no_family': 'لا شيء',
+  'chat_threads_title': 'المحادثات',
+  'chat_new_conversation': 'محادثة جديدة',
+  'chat_threads_empty': 'لا توجد محادثات بعد. ابدأ واحدة كلما شغلك شيء.',
+  'chat_thread_delete_title': 'حذف المحادثة؟',
+  'chat_thread_delete_body': 'ستُحذف هذه المحادثة نهائيًا.',
+  'chat_thread_rename_title': 'إعادة تسمية المحادثة',
+  'chat_thread_rename_hint': 'عنوان المحادثة',
+  'more_options': 'خيارات أخرى',
   'chat_quality_retry':
       'أجب بشكل أكثر أصالة وملموسية، مُفصّلًا لهذا السؤال بالذات، لا وفق قالب. اختر الطريقة الواحدة المناسبة (هوتر، التواصل اللاعنفي، يول، إلخ) فقط إذا كانت تساعد فعلًا. لا حبكة قياسية، لا عبارات مبتذلة، لا جملة تواصل لاعنفي إلزامية، لا جدار نص، لا «يجب عليك». راعِ العمر. المحور (توجيه فقط): {focus} {followUp}',
   'chat_repair_prompt':

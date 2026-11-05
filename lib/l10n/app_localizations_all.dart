@@ -3098,6 +3098,14 @@ class AppStringsManager {
       'chat_family_topics':
           'Wiederkehrende Themen zuletzt: {topics}.',
       'chat_no_family': 'keine',
+      'chat_threads_title': 'Gespräche',
+      'chat_new_conversation': 'Neues Gespräch',
+      'chat_threads_empty': 'Noch keine Gespräche. Starte ein neues, wann immer dich etwas beschäftigt.',
+      'chat_thread_delete_title': 'Gespräch löschen?',
+      'chat_thread_delete_body': 'Dieses Gespräch wird dauerhaft entfernt.',
+      'chat_thread_rename_title': 'Gespräch umbenennen',
+      'chat_thread_rename_hint': 'Titel des Gesprächs',
+      'more_options': 'Weitere Optionen',
       'chat_quality_retry':
           'Antworte echter und konkreter, zugeschnitten auf genau diese Frage – nicht nach Schema. Wähle die EINE passende Methode (Hüther, GfK, Juul o.a.), nur wenn sie wirklich hilft. Keine Standard-Dramaturgie, keine Floskeln, kein Pflicht-GfK-Satz, keine Textwand, kein „Du musst“. Gehe aufs Alter ein. Fokus (nur Orientierung): {focus} {followUp}',
       'chat_context_retry':
@@ -5988,6 +5996,14 @@ class AppStringsManager {
       'chat_family_topics':
           'Recurring topics lately: {topics}.',
       'chat_no_family': 'none',
+      'chat_threads_title': 'Conversations',
+      'chat_new_conversation': 'New conversation',
+      'chat_threads_empty': 'No conversations yet. Start a new one whenever something is on your mind.',
+      'chat_thread_delete_title': 'Delete conversation?',
+      'chat_thread_delete_body': 'This conversation will be permanently removed.',
+      'chat_thread_rename_title': 'Rename conversation',
+      'chat_thread_rename_hint': 'Conversation title',
+      'more_options': 'More options',
       'chat_quality_retry':
           'Answer more genuinely and concretely, tailored to exactly this question — not by a template. Pick the ONE fitting method (Hüther, NVC, Juul etc.) only if it truly helps. No standard dramaturgy, no clichés, no mandatory NVC sentence, no wall of text, no \'you must\'. Address the age. Focus (orientation only): {focus} {followUp}',
       'chat_context_retry':
@@ -16155,6 +16171,14 @@ class AppStringsManager {
       'chat_family_topics':
           'Mijarên dubare yên vê dawiyê: {topics}.',
       'chat_no_family': 'tune',
+      'chat_threads_title': 'Axaftin',
+      'chat_new_conversation': 'Axaftina nû',
+      'chat_threads_empty': 'Hêj axaftin tune. Gava tiştek di mêjiyê te de be, yekê nû dest pê bike.',
+      'chat_thread_delete_title': 'Axaftin were jêbirin?',
+      'chat_thread_delete_body': 'Ev axaftin wê her û her were jêbirin.',
+      'chat_thread_rename_title': 'Navê axaftinê biguhere',
+      'chat_thread_rename_hint': 'Sernavê axaftinê',
+      'more_options': 'Vebijarkên din',
       'chat_quality_retry':
           'Li gorî tam vê pirsê, ne bi şablonê, rasttir û şênbertir bibersivîne. Rêbaza ku lê tê (Hüther, NVC, Juul hwd.) TENÊ heke bi rastî alîkar be hilbijêre. Şanoya standard nîn, klîşe nîn, hevoka NVC ya pêwîst nîn, nivîsa dirêj nîn, \'divê tu\' nîn. Temen binav bike. Baldarî (tenê rênîşan): {focus} {followUp}',
       'chat_context_retry':
@@ -22788,6 +22812,14 @@ class AppStringsManager {
       'chat_family_topics':
           'Son zamanlarda tekrar eden konular: {topics}.',
       'chat_no_family': 'yok',
+      'chat_threads_title': 'Sohbetler',
+      'chat_new_conversation': 'Yeni sohbet',
+      'chat_threads_empty': 'Henüz sohbet yok. Aklına bir şey takıldığında yeni bir tane başlat.',
+      'chat_thread_delete_title': 'Sohbet silinsin mi?',
+      'chat_thread_delete_body': 'Bu sohbet kalıcı olarak kaldırılacak.',
+      'chat_thread_rename_title': 'Sohbeti yeniden adlandır',
+      'chat_thread_rename_hint': 'Sohbet başlığı',
+      'more_options': 'Diğer seçenekler',
       'chat_quality_retry':
           'Tam olarak bu soruya göre, kalıpla değil, daha gerçek ve somut yanıtla. Uyan TEK yöntemi (Hüther, NVC, Juul vb.) yalnızca gerçekten yardımcı oluyorsa seç. Standart kurgu yok, klişe yok, zorunlu NVC cümlesi yok, uzun metin yok, \'yapmalısın\' yok. Yaşa değin. Odak (yalnızca yön): {focus} {followUp}',
       'chat_context_retry':

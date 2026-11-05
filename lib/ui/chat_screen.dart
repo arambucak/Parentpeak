@@ -17,7 +17,8 @@ import 'package:parentpeak/ui/widgets/chat_account_modal.dart';
 import 'package:parentpeak/logic/pedagogical_chat_backend.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/logic/ai_memory_service.dart';
-import 'package:parentpeak/logic/chat_history_store.dart';
+import 'package:parentpeak/logic/chat_thread_store.dart';
+import 'package:parentpeak/ui/chat_threads_screen.dart';
 import 'package:parentpeak/models/ai_memory.dart';
 import 'package:parentpeak/ui/ai_memory_settings_screen.dart';
 import 'package:parentpeak/main.dart';
@@ -27,7 +28,7 @@ class ChatScreen extends StatefulWidget {
   final PedagogicalChatBackend? chatBackend;
   final ChatAccountStore? accountStore;
   final AiMemoryService? memoryService;
-  final ChatHistoryStore? historyStore;
+  final ChatThreadStore? threadStore;
 
   const ChatScreen({
     super.key,
@@ -35,7 +36,7 @@ class ChatScreen extends StatefulWidget {
     this.chatBackend,
     this.accountStore,
     this.memoryService,
-    this.historyStore,
+    this.threadStore,
   });
 
   @override
@@ -134,8 +135,13 @@ class _ChatScreenState extends State<ChatScreen> {
   late String _consentScope;
   late final ChatAccountStore _store;
   late final AiMemoryService _memoryService;
-  late final ChatHistoryStore _historyStore;
+  late final ChatThreadStore _threadStore;
   late ChatAccountTicket _ticket;
+  // ID des aktuell offenen Gesprächs. null = noch kein Thread angelegt
+  // (wird beim ersten Senden erzeugt).
+  String? _activeThreadId;
+  DateTime? _activeThreadCreatedAt;
+  String? _activeThreadTitle;
   int _requestGeneration = 0;
   StreamIterator<String>? _replyIterator;
   bool _topicsLoading = true;
@@ -162,8 +168,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _ticket = _store.ticket;
     _memoryService =
         widget.memoryService ?? AiMemoryService(accountStore: _store);
-    _historyStore =
-        widget.historyStore ?? ChatHistoryStore(accountStore: _store);
+    _threadStore = widget.threadStore ?? ChatThreadStore(accountStore: _store);
     _store.addListener(_onAccountChanged);
     _consentScope = _consent.scope;
     AuthService.instance.addListener(_onConsentScopeChanged);
@@ -176,30 +181,105 @@ class _ChatScreenState extends State<ChatScreen> {
     _maybeSendInitialMessage();
   }
 
-  /// Lädt den gespeicherten Chatverlauf des aktuellen Kontos, damit eine frühere
-  /// Unterhaltung nach dem Wiederöffnen sichtbar bleibt.
+  /// Öffnet beim Start das zuletzt aktive Gespräch, damit die letzte
+  /// Unterhaltung sichtbar bleibt. Gibt es keine Threads, bleibt der Chat leer
+  /// (ein neuer Thread wird beim ersten Senden erzeugt).
   Future<void> _loadPersistedHistory() async {
     final ticket = _ticket;
     try {
-      final stored = await _historyStore.load(ticket);
-      if (stored.isEmpty || !_isCurrent(ticket)) return;
+      final threads = await _threadStore.loadThreads(ticket);
+      if (threads.isEmpty || !_isCurrent(ticket)) return;
       // Nicht überschreiben, wenn inzwischen schon Nachrichten da sind
       // (z. B. durch eine initiale Nachricht).
       if (_messages.isNotEmpty) return;
-      setState(() => _messages.addAll(stored));
+      final latest = threads.first; // nach updatedAt absteigend sortiert
+      setState(() {
+        _activeThreadId = latest.id;
+        _activeThreadCreatedAt = latest.createdAt;
+        _activeThreadTitle = latest.title;
+        _messages.addAll(latest.messages);
+      });
       _scrollToBottom();
     } catch (error) {
-      debugPrint('Chat history load failed: $error');
+      debugPrint('Chat threads load failed: $error');
     }
   }
 
-  /// Persistiert den aktuellen Verlauf für das Konto des [ticket] (best-effort).
+  /// Persistiert das aktuell offene Gespräch (best-effort). Erzeugt beim ersten
+  /// Austausch einen Thread mit automatisch abgeleitetem Titel.
   Future<void> _persistHistory(ChatAccountTicket ticket) async {
     try {
-      await _historyStore.save(
-          ticket, List<Map<String, dynamic>>.from(_messages));
+      final messages = List<Map<String, dynamic>>.from(_messages);
+      if (messages.isEmpty) return;
+      final now = DateTime.now();
+      _activeThreadId ??= _threadStore.newThreadId();
+      _activeThreadCreatedAt ??= now;
+      // Titel aus der ersten Nutzerfrage ableiten, sobald vorhanden.
+      _activeThreadTitle ??= ChatThreadStore.deriveTitle(messages);
+      final thread = ChatThread(
+        id: _activeThreadId!,
+        title: _activeThreadTitle ?? ChatThreadStore.deriveTitle(messages),
+        createdAt: _activeThreadCreatedAt!,
+        updatedAt: now,
+        messages: messages,
+      );
+      await _threadStore.upsertThread(ticket, thread);
     } catch (error) {
-      debugPrint('Chat history save failed: $error');
+      debugPrint('Chat thread save failed: $error');
+    }
+  }
+
+  /// Startet ein neues, leeres Gespräch (aktueller Thread wird zuvor gesichert).
+  void _startNewThread() {
+    _invalidateReply();
+    setState(() {
+      _messages.clear();
+      _assistantFeedbackByIndex.clear();
+      _currentResponse = '';
+      _isStreaming = false;
+      _activeThreadId = null;
+      _activeThreadCreatedAt = null;
+      _activeThreadTitle = null;
+    });
+  }
+
+  /// Öffnet ein bestehendes Gespräch aus der Übersicht.
+  void _openThread(ChatThread thread) {
+    _invalidateReply();
+    setState(() {
+      _messages
+        ..clear()
+        ..addAll(thread.messages);
+      _assistantFeedbackByIndex.clear();
+      _currentResponse = '';
+      _isStreaming = false;
+      _activeThreadId = thread.id;
+      _activeThreadCreatedAt = thread.createdAt;
+      _activeThreadTitle = thread.title;
+    });
+    _scrollToBottom();
+  }
+
+  /// Öffnet die Gesprächs-Übersicht; Rückgabe steuert neues/gewähltes Gespräch.
+  Future<void> _openThreadList() async {
+    final ticket = _ticket;
+    // Aktuellen Stand sichern, damit er in der Liste erscheint.
+    if (_messages.isNotEmpty) await _persistHistory(ticket);
+    if (!mounted || !_isCurrent(ticket)) return;
+    final result = await Navigator.of(context).push<ChatThreadsResult>(
+      MaterialPageRoute(
+        builder: (_) => ChatThreadsScreen(
+          threadStore: _threadStore,
+          accountStore: _store,
+          activeThreadId: _activeThreadId,
+        ),
+      ),
+    );
+    if (!_isCurrent(ticket) || result == null) return;
+    if (result.startNew) {
+      _startNewThread();
+    } else if (result.openThread != null) {
+      _openThread(result.openThread!);
     }
   }
 
@@ -249,6 +329,9 @@ class _ChatScreenState extends State<ChatScreen> {
       _messages.clear();
       _assistantFeedbackByIndex.clear();
       _topicCounts.clear();
+      _activeThreadId = null;
+      _activeThreadCreatedAt = null;
+      _activeThreadTitle = null;
       _activeChildProfileId = null;
       _activeChildName = null;
       _replyChildName = null;
@@ -806,17 +889,24 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _clearChat() {
     final ticket = _ticket;
+    final threadId = _activeThreadId;
     _invalidateReply();
     setState(() {
       _messages.clear();
       _assistantFeedbackByIndex.clear();
       _currentResponse = '';
       _isStreaming = false;
+      _activeThreadId = null;
+      _activeThreadCreatedAt = null;
+      _activeThreadTitle = null;
     });
-    // Auch den gespeicherten Verlauf des Kontos entfernen (best-effort).
-    unawaited(_historyStore.clear(ticket).catchError((Object error) {
-      debugPrint('Chat history clear failed: $error');
-    }));
+    // Das aktuell offene Gespräch aus dem Speicher entfernen (best-effort).
+    if (threadId != null) {
+      unawaited(
+          _threadStore.deleteThread(ticket, threadId).catchError((Object e) {
+        debugPrint('Chat thread delete failed: $e');
+      }));
+    }
   }
 
   Future<void> _confirmClearChat() async {
@@ -1694,33 +1784,71 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         actions: [
           IconButton(
-            tooltip: context.tr('tooltip_ai_memory'),
-            onPressed: () async {
-              final ticket = _ticket;
-              await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) =>
-                      AiMemorySettingsScreen(service: _memoryService),
-                ),
-              );
-              // Nach dem Verwalten das aktive Kind neu bestimmen (Gedächtnis
-              // könnte gerade aktiviert oder ein Kind angelegt worden sein).
-              if (_isCurrent(ticket)) await _loadActiveChildProfile();
-            },
-            icon: const Icon(Icons.psychology_outlined, color: _kBrand),
+            tooltip: context.tr('chat_threads_title'),
+            onPressed: _openThreadList,
+            icon: const Icon(Icons.forum_outlined, color: _kBrand),
           ),
           IconButton(
-            tooltip: context.tr('tooltip_topic_analysis'),
-            onPressed: _showTopicInsights,
-            icon: const Icon(Icons.insights_rounded, color: _kBrand),
-          ),
-          IconButton(
-            tooltip: context.tr('tooltip_delete_chat'),
-            onPressed: _messages.isEmpty ? null : _confirmClearChat,
+            tooltip: context.tr('chat_new_conversation'),
+            onPressed: _messages.isEmpty && _activeThreadId == null
+                ? null
+                : _startNewThread,
             icon: Icon(
-              Icons.delete_outline_rounded,
-              color: _messages.isEmpty ? Colors.grey[400] : _kBrand,
+              Icons.add_comment_outlined,
+              color: _messages.isEmpty && _activeThreadId == null
+                  ? Colors.grey[400]
+                  : _kBrand,
             ),
+          ),
+          PopupMenuButton<String>(
+            tooltip: context.tr('more_options'),
+            icon: const Icon(Icons.more_vert_rounded, color: _kBrand),
+            onSelected: (value) async {
+              if (value == 'memory') {
+                final ticket = _ticket;
+                await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        AiMemorySettingsScreen(service: _memoryService),
+                  ),
+                );
+                if (_isCurrent(ticket)) await _loadActiveChildProfile();
+              } else if (value == 'insights') {
+                _showTopicInsights();
+              } else if (value == 'delete') {
+                if (_messages.isNotEmpty) _confirmClearChat();
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'memory',
+                child: Row(children: [
+                  const Icon(Icons.psychology_outlined,
+                      size: 20, color: _kBrand),
+                  const SizedBox(width: 10),
+                  Text(context.tr('tooltip_ai_memory')),
+                ]),
+              ),
+              PopupMenuItem(
+                value: 'insights',
+                child: Row(children: [
+                  const Icon(Icons.insights_rounded, size: 20, color: _kBrand),
+                  const SizedBox(width: 10),
+                  Text(context.tr('tooltip_topic_analysis')),
+                ]),
+              ),
+              PopupMenuItem(
+                value: 'delete',
+                enabled: _messages.isNotEmpty,
+                child: Row(children: [
+                  Icon(Icons.delete_outline_rounded,
+                      size: 20,
+                      color: _messages.isEmpty ? Colors.grey : _kBrand),
+                  const SizedBox(width: 10),
+                  Text(context.tr('tooltip_delete_chat')),
+                ]),
+              ),
+            ],
           ),
         ],
       ),

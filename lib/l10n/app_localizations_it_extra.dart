@@ -44,6 +44,14 @@ const appLocalizationsItExtra = <String, String>{
   'chat_family_topics':
       'Temi ricorrenti di recente: {topics}.',
   'chat_no_family': 'nessuno',
+  'chat_threads_title': 'Conversazioni',
+  'chat_new_conversation': 'Nuova conversazione',
+  'chat_threads_empty': 'Ancora nessuna conversazione. Iniziane una ogni volta che qualcosa ti preoccupa.',
+  'chat_thread_delete_title': 'Eliminare la conversazione?',
+  'chat_thread_delete_body': 'Questa conversazione verrà rimossa definitivamente.',
+  'chat_thread_rename_title': 'Rinomina la conversazione',
+  'chat_thread_rename_hint': 'Titolo della conversazione',
+  'more_options': 'Altre opzioni',
   'chat_quality_retry':
       'Rispondi in modo più autentico e concreto, su misura proprio per questa domanda, non con un modello. Scegli l\'UNICO metodo adatto (Hüther, CNV, Juul, ecc.) solo se aiuta davvero. Niente drammaturgia standard, niente frasi fatte, niente frase di CNV obbligatoria, niente muro di testo, niente «devi». Considera l\'età. Focus (solo orientamento): {focus} {followUp}',
   'chat_repair_prompt':
