@@ -26,6 +26,18 @@ class _ProfileLegacyClaimState extends State<ProfileLegacyClaim> {
   }
 
   @override
+  void didUpdateWidget(ProfileLegacyClaim oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.store != widget.store) {
+      (oldWidget.store ?? ProfileAccountStore.instance).removeListener(_reload);
+      _store.addListener(_reload);
+    }
+    if (oldWidget.store != widget.store || oldWidget.domain != widget.domain) {
+      _reload();
+    }
+  }
+
+  @override
   void dispose() {
     _store.removeListener(_reload);
     super.dispose();

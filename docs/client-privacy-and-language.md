@@ -26,6 +26,17 @@ erhalten; dieser PR bietet keine Zusammenfuehrung. Die bislang fachlich
 ungenutzten Mehrfachrollen/Altersgruppen bleiben fuer die lokale Wiederherstellung
 erhalten; ihre weitergehende Verwendung ist Backlog.
 
+Claims erscheinen nur bei echten, noch nicht zugeordneten und nicht mit dem
+Kontobereich kollidierenden Werten. Leere Texte/Listen und Platzhalter sind
+kein Altbestand. DE/NRW, der historische Standard der Kachelreihenfolge und
+ein Abschluss-Flag allein gelten nicht als persoenlicher Onboarding-Entwurf;
+Familienname, Rollen, Altersgruppen, Prioritaeten, eine andere Region oder
+eigene Kachelreihenfolge bleiben uebernehmbar. Ein Standort braucht einen
+Orts-/Events-Stadtnamen oder ein vollstaendiges Koordinatenpaar (nicht den
+leeren Ursprung 0/0); eine Methode oder einzelne Koordinate allein genuegt
+nicht. Erkennung und Claim verwenden dieselbe validierte Datenpruefung.
+Die globalen Originalwerte werden weiterhin nicht geloescht.
+
 Kinderlisten werden nicht an den Onboarding-Endpunkt gesendet. Der bestehende
 minimale Sync umfasst nur UID, Abschluss, Familienname, Elternrolle und
 Prioritaeten. AuthGate wartet auf einen kontobezogenen Status und zeigt bei
@@ -45,6 +56,27 @@ Client-HTTP-Guards pruefen die Session auch nach Token-Aufloesung und vor 401-Re
 Keine Schema-Migration. Der geaenderte Backend-Tree verlangt vor Pages-Freigabe
 einen freigegebenen Render-Rollout. Dieser Nachweis ist keine Produktionsfreigabe.
 Die lokale Kontozuordnung ist keine Verschluesselung.
+
+## Passwort aendern
+
+Unter Profil & Schutz, Konto & Sicherheit, koennen E-Mail/Passwort-Konten ihr
+Passwort aendern. Fuer Google-/Apple-Konten bleibt der Eintrag verborgen;
+massgeblich ist `AuthService.primaryProviderId()`. Das neue Passwort wird
+nach den bestehenden Registrierungsregeln geprueft: mindestens acht Zeichen,
+ein lateinischer Grossbuchstabe und eine Ziffer, plus Bestaetigung im Dialog.
+Passwoerter werden nicht getrimmt.
+
+`changePassword` reauthentifiziert zuerst ueber Firebase
+`EmailAuthProvider.credential`, danach erfolgt `User.updatePassword`.
+Erfolg erscheint erst nach Firebase-Bestaetigung; Kontowechsel/Logout
+invalidieren den laufenden Vorgang. Fehler werden als lokalisierte Schluessel
+in de/en/tr/ku/fr/es/it/ar angezeigt. Keine Passwortspeicherung, kein
+Backend-Aufruf und keine Ausgabe von Passwoertern oder Provider-Fehlerdetails.
+Lokale Debug-Konten ohne Firebase koennen darueber kein Passwort aendern.
+Firebase-/Store-Konfiguration und reale Kontotests bleiben separate QA.
+
+Gezielte Tests:
+`flutter test --no-pub test/change_password_test.dart test/auth_provider_selection_test.dart test/auth_session_restore_test.dart test/auth_service_logout_test.dart test/profile_account_store_test.dart test/profile_claim_widget_test.dart test/profile_onboarding_lifecycle_widget_test.dart test/profile_account_http_guard_test.dart test/supported_languages_test.dart test/visible_text_spelling_test.dart`.
 
 ## Ungefaehrer Standort im Onboarding
 

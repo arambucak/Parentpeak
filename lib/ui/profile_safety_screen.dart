@@ -26,6 +26,7 @@ import 'package:parentpeak/services/image_upload_service.dart';
 import 'package:parentpeak/logic/profile_account_store.dart';
 import 'package:parentpeak/logic/profile_data_export_service.dart';
 import 'package:parentpeak/ui/widgets/profile_legacy_claim.dart';
+import 'package:parentpeak/ui/widgets/change_password_dialog.dart';
 import 'package:parentpeak/ui/ads_consent_screen.dart';
 
 String _t(String key) =>
@@ -88,6 +89,19 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
   bool _childrenFailed = false;
   int _childrenRequest = 0;
   late ProfileAccountTicket _session;
+
+  Future<void> _changePassword() async {
+    final ticket = _accounts.ticket;
+    final changed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => ChangePasswordDialog(accounts: _accounts),
+    );
+    if (!mounted || !_accounts.isCurrent(ticket) || changed != true) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(_t('password_change_success'))),
+    );
+  }
 
   String? get _renderedAvatarUrl {
     final url = UserProfileService.resolveAvatarUrl(_avatarUrl);
@@ -743,6 +757,16 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 28),
+              ],
+
+              if (AuthService.instance.primaryProviderId() == 'password') ...[
+                _buildSectionHeader(theme, '\u{1F512}', _t('password_change_security')),
+                const SizedBox(height: 10),
+                _buildTile(theme,
+                    icon: Icons.password_rounded,
+                    title: _t('password_change_title'),
+                    onTap: _changePassword),
                 const SizedBox(height: 28),
               ],
 
