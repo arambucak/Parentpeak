@@ -14,9 +14,9 @@ class PedagogicalChatBackend {
     GeminiAIService? geminiService,
     ChatAiConsent? consent,
     ChatAccountStore? accountStore,
-  }) : _geminiService = geminiService,
-       consent = consent ?? ChatAiConsent.instance,
-       accountStore = accountStore ?? ChatAccountStore.instance;
+  })  : _geminiService = geminiService,
+        consent = consent ?? ChatAiConsent.instance,
+        accountStore = accountStore ?? ChatAccountStore.instance;
 
   final GeminiAIService? _geminiService;
   final ChatAiConsent consent;
@@ -327,7 +327,8 @@ class PedagogicalChatBackend {
           ..add({'role': 'assistant', 'content': response})
           ..add({
             'role': 'user',
-            'content': ChatPromptPolicy.text(languageCode, 'chat_boundary_retry'),
+            'content':
+                ChatPromptPolicy.text(languageCode, 'chat_boundary_retry'),
           });
         final retryResponse = await _chatWithConsent(
           retryHistory,
@@ -341,12 +342,14 @@ class PedagogicalChatBackend {
         }
       }
 
-      if (languageCode == 'de' && !_preservesCriticalContext(response, contextAnchors)) {
+      if (languageCode == 'de' &&
+          !_preservesCriticalContext(response, contextAnchors)) {
         final retryHistory = List<Map<String, String>>.from(preparedHistory)
           ..add({'role': 'assistant', 'content': response})
           ..add({
             'role': 'user',
-            'content': ChatPromptPolicy.text(languageCode, 'chat_context_retry', {'context': contextAnchors.join(', ')}),
+            'content': ChatPromptPolicy.text(languageCode, 'chat_context_retry',
+                {'context': contextAnchors.join(', ')}),
           });
         final retryResponse = await _chatWithConsent(
           retryHistory,
@@ -365,7 +368,8 @@ class PedagogicalChatBackend {
           ..add({'role': 'assistant', 'content': response})
           ..add({
             'role': 'user',
-            'content': ChatPromptPolicy.quality(languageCode, topicMode, needsFollowUpQuestion),
+            'content': ChatPromptPolicy.quality(
+                languageCode, topicMode, needsFollowUpQuestion),
           });
         final retryResponse = await _chatWithConsent(
           retryHistory,
@@ -476,15 +480,13 @@ class PedagogicalChatBackend {
     }
 
     final lower = compact.toLowerCase();
-    final hasAge =
-        RegExp(
+    final hasAge = RegExp(
           r'\b\d{1,2}(?:\s+(?:vollendete|completed))?\s*(?:jahre?|monate?|years?|months?|yaş(?:ını)?|sal(?:ên)?|meh)(?![\p{L}\p{N}])',
           unicode: true,
         ).hasMatch(lower) ||
         lower.contains('kindergartenalter') ||
         lower.contains('grundschule');
-    final hasTriggerContext =
-        lower.contains('weil') ||
+    final hasTriggerContext = lower.contains('weil') ||
         lower.contains('wenn') ||
         lower.contains('situation') ||
         lower.contains('passiert') ||
@@ -605,7 +607,8 @@ class PedagogicalChatBackend {
     return matches >= minMatches;
   }
 
-  bool _needsQualityRetry(String response, String language, bool needsFollowUp) {
+  bool _needsQualityRetry(
+      String response, String language, bool needsFollowUp) {
     final lower = response.toLowerCase();
     if (response.trim().length < 140) {
       return true;
@@ -629,27 +632,23 @@ class PedagogicalChatBackend {
       'wekî ai',
     ];
     final hasGeneric = _containsAny(lower, genericMarkers);
-    final empathyMarkers = {
-      'de': ['kann es sein', 'ich hoere heraus', 'ich höre heraus', 'das klingt'],
-      'en': ['that sounds', 'it sounds', 'i hear', 'it may', 'it can feel'],
-      'tr': ['görünüyor', 'duyuyorum', 'anlıyorum', 'olabilir', 'zor'],
-      'ku': ['xuya', 'dijwar', 'dibe ku', 'fêm', 'dibihîzim'],
-    };
-    final hasEmpathySignal = _containsAny(lower, empathyMarkers[language] ?? empathyMarkers['en']!);
+    // Bewusst KEIN erzwungener Empathie-Marker mehr: Der Coach darf je nach
+    // Situation variieren (praktische Frage → direkt, emotionale Lage →
+    // menschlich). Ein Pflicht-Einstieg führte zur immer gleichen Schablone.
     final questionCount = RegExp(r'\?').allMatches(response).length;
-    final tooManyQuestions = questionCount > (needsFollowUp ? 1 : 0);
+    // Etwas Spielraum lassen: eine zusätzliche natürliche Rückfrage ist ok.
+    final tooManyQuestions = questionCount > (needsFollowUp ? 2 : 1);
     final paragraphs = response
         .split(RegExp(r'\n\s*\n'))
         .where((p) => p.trim().isNotEmpty)
         .toList();
+    // Nur echte Textwände verwerfen (vorher: >4 Sätze pro Absatz — zu streng
+    // und erzwang ein starres Kurzformat).
     final hasOverlongParagraph = paragraphs.any((p) {
       final sentenceCount = RegExp(r'[.!?]+').allMatches(p).length;
-      return sentenceCount > 4;
+      return sentenceCount > 7;
     });
-    return hasGeneric ||
-        !hasEmpathySignal ||
-        tooManyQuestions ||
-        hasOverlongParagraph;
+    return hasGeneric || tooManyQuestions || hasOverlongParagraph;
   }
 
   bool _looksLikeDefensiveBoundaryResponse(String input) {
@@ -678,8 +677,7 @@ class PedagogicalChatBackend {
     final hasViolenceTerms = _containsAny(input, _violentKeywords);
     if (!hasViolenceTerms) return false;
 
-    final hasSafeContext =
-        _containsAny(input, _nonViolentContextKeywords) ||
+    final hasSafeContext = _containsAny(input, _nonViolentContextKeywords) ||
         _containsAny(input, _helpSeekingViolenceContextKeywords);
     if (hasSafeContext) return false;
 

@@ -4710,7 +4710,9 @@ app.post('/ai/generate', async (req, res) => {
       ],
     }],
     generationConfig: {
-      temperature: useGoogleSearch ? 1.0 : 0.7,
+      // Etwas höhere Temperatur für lebendigere, weniger schablonenhafte
+      // Antworten der Elternberatung (zuvor 0.7 → wirkte repetitiv).
+      temperature: useGoogleSearch ? 1.0 : 0.85,
       maxOutputTokens: useGoogleSearch ? 6000 : 8192,
     },
     systemInstruction: { parts: [{ text: finalSystemInstruction }] },
