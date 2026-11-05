@@ -18,9 +18,11 @@ import 'package:parentpeak/logic/family_finance_store.dart';
 import 'package:parentpeak/ui/antragshelfer_screen.dart';
 import 'package:parentpeak/ui/familien_geld_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'quota_test_support.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(disableQuotasForTest);
 
   testWidgets(
     'amounts and country selection wait for Ack; errors preserve last committed values',

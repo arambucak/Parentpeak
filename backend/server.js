@@ -17,6 +17,10 @@ const { publicTreasure } = require('./treasure_public_view');
 const treasureGeometry = require('./treasure_geometry');
 const { MEMORY_CONSENT_VERSION, hasMemoryConsent, buildMemoryContext, minimizeMemoryText } = require('./ai_memory_policy');
 const { readEntitlementSnapshot } = require('./entitlement_store');
+const featureQuotas = require('./feature_quota_store');
+const { buildFeatureAiRequest } = require('./feature_ai_request');
+const { storeDiscoveredEvents } = require('./discovered_event_store');
+featureQuotas.limitsEnabled();
 const { readAdsConsent, setAdsConsent } = require('./ads_consent_store');
 
 // Firebase Admin — initialised lazily so the server starts without credentials
@@ -4607,7 +4611,122 @@ app.get('/ai/health', async (req, res) => {
   }
 });
 
+function respondFeatureQuotaError(res, error) {
+  if (error instanceof featureQuotas.FeatureQuotaError) {
+    res.status(error.status).json({ error: error.message, code: error.code,
+      feature: error.feature, quota: error.snapshot ?? null });
+    return;
+  }
+  if (error.httpStatus) {
+    res.status(error.httpStatus).json({ error: error.message });
+    return;
+  }
+  console.error('Feature quota persistence failed:', error.message);
+  res.status(503).json({ error: 'Feature access could not be verified', code: 'feature_access_unavailable' });
+}
+
+async function requireQuotaUser(req, res) {
+  const { uid, verified } = await verifyFirebaseIdToken(req);
+  if (!verified || !uid) {
+    res.status(401).json({ error: 'Verified Firebase session required' });
+    return null;
+  }
+  req.firebaseUid = uid;
+  await ensureVerifiedBackendUser(uid);
+  return uid;
+}
+
+async function requireContactQuota(req, res, toUid, operation) {
+  if (!featureQuotas.limitsEnabled()) {
+    await operation(prisma);
+    return true;
+  }
+  try {
+    await ensureVerifiedBackendUser(req.firebaseUid);
+    const [low, high] = pairKey(req.firebaseUid, toUid);
+    const existing = await prisma.$queryRawUnsafe(
+      `SELECT 1 FROM "Friendship" WHERE "userLow" = $1 AND "userHigh" = $2
+       AND "status" IN ('pending', 'accepted')`, low, high,
+    );
+    if (existing.length) await operation(prisma);
+    else await featureQuotas.consumeQuota(prisma, req.firebaseUid, 'contacts', toUid,
+      true, operation);
+    return true;
+  } catch (error) {
+    respondFeatureQuotaError(res, error);
+    return false;
+  }
+}
+
+app.get('/usage/me', requireVerifiedUser, async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  try {
+    await ensureVerifiedBackendUser(req.firebaseUid);
+    return res.json(await featureQuotas.quotaStatus(prisma, req.firebaseUid));
+  } catch (error) { return respondFeatureQuotaError(res, error); }
+});
+
+app.post('/usage/recipes/reserve', requireVerifiedUser, async (req, res) => {
+  try {
+    await ensureVerifiedBackendUser(req.firebaseUid);
+    return res.json(await featureQuotas.consumeQuota(prisma, req.firebaseUid, 'recipes'));
+  } catch (error) { return respondFeatureQuotaError(res, error); }
+});
+
+app.get('/usage/recipes/today', requireVerifiedUser, async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  try { return res.json(await featureQuotas.todayRecipe(prisma, req.firebaseUid)); }
+  catch (error) { return respondFeatureQuotaError(res, error); }
+});
+
+app.put('/usage/recipes/:receipt/result', requireVerifiedUser, async (req, res) => {
+  try {
+    await featureQuotas.saveRecipeResult(prisma, req.firebaseUid, req.params.receipt, req.body.item);
+    return res.json({ ok: true });
+  } catch (error) { return respondFeatureQuotaError(res, error); }
+});
+
+app.post('/usage/events/view', requireVerifiedUser, async (req, res) => {
+  const eventKey = req.body.eventKey;
+  if (typeof eventKey !== 'string' || !eventKey.trim() || eventKey.length > 512) {
+    return res.status(400).json({ error: 'Invalid event key' });
+  }
+  try {
+    await ensureVerifiedBackendUser(req.firebaseUid);
+    if (eventKey.startsWith('community:')) {
+      const event = await prisma.event.findUnique({ where: { id: eventKey.slice(10) } });
+      if (!event) return res.status(404).json({ error: 'Event not found' });
+      const current = await prisma.eventParticipation.findUnique({
+        where: { eventId_userId: { eventId: event.id, userId: req.firebaseUid } },
+      });
+      await authorizeEventParticipation(prisma, event, req.firebaseUid, current);
+    } else if (eventKey.startsWith('discovered:')) {
+      const rows = await prisma.$queryRawUnsafe(
+        'SELECT "id" FROM "DiscoveredEventDetail" WHERE "id" = $1', eventKey.slice(11));
+      if (!rows.length) return res.status(404).json({ error: 'Event not found; refresh discovery' });
+    } else {
+      return res.status(400).json({ error: 'Invalid event key' });
+    }
+    return res.json(await featureQuotas.consumeQuota(prisma, req.firebaseUid, 'events', eventKey));
+  } catch (error) { return respondFeatureQuotaError(res, error); }
+});
+
+app.get('/usage/finance/access', requireVerifiedUser, async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  try {
+    await ensureVerifiedBackendUser(req.firebaseUid);
+    await featureQuotas.requireFinancePremium(prisma, req.firebaseUid);
+    return res.json({ granted: true });
+  } catch (error) { return respondFeatureQuotaError(res, error); }
+});
+
 app.post('/ai/generate', async (req, res) => {
+  const enforceQuotas = featureQuotas.limitsEnabled();
+  if (enforceQuotas) {
+    try {
+      if (!await requireQuotaUser(req, res)) return;
+    } catch (error) { return respondFeatureQuotaError(res, error); }
+  }
   if (!geminiApiKey) {
     return res.status(503).json({ error: 'KI-Dienst nicht konfiguriert' });
   }
@@ -4633,14 +4752,24 @@ app.post('/ai/generate', async (req, res) => {
   }
 
   const model = String(req.body?.model || 'gemini-3.5-flash-lite').trim();
-  const prompt = String(req.body?.prompt || '').trim();
-  const systemInstruction = String(req.body?.systemInstruction || '').trim();
+  let prompt = String(req.body?.prompt || '').trim();
+  let systemInstruction = String(req.body?.systemInstruction || '').trim();
   const appLanguage = normalizeAppLanguage(req.body?.language);
-  const useGoogleSearch = req.body?.useGoogleSearch === true;
+  let useGoogleSearch = req.body?.useGoogleSearch === true;
   const childProfileId = String(req.body?.childProfileId || '').trim();
   const imageBase64 = String(req.body?.imageBase64 || '').trim();
   const imageMimeType = String(req.body?.imageMimeType || '').trim();
   const allowedImageMimeTypes = new Set(['image/jpeg', 'image/png', 'image/webp']);
+  let quotaRequest;
+  try {
+    if (enforceQuotas) {
+      quotaRequest = buildFeatureAiRequest(req.body, new Date());
+      ({ prompt, systemInstruction, useGoogleSearch } = quotaRequest);
+    }
+  } catch (error) {
+    if (error instanceof TypeError) return res.status(400).json({ error: error.message });
+    return respondFeatureQuotaError(res, error);
+  }
 
   if (!allowedGeminiModels.has(model)) {
     return res.status(400).json({ error: 'Nicht unterstütztes KI-Modell' });
@@ -4698,6 +4827,22 @@ app.post('/ai/generate', async (req, res) => {
     aiMemoryContext,
     buildLanguageInstruction(appLanguage),
   ].filter(Boolean).join('\n\n');
+
+  if (enforceQuotas) {
+    try {
+      const feature = quotaRequest.feature;
+      if (feature === 'recipes') {
+        if (typeof req.body.recipeReceipt !== 'string') {
+          throw new featureQuotas.FeatureQuotaError('recipe_receipt_invalid', 'recipes', 409);
+        }
+        await featureQuotas.useRecipeReceipt(prisma, req.firebaseUid, req.body.recipeReceipt);
+      } else if (feature === 'finance') {
+        await featureQuotas.requireFinancePremium(prisma, req.firebaseUid);
+      } else if (feature === 'chat') {
+        await featureQuotas.consumeQuota(prisma, req.firebaseUid, 'chat');
+      }
+    } catch (error) { return respondFeatureQuotaError(res, error); }
+  }
 
   const requestBody = {
     contents: [{
@@ -4801,6 +4946,9 @@ app.post('/ai/generate', async (req, res) => {
       return res.status(502).json({ error: 'KI-Dienst lieferte keine Antwort' });
     }
     await checkMemoryTransfer();
+    if (enforceQuotas && quotaRequest.feature === 'events') {
+      result.text = await storeDiscoveredEvents(prisma, result.text);
+    }
     return res.json({ text: result.text, groundingUrls: result.groundingUrls });
   } catch (error) {
     if (error.code === 'MEMORY_CONSENT_REQUIRED') {
@@ -8984,7 +9132,8 @@ async function recordParentMatchingAction(req, res) {
       return res.status(403).json({ error: 'Eigenes Profil kann nicht kontaktiert werden' });
     }
 
-    const createdAction = await prisma.parentMatchingAction.create({
+    let createdAction;
+    const createAction = async tx => { createdAction = await tx.parentMatchingAction.create({
       data: {
         familyId,
         profileId: targetProfile.id,
@@ -8992,7 +9141,10 @@ async function recordParentMatchingAction(req, res) {
         createdAt: new Date(),
         actorUserId,
       },
-    });
+    }); };
+    if (['like', 'contact'].includes(actionValue)) {
+      if (!await requireContactQuota(req, res, targetProfile.ownerUserId, createAction)) return;
+    } else await createAction(prisma);
 
     const mutualProfileIds = await getMutualConnectionProfileIds(familyId, actorUserId);
     const connected = actionValue === 'like' && mutualProfileIds.includes(targetProfile.id);
@@ -9009,6 +9161,7 @@ async function recordParentMatchingAction(req, res) {
         : (actionValue === 'like' ? 'pending' : 'none'),
     });
   } catch (error) {
+    if (featureQuotas.limitsEnabled()) return respondFeatureQuotaError(res, error);
     if (respondWithStrictPersistenceError(res, 'POST /parent-matching/actions', error)) {
       return;
     }
@@ -9782,14 +9935,14 @@ app.post('/api/friendships/request', requireVerifiedUser, async (req, res) => {
     );
     if (p.length > 0) targetPrivate = p[0].isPrivate !== false;
     const status = targetPrivate || requestSource ? 'pending' : 'accepted';
-    await prisma.$executeRawUnsafe(
+    if (!await requireContactQuota(req, res, toUid, tx => tx.$executeRawUnsafe(
       `INSERT INTO "Friendship" ("userLow", "userHigh", "status", "requestedBy", "createdAt", "updatedAt")
        VALUES ($1, $2, $3, $4, NOW(), NOW())
        ON CONFLICT ("userLow", "userHigh") DO UPDATE SET
          "status" = CASE WHEN "Friendship"."status" = 'accepted' THEN 'accepted' ELSE $3 END,
          "updatedAt" = NOW()`,
       low, high, status, fromUid
-    );
+    ))) return;
     return res.json({ ok: true, status, roomId: friendRoomId(fromUid, toUid) });
   } catch (error) {
     return respondChatPersistenceError(res, 'POST /api/friendships/request', error);
@@ -12128,6 +12281,7 @@ app.put('/events/item/:id', async (req, res) => {
 
 app.get('/events/item/:id', async (req, res) => {
   try {
+    if (featureQuotas.limitsEnabled() && !await requireQuotaUser(req, res)) return;
     const record = await prisma.event.findUnique({ where: { id: req.params.id } });
     if (!record) {
       return res.status(404).json({ error: 'Event nicht gefunden' });
@@ -12137,6 +12291,9 @@ app.get('/events/item/:id', async (req, res) => {
       where: { eventId_userId: { eventId: record.id, userId: req.firebaseUid } },
     }) : null;
     await authorizeEventParticipation(prisma, record, req.firebaseUid, current);
+    if (featureQuotas.limitsEnabled()) {
+      await featureQuotas.consumeQuota(prisma, req.firebaseUid, 'events', `community:${record.id}`);
+    }
 
     const countMap = await buildParticipantCountMap([record.id]);
     const item = mapEventRecordToApiItem(record, {
@@ -12146,6 +12303,8 @@ app.get('/events/item/:id', async (req, res) => {
     const inviteCodeExpiresAt = eventInviteExpiresAt[item.id] || item.inviteCodeExpiresAt || null;
     return res.json({ item: { ...item, inviteCode, inviteCodeExpiresAt } });
   } catch (error) {
+    if (error instanceof featureQuotas.FeatureQuotaError) return respondFeatureQuotaError(res, error);
+    if (featureQuotas.limitsEnabled() && !error.httpStatus) return respondFeatureQuotaError(res, error);
     if (error.httpStatus) return res.status(error.httpStatus).json({ error: error.message });
     if (respondWithStrictPersistenceError(res, 'GET /events/item/:id', error)) {
       return;
@@ -15444,6 +15603,7 @@ app.get('/api/events/:id', async (req, res) => {
   const { id } = req.params;
 
   try {
+    if (featureQuotas.limitsEnabled() && !await requireQuotaUser(req, res)) return;
     const event = await prisma.event.findUnique({
       where: { id },
       include: {
@@ -15459,6 +15619,9 @@ app.get('/api/events/:id', async (req, res) => {
 
     const current = req.firebaseUid ? event.participants.find(item => item.userId === req.firebaseUid) : null;
     await authorizeEventParticipation(prisma, event, req.firebaseUid, current);
+    if (featureQuotas.limitsEnabled()) {
+      await featureQuotas.consumeQuota(prisma, req.firebaseUid, 'events', `community:${event.id}`);
+    }
 
     const formattedEvent = {
       ...event,
@@ -15473,6 +15636,7 @@ app.get('/api/events/:id', async (req, res) => {
 
     res.json({ event: formattedEvent });
   } catch (err) {
+    if (err instanceof featureQuotas.FeatureQuotaError) return respondFeatureQuotaError(res, err);
     console.error('❌ Event detail error:', err.message);
     res.status(err.httpStatus || 503).json({ error: `Failed to get event: ${err.message}` });
   }

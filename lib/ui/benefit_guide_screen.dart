@@ -13,6 +13,8 @@ import 'package:parentpeak/ui/widgets/account_ai_consent_dialog.dart';
 import 'package:parentpeak/ui/widgets/family_hub_account_boundary.dart';
 import 'package:parentpeak/models/benefit_guide_result.dart';
 import 'package:parentpeak/services/ai_rate_limiter.dart';
+import 'package:parentpeak/services/feature_quota_service.dart';
+import 'package:parentpeak/ui/widgets/feature_quota_gate.dart';
 import 'package:parentpeak/models/country_finance_config.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/ui/antragshelfer_screen.dart';
@@ -48,7 +50,10 @@ class _BenefitGuideRouteState extends State<BenefitGuideScreen> {
   @override
   Widget build(BuildContext context) => FamilyHubAccountModal(
     expectedScope: _scope,
-    builder: (_) => _ScopedBenefitGuideScreen(screen: widget),
+    builder: (_) => FeatureQuotaGate(
+      feature: QuotaFeature.finance,
+      child: _ScopedBenefitGuideScreen(screen: widget),
+    ),
   );
 }
 
@@ -179,6 +184,13 @@ class _BenefitGuideScreenState extends State<_ScopedBenefitGuideScreen> {
         _result = result;
         _loading = false;
       });
+    } on FeatureQuotaException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _awaitingConsent = false;
+      });
+      await showFeatureQuotaNotice(context, error.feature);
     } on AiRateLimitException catch (e) {
       if (!mounted) return;
       setState(() {

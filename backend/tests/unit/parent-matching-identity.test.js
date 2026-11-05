@@ -38,6 +38,11 @@ function fixture({ persistenceFails = false, missingOwnProfile = false } = {}) {
     constructor(status, code, message) { super(message); this.status = status; this.code = code; }
   }
   const context = {
+    featureQuotas: { ...require('../../feature_quota_store'), limitsEnabled: () => false },
+    requireContactQuota: async (_req, _res, _uid, operation) => {
+      await operation(context.prisma);
+      return true;
+    },
     crypto, FamilyContextError, console: { error() {} },
     app: Object.fromEntries(['get', 'post'].map(method => [method,
       (url, ...handlers) => routes.set(`${method} ${url}`, handlers)])),

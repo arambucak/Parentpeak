@@ -13,6 +13,8 @@ import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/language_service.dart';
 import 'package:parentpeak/logic/privacy_sanitizer.dart';
 import 'package:parentpeak/logic/chat_memory_consent.dart';
+import 'package:parentpeak/services/feature_quota_service.dart';
+import 'package:parentpeak/logic/profile_account_store.dart';
 
 class GeminiAIService {
   GeminiAIService({
@@ -36,6 +38,10 @@ class GeminiAIService {
     String? appLanguage,
     String? childProfileId,
     void Function()? requestGuard,
+    QuotaFeature feature = QuotaFeature.chat,
+    Map<String, dynamic>? featureInput,
+    String? recipeReceipt,
+    String? proxyPurpose,
   }) async {
     final response = await generate(
       prompt,
@@ -46,6 +52,10 @@ class GeminiAIService {
       appLanguage: appLanguage,
       childProfileId: childProfileId,
       requestGuard: requestGuard,
+      feature: feature,
+      featureInput: featureInput,
+      recipeReceipt: recipeReceipt,
+      proxyPurpose: proxyPurpose,
     );
     return response.text;
   }
@@ -59,7 +69,12 @@ class GeminiAIService {
     String? appLanguage,
     String? childProfileId,
     void Function()? requestGuard,
+    QuotaFeature feature = QuotaFeature.chat,
+    Map<String, dynamic>? featureInput,
+    String? recipeReceipt,
+    String? proxyPurpose,
   }) async {
+    final account = ProfileAccountStore.instance.ticket;
     final owner = memoryConsent.scope;
     final memoryChildId = childProfileId?.trim();
     final useMemory =
@@ -69,14 +84,13 @@ class GeminiAIService {
     final revision = memoryConsent.revision(owner);
     void guard() {
       requestGuard?.call();
+      ProfileAccountStore.instance.require(account);
       if (useMemory) memoryConsent.requireRevision(owner, revision);
     }
 
     if (useMemory) await memoryConsent.require(owner);
     guard();
-    final client = requestGuard == null && !useMemory
-        ? _apiClient
-        : _apiClient?.withRequestGuard(guard);
+    final client = _apiClient?.withRequestGuard(guard);
     if (client == null) {
       throw Exception('Backend-URL nicht konfiguriert.');
     }
@@ -87,6 +101,9 @@ class GeminiAIService {
       '/ai/generate',
       {
         'model': _modelName,
+        'feature': proxyPurpose ?? feature.name,
+        if (featureInput != null) 'featureInput': featureInput,
+        if (recipeReceipt != null) 'recipeReceipt': recipeReceipt,
         'prompt': PrivacySanitizer.sanitizeForAi(prompt),
         if (systemInstruction != null && systemInstruction.trim().isNotEmpty)
           'systemInstruction': systemInstruction.trim(),
@@ -105,6 +122,8 @@ class GeminiAIService {
       );
     } on BackendApiException catch (error) {
       guard();
+      final quota = FeatureQuotaException.fromBackend(error);
+      if (quota != null) throw FeatureQuotaException(feature, quota.code);
       if (useMemory && error.isForbidden) {
         throw const ChatMemoryConsentRequiredException();
       }
@@ -162,6 +181,8 @@ class GeminiAIService {
     } on AccountAiConsentRequiredException {
       rethrow;
     } on ChatAccountChanged {
+      rethrow;
+    } on FeatureQuotaException {
       rethrow;
     } on BackendApiException catch (error) {
       final issue = error.statusCode == 401 || error.statusCode == 403

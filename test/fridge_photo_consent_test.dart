@@ -16,6 +16,7 @@ import 'package:parentpeak/logic/fridge_recipe_service.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/ui/fridge_recipe_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'quota_test_support.dart';
 
 class _Photo extends XFile {
   _Photo({this.onRead}) : super('/not-a-real-fridge.jpg');
@@ -56,6 +57,7 @@ void main() {
   late Future<http.Response> Function(http.Request) respond;
 
   setUp(() {
+    disableQuotasForTest();
     SharedPreferences.setMockInitialValues({});
     owner = 'account.fridge-a';
     consent = FridgePhotoConsent(scopeProvider: () => owner);

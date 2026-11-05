@@ -12,6 +12,8 @@ import 'package:parentpeak/main.dart';
 import 'package:parentpeak/ui/widgets/family_recipe_consent_dialog.dart';
 import 'package:parentpeak/ui/widgets/family_hub_account_boundary.dart';
 import 'package:parentpeak/logic/family_hub_store.dart';
+import 'package:parentpeak/services/feature_quota_service.dart';
+import 'package:parentpeak/ui/widgets/feature_quota_gate.dart';
 
 /// Familien-Küche — 1-Tap Rezept-Inspiration + Eltern-Tipps.
 ///
@@ -61,7 +63,7 @@ class _FamilienKuecheScreenState extends State<_ScopedFamilienKuecheScreen> {
   Future<void> _init() async {
     await _loadKinderHits();
     if (!mounted) return;
-    await _generateNew();
+    await _generateNew(reopenToday: true);
   }
 
   /// Lädt die lokale "Kinder-Hits"-Liste (geschmeckt-Bewertungen).
@@ -83,7 +85,7 @@ class _FamilienKuecheScreenState extends State<_ScopedFamilienKuecheScreen> {
     );
   }
 
-  Future<void> _generateNew() async {
+  Future<void> _generateNew({bool reopenToday = false}) async {
     if (!mounted) return;
     setState(() {
       _loading = true;
@@ -97,13 +99,15 @@ class _FamilienKuecheScreenState extends State<_ScopedFamilienKuecheScreen> {
       setState(() => _checkingConsent = false);
       await _service.initialize();
       if (!mounted) return;
-      final recipe = accepted
+      final saved = reopenToday ? await _service.loadTodayRecipe() : null;
+      if (!mounted) return;
+      final recipe = saved ?? (accepted
           ? await _service.generateRecipe(
               languageCode: languageService.currentLanguage,
             )
-          : _service.localRecipe(
+          : await _service.localRecipe(
               languageCode: languageService.currentLanguage,
-            );
+            ));
       if (!mounted) return;
       setState(() {
         _currentRecipe = recipe;
@@ -113,6 +117,13 @@ class _FamilienKuecheScreenState extends State<_ScopedFamilienKuecheScreen> {
         _noSafeRecipe = recipe == null;
         _loading = false;
       });
+    } on FeatureQuotaException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _checkingConsent = false;
+      });
+      await showFeatureQuotaNotice(context, error.feature);
     } catch (error) {
       debugPrint('FamilienKueche._generateNew: $error');
       if (!mounted) return;

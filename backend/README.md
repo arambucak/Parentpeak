@@ -1,5 +1,12 @@
 # Parentpeak Marktplatz Backend
 
+## Free-/Premium-Kontingente
+
+Serverkontingente sind vorbereitet und standardmaessig deaktiviert
+(`PP_ABO_LIMITS_ENABLED=false`). Migration, UID-Trennung, UTC-Reset,
+Zaehleinheiten und Besitzer-Rollout stehen in
+[Kontogebundene Free-Kontingente](../docs/abo-limits.md).
+
 ## Gebrandete Konto-E-Mails und Kontoseiten
 
 Passwort-Reset und E-Mail-Bestaetigung verwenden die gemeinsamen

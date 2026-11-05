@@ -17,6 +17,7 @@ function fixture({ enabled = true, version = policy.MEMORY_CONSENT_VERSION,
       { status: 'archived', category: 'note', key: 'old', value: 'DO NOT SEND' },
     ] };
   const context = {
+    featureQuotas: { ...require('../../feature_quota_store'), limitsEnabled: () => false },
     ...policy,
     crypto: require('node:crypto'),
     app: Object.fromEntries(['get', 'post', 'put', 'delete'].map(method =>

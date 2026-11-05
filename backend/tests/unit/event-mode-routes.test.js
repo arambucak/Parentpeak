@@ -73,6 +73,7 @@ function fixture(overrides = {}, initial = []) {
     },
   };
   const context = vm.createContext({
+    featureQuotas: { ...require('../../feature_quota_store'), limitsEnabled: () => false },
     ...policy, prisma, crypto, console: { error() {} },
     adminUserIds: new Set(['moderator']),
     respondChatPersistenceError: (res, _route, _error) =>

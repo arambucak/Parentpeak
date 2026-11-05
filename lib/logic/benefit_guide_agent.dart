@@ -10,7 +10,7 @@ import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/logic/benefit_guide_consent.dart';
 import 'package:parentpeak/models/benefit_guide_result.dart';
 import 'package:parentpeak/models/country_finance_config.dart';
-import 'package:parentpeak/services/ai_rate_limiter.dart';
+import 'package:parentpeak/services/feature_quota_service.dart';
 
 /// Der "Familien-Leistungs-Wegweiser".
 ///
@@ -38,12 +38,8 @@ class BenefitGuideAgent {
     String languageCode = 'de',
   }) async {
     await _consent.require(expectedScope);
-    await AIRateLimiter.initialize();
+    await FeatureQuotaService.instance.financeAccess();
     await _consent.require(expectedScope);
-    if (!AIRateLimiter.canMakeRequest()) {
-      debugPrint('BenefitGuideAgent: Rate limit erreicht');
-      throw AiRateLimitException(AIRateLimiter.limitReachedMessage);
-    }
 
     final prompt = _buildPrompt(
       country: country,
@@ -59,14 +55,15 @@ class BenefitGuideAgent {
             systemInstruction: _systemInstruction(languageCode),
             appLanguage: languageCode,
             useGoogleSearch: true,
+            feature: QuotaFeature.finance,
           )
           .timeout(const Duration(seconds: 35));
-      await _consent.require(expectedScope);
-      await AIRateLimiter.recordRequest();
       await _consent.require(expectedScope);
       final result = _parse(response.text, country, response.groundingUrls, languageCode);
       if (result.isEmpty) return _fallback(country, languageCode);
       return result;
+    } on FeatureQuotaException {
+      rethrow;
     } catch (e) {
       debugPrint('BenefitGuideAgent.guide: $e');
       await _consent.require(expectedScope);

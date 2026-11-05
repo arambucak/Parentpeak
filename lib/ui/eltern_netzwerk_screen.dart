@@ -16,6 +16,8 @@ import 'package:parentpeak/logic/playmate_profile_service.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/logic/friendship_service.dart';
+import 'package:parentpeak/services/feature_quota_service.dart';
+import 'package:parentpeak/ui/widgets/feature_quota_gate.dart';
 import 'package:parentpeak/logic/user_profile_service.dart';
 import 'package:parentpeak/logic/profile_account_store.dart';
 import 'package:parentpeak/ui/widgets/account_suspended_notice.dart';
@@ -105,6 +107,27 @@ class ElternNetzwerkScreen extends StatefulWidget {
 }
 
 class _ScreenState extends State<ElternNetzwerkScreen> {
+
+  Future<bool?> _sendQuotaCheckedRequest(String uid, {String? source}) async {
+    try {
+      return await FriendshipService.instance.sendRequest(uid, source: source);
+    } on FeatureQuotaException catch (error) {
+      if (mounted) await showFeatureQuotaNotice(context, error.feature);
+      return null;
+    }
+  }
+
+  Future<ParentMatchActionResult> _sendQuotaCheckedAction({
+    required String profileId, required String action, String? userId,
+  }) async {
+    try {
+      return await _matching.sendAction(
+        profileId: profileId, action: action, userId: userId);
+    } on FeatureQuotaException catch (error) {
+      if (mounted) await showFeatureQuotaNotice(context, error.feature);
+      return const ParentMatchActionResult(connected: false, matchState: 'quota');
+    }
+  }
   // 0 = Entdecken, 1 = Momente, 2 = Chats, 3 = Meine Familie
   int _index = 0;
   final GlobalKey<MomentsFeedState> _momentsKey =
@@ -380,8 +403,8 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
       ),
     );
     if (ok != true) return;
-    final sent = await FriendshipService.instance.sendRequest(resolved['uid']!);
-    if (!mounted) return;
+    final sent = await _sendQuotaCheckedRequest(resolved['uid']!);
+    if (!mounted || sent == null) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -432,8 +455,8 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
       ),
     );
     if (ok != true) return;
-    final sent = await FriendshipService.instance.sendRequest(resolved['uid']!);
-    if (!mounted) return;
+    final sent = await _sendQuotaCheckedRequest(resolved['uid']!);
+    if (!mounted || sent == null) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -1822,12 +1845,16 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
           .where((x) => (x.profile.userId ?? x.profile.id) != ownerId)
           .toList();
     });
-    final result = await _matching.sendAction(
+    final result = await _sendQuotaCheckedAction(
       profileId: profileId,
       action: action,
       userId: uid,
     );
     if (!mounted) return;
+    if (result.matchState == 'quota') {
+      setState(() => _matches = [..._matches, m]);
+      return;
+    }
     if (result.matchState == 'error') {
       messenger.showSnackBar(
         SnackBar(
@@ -2609,10 +2636,11 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
                 child: FilledButton(
                   onPressed: () async {
                     final account = AuthService.instance.currentUser?.uid;
-                    final ok = await FriendshipService.instance.sendRequest(
+                    final ok = await _sendQuotaCheckedRequest(
                       s.userId,
                       source: 'discovery',
                     );
+                    if (ok == null) return;
                     if (mounted &&
                         AuthService.instance.currentUser?.uid == account) {
                       if (ok) {

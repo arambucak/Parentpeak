@@ -14,9 +14,11 @@ import 'package:parentpeak/logic/childcare_tax_estimate.dart';
 import 'package:parentpeak/logic/family_finance_store.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'quota_test_support.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(disableQuotasForTest);
 
   test('childcare illustration applies 80 percent and the per-child cap', () {
     expect(ChildcareTaxEstimate.deductible(0), 0);

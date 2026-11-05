@@ -15,6 +15,7 @@ import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/ui/benefit_guide_screen.dart';
 import 'package:parentpeak/ui/widgets/account_ai_consent_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'quota_test_support.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -24,6 +25,7 @@ void main() {
   var changeAccountOnResponse = false;
 
   setUp(() {
+    disableQuotasForTest();
     SharedPreferences.setMockInitialValues({});
     scope = 'account.a';
     consent = BenefitGuideConsent(scopeProvider: () => scope);

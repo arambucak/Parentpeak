@@ -14,6 +14,8 @@ import 'package:parentpeak/models/event_participation.dart';
 import 'package:parentpeak/ui/widgets/event_photo.dart';
 import 'package:parentpeak/ui/widgets/event_host_identity.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:parentpeak/services/feature_quota_service.dart';
+import 'package:parentpeak/ui/widgets/feature_quota_gate.dart';
 
 class EventDetailScreen extends StatefulWidget {
   final MeetupEvent event;
@@ -424,6 +426,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return FeatureQuotaGate(
+      feature: QuotaFeature.events,
+      eventKey: 'community:${_event.id}',
+      child: _content(context),
+    );
+  }
+
+  Widget _content(BuildContext context) {
     final theme = Theme.of(context);
 
     return Scaffold(

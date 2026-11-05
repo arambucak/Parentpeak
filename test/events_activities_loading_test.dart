@@ -15,6 +15,7 @@ import 'package:parentpeak/ui/event_detail_screen.dart';
 import 'package:parentpeak/ui/events_activities_screen.dart';
 import 'package:parentpeak/ui/widgets/location_picker_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'quota_test_support.dart';
 
 const _berlin = PickedLocation(
     displayName: 'Berlin',
@@ -141,6 +142,7 @@ Future<void> _showFeed(WidgetTester tester, String title) async {
 
 void main() {
   setUp(() async {
+    disableQuotasForTest();
     SharedPreferences.setMockInitialValues({});
     await AuthService.instance.debugSeedSessionForTesting();
     await languageService.setLanguage('en');

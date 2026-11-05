@@ -18,6 +18,7 @@ import 'package:parentpeak/logic/pedagogical_chat_backend.dart';
 import 'package:parentpeak/ui/ai_memory_settings_screen.dart';
 import 'package:parentpeak/ui/chat_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'quota_test_support.dart';
 
 const _answers = {
   'de':
@@ -40,6 +41,7 @@ void main() {
   late PedagogicalChatBackend backend;
 
   setUp(() async {
+    disableQuotasForTest();
     SharedPreferences.setMockInitialValues({});
     store = ChatAccountStore(userIdProvider: () => 'locale');
     consent = ChatAiConsent(scopeProvider: () => store.scope);

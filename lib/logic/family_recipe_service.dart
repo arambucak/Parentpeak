@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
-import 'package:parentpeak/services/ai_rate_limiter.dart';
+import 'package:parentpeak/services/feature_quota_service.dart';
 import 'package:parentpeak/models/family_recipe.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/models/kind_dossier.dart';
@@ -26,11 +26,14 @@ class FamilyRecipeService {
   FamilyRecipeService({
     GeminiAIService? aiService,
     FamilyRecipeConsent? consent,
+    FeatureQuotaService? quotas,
   })  : _aiService = aiService,
-        _consent = consent ?? FamilyRecipeConsent.instance;
+        _consent = consent ?? FamilyRecipeConsent.instance,
+        _quotas = quotas ?? FeatureQuotaService.instance;
 
   final GeminiAIService? _aiService;
   final FamilyRecipeConsent _consent;
+  final FeatureQuotaService _quotas;
   String? _contextScope;
 
   final Random _random = Random();
@@ -169,9 +172,35 @@ class FamilyRecipeService {
     return scope;
   }
 
-  FamilyRecipe? localRecipe({String languageCode = 'de'}) {
+  Future<FamilyRecipe?> localRecipe({String languageCode = 'de'}) async {
     _requireContext();
-    return _fallbackRecipe(languageCode: languageCode);
+    return _deliverRecipe((_) async => _fallbackRecipe(languageCode: languageCode));
+  }
+
+  Future<FamilyRecipe?> loadTodayRecipe() async {
+    _requireContext();
+    final item = await _quotas.todayRecipe();
+    _requireContext();
+    if (item == null) return null;
+    final recipe = FamilyRecipe.fromJson(item);
+    if (!AllergenGuard.isRecipeSafe(recipe, _allergenKeys) ||
+        !_isAgeAppropriate(recipe)) {
+      throw StateError('Daily recipe is not safe for the current family context');
+    }
+    return recipe;
+  }
+
+  Future<FamilyRecipe?> _deliverRecipe(
+    Future<FamilyRecipe?> Function(String? receipt) generate,
+  ) async {
+    final scope = _requireContext();
+    final receipt = await _quotas.reserveRecipe();
+    if (_requireContext() != scope) throw const RecipeAiConsentRequiredException();
+    final recipe = await generate(receipt);
+    if (_requireContext() != scope) throw const RecipeAiConsentRequiredException();
+    if (recipe != null) await _quotas.saveRecipe(receipt, recipe.toJson());
+    if (_requireContext() != scope) throw const RecipeAiConsentRequiredException();
+    return recipe;
   }
 
   /// Sammelt die (rohen) Allergie-Begriffe aus allen Kind-Dossiers.
@@ -189,14 +218,16 @@ class FamilyRecipeService {
 
   /// Generiert ein neues Rezept via Gemini.
   Future<FamilyRecipe?> generateRecipe({String languageCode = 'de'}) async {
+    await _consent.require(_requireContext());
+    return _deliverRecipe((receipt) =>
+      _generateRecipe(languageCode: languageCode, receipt: receipt));
+  }
+
+  Future<FamilyRecipe?> _generateRecipe({
+    required String languageCode, String? receipt,
+  }) async {
     final requestScope = _requireContext();
     await _consent.require(requestScope);
-    // Rate limit check
-    await AIRateLimiter.initialize();
-    if (!AIRateLimiter.canMakeRequest()) {
-      debugPrint('FamilyRecipeService: Rate limit reached');
-      return _fallbackRecipe(languageCode: languageCode);
-    }
 
     final season = _currentSeason();
     final allergyText = _allergies.isEmpty
@@ -263,12 +294,15 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
       final raw = await (_aiService ?? GeminiAIService(modelName: modelName))
           .generateText(
         prompt,
+        feature: QuotaFeature.recipes,
+        recipeReceipt: receipt,
+        featureInput: {'childAge': _childAge, 'allergies': _allergies,
+          'avoidTitles': _recentTitles},
         systemInstruction:
             'Du bist ein mehrsprachiger Familien-Koch-Assistent. Antworte IMMER NUR mit gültigem JSON. '
             'Kein Markdown, kein Text davor oder danach. Nur ein JSON-Objekt.',
       );
       await _consent.require(requestScope);
-      await AIRateLimiter.recordRequest();
       debugPrint('FamilyRecipeService: Gemini Antwort (${raw.length} Zeichen)');
 
       if (raw.isEmpty) {
@@ -298,6 +332,8 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
       return _fallbackRecipe(languageCode: languageCode);
     } on RecipeAiConsentRequiredException {
       rethrow;
+    } on FeatureQuotaException {
+      rethrow;
     } catch (e, stack) {
       debugPrint('FamilyRecipeService: KI-Fehler: $e');
       debugPrint(
@@ -316,13 +352,16 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
   }) async {
     final wanted = dish.trim();
     if (wanted.isEmpty) return generateRecipe(languageCode: languageCode);
+    await _consent.require(_requireContext());
+    return _deliverRecipe((receipt) =>
+      _generateRecipeFor(wanted, languageCode: languageCode, receipt: receipt));
+  }
+
+  Future<FamilyRecipe?> _generateRecipeFor(
+    String wanted, {required String languageCode, String? receipt}
+  ) async {
     final requestScope = _requireContext();
     await _consent.require(requestScope);
-    await AIRateLimiter.initialize();
-    if (!AIRateLimiter.canMakeRequest()) {
-      debugPrint('FamilyRecipeService: Rate limit reached (generateFor)');
-      throw AiRateLimitException(AIRateLimiter.limitReachedMessage);
-    }
     final season = _currentSeason();
     final allergyText = _allergies.isEmpty
         ? 'Keine bekannten Allergien'
@@ -377,15 +416,19 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
       final raw = await (_aiService ?? GeminiAIService(modelName: modelName))
           .generateText(
         prompt,
+        feature: QuotaFeature.recipes,
+        recipeReceipt: receipt,
+        featureInput: {'childAge': _childAge, 'allergies': _allergies, 'dish': wanted},
         systemInstruction:
             'Du bist ein Familien-Koch-Assistent. Antworte IMMER NUR mit gültigem '
             'JSON. Kein Markdown, kein Text davor oder danach. Nur ein JSON-Objekt.',
       );
       await _consent.require(requestScope);
-      await AIRateLimiter.recordRequest();
       if (raw.isEmpty) return null;
       return _parseRecipeStrict(raw);
     } on RecipeAiConsentRequiredException {
+      rethrow;
+    } on FeatureQuotaException {
       rethrow;
     } catch (e) {
       debugPrint('FamilyRecipeService.generateRecipeFor: $e');

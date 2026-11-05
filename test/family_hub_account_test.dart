@@ -17,6 +17,7 @@ import 'package:parentpeak/models/kind_dossier.dart';
 import 'package:parentpeak/models/shopping_item.dart';
 import 'package:parentpeak/ui/familien_zentrale_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'quota_test_support.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -26,6 +27,7 @@ void main() {
   late ShoppingListService shopping;
 
   setUp(() async {
+    disableQuotasForTest();
     SharedPreferences.setMockInitialValues({});
     uid = 'owner-a';
     store = FamilyHubStore(userIdProvider: () => uid);
