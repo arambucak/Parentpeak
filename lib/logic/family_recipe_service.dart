@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:math';
+
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parentpeak/config/api_config.dart';
@@ -24,12 +26,86 @@ class FamilyRecipeService {
   FamilyRecipeService({
     GeminiAIService? aiService,
     FamilyRecipeConsent? consent,
-  }) : _aiService = aiService,
-       _consent = consent ?? FamilyRecipeConsent.instance;
+  })  : _aiService = aiService,
+        _consent = consent ?? FamilyRecipeConsent.instance;
 
   final GeminiAIService? _aiService;
   final FamilyRecipeConsent _consent;
   String? _contextScope;
+
+  final Random _random = Random();
+
+  /// Titel der zuletzt vorgeschlagenen Rezepte (KI + Fallback). Wird dem
+  /// Prompt als „bitte vermeiden" mitgegeben, damit „Andere Idee" nicht immer
+  /// dasselbe Gericht liefert. Nur im Speicher, bewusst klein gehalten.
+  final List<String> _recentTitles = [];
+  static const int _recentMemory = 8;
+
+  /// Zufällige Fokus-Vorgaben, die pro Aufruf in den Prompt gemischt werden.
+  /// Da bei den Preview-Gemini-Modellen bewusst KEIN GenerationConfig
+  /// (temperature/seed) genutzt wird, erzeugt dieser rotierende Fokus die
+  /// nötige Vielfalt direkt über den Prompt-Inhalt.
+  static const List<String> _focusHauptzutat = [
+    'Hähnchen',
+    'Hackfleisch',
+    'Rind',
+    'Pute',
+    'Lachs oder Fischstäbchen',
+    'Kartoffeln',
+    'Reis',
+    'Nudeln',
+    'Linsen oder Kichererbsen',
+    'Eier',
+    'Käse',
+    'Gemüse der Saison',
+  ];
+  static const List<String> _focusKueche = [
+    'italienisch',
+    'deutsch-klassisch',
+    'orientalisch-mild',
+    'asiatisch-mild',
+    'mediterran',
+    'türkisch',
+    'ganz einfach / Hausmannskost',
+  ];
+  static const List<String> _focusForm = [
+    'Auflauf',
+    'Pfannengericht',
+    'Suppe oder Eintopf',
+    'Ofengericht',
+    'One-Pot-Gericht',
+    'Wrap oder gefülltes Fladenbrot',
+    'Bratlinge/Puffer',
+    'Nudel- oder Reisgericht',
+    'Pfannkuchen herzhaft',
+  ];
+
+  void _rememberTitle(String? title) {
+    final t = title?.trim();
+    if (t == null || t.isEmpty) return;
+    _recentTitles.removeWhere((e) => e.toLowerCase() == t.toLowerCase());
+    _recentTitles.add(t);
+    while (_recentTitles.length > _recentMemory) {
+      _recentTitles.removeAt(0);
+    }
+  }
+
+  /// Baut den Vielfalts-Block für den Prompt: eine Zufalls-Richtung plus die
+  /// Liste der zuletzt gezeigten Gerichte, die vermieden werden sollen.
+  String _varietyBlock() {
+    final zutat = _focusHauptzutat[_random.nextInt(_focusHauptzutat.length)];
+    final kueche = _focusKueche[_random.nextInt(_focusKueche.length)];
+    final form = _focusForm[_random.nextInt(_focusForm.length)];
+    final avoid = _recentTitles.isEmpty
+        ? ''
+        : '\n- WICHTIG: Schlage NICHT erneut eines dieser zuletzt gezeigten Gerichte '
+            '(auch keine sehr ähnliche Variante davon) vor: '
+            '${_recentTitles.join("; ")}.';
+    return 'Inspirations-Richtung für DIESEN Vorschlag (frei umsetzbar, nur als '
+        'Anstoß für Abwechslung): Hauptzutat Richtung „$zutat", Stil „$kueche", '
+        'Gericht-Art „$form". Weiche gern ab, aber liefere etwas DEUTLICH anderes '
+        'als zuletzt.$avoid';
+  }
 
   static const _savedKey = 'familyküche.saved';
 
@@ -59,14 +135,16 @@ class FamilyRecipeService {
     final hub = await FamilyHubStore.instance.read(
       expectedScope: FamilyHubStore.instance.scope,
     );
-    final legacy = List<String>.from(hub[FamilyHubStore.allergyKey] as List? ?? []);
+    final legacy =
+        List<String>.from(hub[FamilyHubStore.allergyKey] as List? ?? []);
     final dossierAllergies = await _loadDossierAllergies();
     _allergies = {...dossierAllergies, ...legacy}.toList();
     // Kanonische Allergen-Keys für die clientseitige Rezept-Prüfung.
     _allergenKeys = AllergenGuard.allergensFromDossiers([
       // Legacy-Begriffe ebenfalls kanonisieren.
       ...legacy.map((a) => KindDossier(childName: '', allergies: [a])),
-    ])..addAll(dossierAllergies.map(AllergenGuard.canonicalAllergen));
+    ])
+      ..addAll(dossierAllergies.map(AllergenGuard.canonicalAllergen));
 
     // Gespeicherte Rezepte laden
     final savedRaw = prefs.getString(_savedKey);
@@ -98,15 +176,15 @@ class FamilyRecipeService {
 
   /// Sammelt die (rohen) Allergie-Begriffe aus allen Kind-Dossiers.
   Future<List<String>> _loadDossierAllergies() async {
-      await KindDossierService.instance.load();
-      final all = <String>{};
-      for (final d in KindDossierService.instance.dossiers) {
-        for (final a in d.allergies) {
-          final clean = a.trim();
-          if (clean.isNotEmpty) all.add(clean);
-        }
+    await KindDossierService.instance.load();
+    final all = <String>{};
+    for (final d in KindDossierService.instance.dossiers) {
+      for (final a in d.allergies) {
+        final clean = a.trim();
+        if (clean.isNotEmpty) all.add(clean);
       }
-      return all.toList();
+    }
+    return all.toList();
   }
 
   /// Generiert ein neues Rezept via Gemini.
@@ -127,30 +205,33 @@ class FamilyRecipeService {
     final ageText = _childAge < 1
         ? 'Baby (6-12 Monate, Brei/Fingerfood)'
         : _childAge < 3
-        ? 'Kleinkind ($_childAge Jahre, weich, kleine Stücke)'
-        : _childAge < 6
-        ? 'Kita-Kind ($_childAge Jahre, normal)'
-        : 'Schulkind ($_childAge Jahre, alles)';
+            ? 'Kleinkind ($_childAge Jahre, weich, kleine Stücke)'
+            : _childAge < 6
+                ? 'Kita-Kind ($_childAge Jahre, normal)'
+                : 'Schulkind ($_childAge Jahre, alles)';
     final outputLanguage = _outputLanguage(languageCode);
+    final varietyBlock = _varietyBlock();
 
-    final prompt =
-        '''
+    final prompt = '''
 Generiere EIN kinderfreundliches Familien-Rezept auf $outputLanguage.
 
 Kontext:
 - Jüngstes Kind: $ageText
-- Saison: $season (nutze saisonale Zutaten)
+- Saison: $season (saisonale Zutaten sind ein PLUS, aber kein Muss)
 - $allergyText
 - Budget: günstig (unter 4 EUR pro Portion)
 - Zeit: maximal 35 Minuten
 - Portionen: 4
 
+$varietyBlock
+
 Regeln:
-- VIELFALT: Wechsle zwischen Fleisch (Hähnchen, Hackfleisch, Schnitzel), Fisch (Lachs, Fischstäbchen), und vegetarisch. NICHT immer das gleiche.
+- VIELFALT ist PFLICHT: Wechsle über die Zeit zwischen Fleisch (Hähnchen, Hackfleisch, Schnitzel), Fisch (Lachs, Fischstäbchen) und vegetarisch. Liefere NICHT immer dasselbe Gericht oder nur Varianten derselben Soße.
+- Vermeide es, erneut ein Nudel-/Pasta-Gericht vorzuschlagen, wenn das zuletzt schon kam.
 - Das Rezept MUSS für das angegebene Kindesalter sicher und geeignet sein
 - Einfache Zutaten die man im Supermarkt bekommt
 - Kinder müssen es MÖGEN (nicht zu scharf, nicht zu bitter)
-- Beliebt bei Kindern: Nudeln, Reis, Kartoffeln, Chicken Nuggets, Pizza, Pfannkuchen, Fischstäbchen, Bolognese, Schnitzel, Mac&Cheese
+- Beliebt bei Kindern (als Ideen-Pool, nicht jedes Mal dasselbe): Nudeln, Reis, Kartoffeln, Chicken Nuggets, Pizza, Pfannkuchen, Fischstäbchen, Bolognese, Schnitzel, Mac&Cheese, Frikadellen, Ofengemüse, Wraps
 - Gib einen konkreten Eltern-Tipp (picky eater trick, gemeinsam kochen, etc.)
 - allergensFree: nur auflisten wenn das Rezept tatsächlich FREI von Allergenen ist. Wenn Milch drin ist, NICHT "laktose" listen.
 - Alle nutzersichtbaren JSON-Werte müssen auf $outputLanguage sein. Die JSON-Schlüssel bleiben exakt wie vorgegeben.
@@ -181,12 +262,12 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
       _requireContext();
       final raw = await (_aiService ?? GeminiAIService(modelName: modelName))
           .generateText(
-            prompt,
-            systemInstruction:
-                'Du bist ein mehrsprachiger Familien-Koch-Assistent. Antworte IMMER NUR mit gültigem JSON. '
-                'Kein Markdown, kein Text davor oder danach. Nur ein JSON-Objekt.',
-          );
-          await _consent.require(requestScope);
+        prompt,
+        systemInstruction:
+            'Du bist ein mehrsprachiger Familien-Koch-Assistent. Antworte IMMER NUR mit gültigem JSON. '
+            'Kein Markdown, kein Text davor oder danach. Nur ein JSON-Objekt.',
+      );
+      await _consent.require(requestScope);
       await AIRateLimiter.recordRequest();
       debugPrint('FamilyRecipeService: Gemini Antwort (${raw.length} Zeichen)');
 
@@ -203,6 +284,7 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
         // ausliefern, sondern auf ein garantiert sicheres Fallback ausweichen.
         if (AllergenGuard.isRecipeSafe(recipe, _allergenKeys) &&
             _isAgeAppropriate(recipe)) {
+          _rememberTitle(recipe.title);
           return recipe;
         }
         debugPrint(
@@ -248,14 +330,13 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
     final ageText = _childAge < 1
         ? 'Baby (6-12 Monate, Brei/Fingerfood)'
         : _childAge < 3
-        ? 'Kleinkind ($_childAge Jahre, weich, kleine Stücke)'
-        : _childAge < 6
-        ? 'Kita-Kind ($_childAge Jahre, normal)'
-        : 'Schulkind ($_childAge Jahre, alles)';
+            ? 'Kleinkind ($_childAge Jahre, weich, kleine Stücke)'
+            : _childAge < 6
+                ? 'Kita-Kind ($_childAge Jahre, normal)'
+                : 'Schulkind ($_childAge Jahre, alles)';
     final outputLanguage = _outputLanguage(languageCode);
 
-    final prompt =
-        '''
+    final prompt = '''
 Erstelle EIN kinderfreundliches Familien-Rezept auf $outputLanguage für: "$wanted".
 
 Kontext:
@@ -295,12 +376,12 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
       _requireContext();
       final raw = await (_aiService ?? GeminiAIService(modelName: modelName))
           .generateText(
-            prompt,
-            systemInstruction:
-                'Du bist ein Familien-Koch-Assistent. Antworte IMMER NUR mit gültigem '
-                'JSON. Kein Markdown, kein Text davor oder danach. Nur ein JSON-Objekt.',
-          );
-          await _consent.require(requestScope);
+        prompt,
+        systemInstruction:
+            'Du bist ein Familien-Koch-Assistent. Antworte IMMER NUR mit gültigem '
+            'JSON. Kein Markdown, kein Text davor oder danach. Nur ein JSON-Objekt.',
+      );
+      await _consent.require(requestScope);
       await AIRateLimiter.recordRequest();
       if (raw.isEmpty) return null;
       return _parseRecipeStrict(raw);
@@ -400,11 +481,11 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
   /// Mappt einen Sprachcode auf die (deutsche) Bezeichnung für den KI-Prompt,
   /// damit Gemini in der aktiven App-Sprache antwortet.
   static String _outputLanguage(String languageCode) => switch (languageCode) {
-    'de' => 'Deutsch',
-    'tr' => 'Türkisch',
-    'ku' => 'Kurmandschi (lateinische Schrift)',
-    _ => 'Englisch',
-  };
+        'de' => 'Deutsch',
+        'tr' => 'Türkisch',
+        'ku' => 'Kurmandschi (lateinische Schrift)',
+        _ => 'Englisch',
+      };
 
   String _currentSeason() {
     final month = DateTime.now().month;
@@ -436,12 +517,10 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
     }
   }
 
-  int _fallbackIndex = 0;
-
-  /// Liefert ein Fallback-Rezept, das für die gesetzten Allergene SICHER ist.
-  /// Rotiert dafür durch die Liste und überspringt unsichere Rezepte. Gibt
-  /// null zurück, wenn KEIN Fallback sicher ist — dann zeigt die UI eine klare
-  /// Allergen-Warnung statt eines (gefährlichen) Rezepts.
+  /// Liefert ein Fallback-Rezept, das für die gesetzten Allergene SICHER und
+  /// altersgerecht ist. Wählt zufällig aus der sicheren Teilmenge und meidet
+  /// die zuletzt gezeigten Titel. Gibt null zurück, wenn KEIN Fallback sicher
+  /// ist — dann zeigt die UI eine klare Allergen-Warnung statt eines Rezepts.
   ///
   /// Die Fallback-Rezepte werden in der aktiven App-Sprache ausgegeben
   /// (DE/EN/TR/KU, sonst EN als inklusiver Rückfall).
@@ -452,29 +531,40 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
       recipe.minChildAge <= _childAge;
 
   FamilyRecipe? _fallbackRecipe({String languageCode = 'de'}) {
-    final recipes = FallbackRecipes.forLanguage(languageCode);
-    final count = recipes.length;
-    for (var i = 0; i < count; i++) {
-      final recipe = recipes[(_fallbackIndex + i) % count];
-      if (AllergenGuard.isRecipeSafe(recipe, _allergenKeys) &&
-          _isAgeAppropriate(recipe)) {
-        _fallbackIndex = (_fallbackIndex + i + 1) % count;
-        return FamilyRecipe(
-          id: 'fallback_${DateTime.now().millisecondsSinceEpoch}_$_fallbackIndex',
-          title: recipe.title,
-          description: recipe.description,
-          prepMinutes: recipe.prepMinutes,
-          costPerPortion: recipe.costPerPortion,
-          minChildAge: recipe.minChildAge,
-          ingredients: recipe.ingredients,
-          steps: recipe.steps,
-          allergensFree: recipe.allergensFree,
-          season: _currentSeason(),
-          tip: recipe.tip,
-        );
-      }
-    }
-    // Kein einziges Fallback-Rezept ist für diese Allergene sicher.
-    return null;
+    final all = FallbackRecipes.forLanguage(languageCode);
+    // Nur sichere + altersgerechte Rezepte kommen in Frage.
+    final safe = [
+      for (final r in all)
+        if (AllergenGuard.isRecipeSafe(r, _allergenKeys) &&
+            _isAgeAppropriate(r))
+          r
+    ];
+    if (safe.isEmpty) return null; // Kein sicheres Fallback → UI warnt.
+
+    // Zufällig mischen und zuletzt gezeigte Titel ans Ende sortieren, damit
+    // „Andere Idee" möglichst ein noch nicht gezeigtes Gericht bringt.
+    final pool = [...safe]..shuffle(_random);
+    final recentLower = _recentTitles.map((e) => e.toLowerCase()).toSet();
+    pool.sort((a, b) {
+      final ar = recentLower.contains(a.title.toLowerCase()) ? 1 : 0;
+      final br = recentLower.contains(b.title.toLowerCase()) ? 1 : 0;
+      return ar - br;
+    });
+
+    final recipe = pool.first;
+    _rememberTitle(recipe.title);
+    return FamilyRecipe(
+      id: 'fallback_${DateTime.now().millisecondsSinceEpoch}_${_random.nextInt(99999)}',
+      title: recipe.title,
+      description: recipe.description,
+      prepMinutes: recipe.prepMinutes,
+      costPerPortion: recipe.costPerPortion,
+      minChildAge: recipe.minChildAge,
+      ingredients: recipe.ingredients,
+      steps: recipe.steps,
+      allergensFree: recipe.allergensFree,
+      season: _currentSeason(),
+      tip: recipe.tip,
+    );
   }
 }
