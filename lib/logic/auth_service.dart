@@ -963,6 +963,64 @@ class AuthService with ChangeNotifier {
     return null;
   }
 
+  static String? passwordValidationKey(String password) {
+    if (password.length < 8) return 'register_password_min_length';
+    if (!password.contains(RegExp(r'[A-Z]'))) {
+      return 'register_password_uppercase';
+    }
+    if (!password.contains(RegExp(r'[0-9]'))) {
+      return 'register_password_number';
+    }
+    return null;
+  }
+
+  static String passwordChangeErrorKey(String code) => switch (code) {
+    'wrong-password' || 'invalid-credential' => 'password_change_wrong',
+    'weak-password' || 'password-does-not-meet-requirements' =>
+      'password_change_weak',
+    'requires-recent-login' || 'user-token-expired' || 'invalid-user-token' =>
+      'password_change_recent',
+    'network-request-failed' => 'password_change_network',
+    'too-many-requests' => 'password_change_throttled',
+    'user-disabled' || 'user-not-found' => 'password_change_session',
+    _ => 'password_change_failed',
+  };
+
+  Future<String?> changePassword(String current, String next) async {
+    if (current.isEmpty) return 'password_change_current_required';
+    final validation = passwordValidationKey(next);
+    if (validation != null) return validation;
+    if (current == next) return 'password_change_same';
+    if (!_firebaseReady) return 'password_change_session';
+    final auth = _firebaseAuth;
+    final user = auth?.currentUser;
+    final email = user?.email;
+    if (user == null || email == null || email.isEmpty) {
+      return 'password_change_session';
+    }
+    if (primaryProviderId() != 'password') return 'password_change_provider';
+    final epoch = _sessionEpoch;
+    bool isCurrent() =>
+        epoch == _sessionEpoch && auth?.currentUser?.uid == user.uid;
+    try {
+      await user.reauthenticateWithCredential(
+        EmailAuthProvider.credential(email: email, password: current),
+      );
+      if (!isCurrent()) return 'password_change_session';
+      await user.updatePassword(next);
+      if (!isCurrent()) return 'password_change_session';
+      return null;
+    } on FirebaseAuthException catch (error) {
+      debugPrint('Password change failed: ${error.code}');
+      return isCurrent()
+          ? passwordChangeErrorKey(error.code)
+          : 'password_change_session';
+    } catch (error) {
+      debugPrint('Password change failed: ${error.runtimeType}');
+      return 'password_change_failed';
+    }
+  }
+
   /// Re-authenticates with [password] and then permanently deletes the account.
   Future<String?> reauthenticateAndDeleteAccount(String password) async {
     if (!_firebaseReady) return 'Firebase nicht verfügbar.';
@@ -1293,24 +1351,14 @@ class AuthService with ChangeNotifier {
   }
 
   AuthResult? _validatePassword(String password) {
-    if (password.length < 8) {
-      return AuthResult.fail(
-        AuthErrorCode.weakPassword,
+    final key = passwordValidationKey(password);
+    if (key == null) return null;
+    return AuthResult.fail(AuthErrorCode.weakPassword, switch (key) {
+      'register_password_min_length' =>
         'Das Passwort muss mindestens 8 Zeichen lang sein.',
-      );
-    }
-    if (!password.contains(RegExp(r'[A-Z]'))) {
-      return AuthResult.fail(
-        AuthErrorCode.weakPassword,
+      'register_password_uppercase' =>
         'Das Passwort muss mindestens einen Großbuchstaben enthalten.',
-      );
-    }
-    if (!password.contains(RegExp(r'[0-9]'))) {
-      return AuthResult.fail(
-        AuthErrorCode.weakPassword,
-        'Das Passwort muss mindestens eine Zahl enthalten.',
-      );
-    }
-    return null;
+      _ => 'Das Passwort muss mindestens eine Zahl enthalten.',
+    });
   }
 }

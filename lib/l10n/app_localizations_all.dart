@@ -1,5 +1,6 @@
 import 'package:parentpeak/l10n/supported_languages.dart';
 import 'package:parentpeak/l10n/quota_strings.dart';
+import 'package:parentpeak/l10n/password_change_strings.dart';
 import 'package:parentpeak/l10n/profile_account_strings.dart';
 import 'package:parentpeak/l10n/app_localizations_fr_extra.dart';
 import 'package:parentpeak/l10n/app_localizations_es_extra.dart';
@@ -14,6 +15,7 @@ class AppStringsManager {
     // Deutsch
     'de': {
       ...quotaDeStrings,
+      ...passwordChangeDeStrings,
       'network_match_title': 'Ihr seid verbunden!',
       'network_connected_new': 'Neu verbunden',
       'network_match_subtitle':
@@ -3536,6 +3538,7 @@ class AppStringsManager {
     // English
     'en': {
       ...quotaEnStrings,
+      ...passwordChangeEnStrings,
       'network_match_title': 'You\'re connected!',
       'network_connected_new': 'Newly connected',
       'network_match_subtitle':
@@ -6986,6 +6989,7 @@ class AppStringsManager {
     // Français
     'fr': {
       ...quotaFrStrings,
+      ...passwordChangeFrStrings,
       'network_match_title': 'Vous êtes connectés !',
       'network_connected_new': 'Nouvelles connexions',
       'network_match_subtitle':
@@ -7923,6 +7927,7 @@ class AppStringsManager {
     // Español
     'es': {
       ...quotaEsStrings,
+      ...passwordChangeEsStrings,
       'network_match_title': '¡Estáis conectados!',
       'network_connected_new': 'Recién conectados',
       'network_match_subtitle':
@@ -8845,6 +8850,7 @@ class AppStringsManager {
     // Italiano
     'it': {
       ...quotaItStrings,
+      ...passwordChangeItStrings,
       'network_match_title': 'Siete connessi!',
       'network_connected_new': 'Appena connessi',
       'network_match_subtitle':
@@ -11409,6 +11415,7 @@ class AppStringsManager {
     // العربية (Arabic)
     'ar': {
       ...quotaArStrings,
+      ...passwordChangeArStrings,
       'network_match_title': 'أنتما متصلان الآن!',
       'network_connected_new': 'متصلون حديثاً',
       'network_match_subtitle': 'كلاكما مهتم. ألقِ التحية متى شئت.',
@@ -13114,6 +13121,7 @@ class AppStringsManager {
     // کوردی Kurmancî (ku)
     'ku': {
       ...quotaKuStrings,
+      ...passwordChangeKuStrings,
       'network_match_title': 'Hûn girêdayî ne!',
       'network_connected_new': 'Nû girêdayî',
       'network_match_subtitle':
@@ -19774,6 +19782,7 @@ class AppStringsManager {
     // Türkçe (Turkish)
     'tr': {
       ...quotaTrStrings,
+      ...passwordChangeTrStrings,
       'network_match_title': 'Bağlandınız!',
       'network_connected_new': 'Yeni bağlantılar',
       'network_match_subtitle':

@@ -66,6 +66,11 @@ class ProfileAccountStore extends ChangeNotifier {
     ],
   };
   static Future<void>? _writes;
+  static const _legacyDefaultTileOrder = [
+    'Impulse & Entwicklung', 'KI Elternberatung', 'Kalender', 'Organisation',
+    'Eltern Match', 'Events & Aktivitäten', 'Verschenkmarkt', 'GemeinsamSatt',
+    'Finanzen & Budget',
+  ];
   final String? Function() _userIdProvider;
   final Future<bool> Function(String, String)? _persist;
   final bool _checkFirebase;
@@ -170,8 +175,56 @@ class ProfileAccountStore extends ChangeNotifier {
     require(expected);
     final prefs = await SharedPreferences.getInstance();
     require(expected);
-    return (_root(prefs)['legacyOwners'] as Map)[domain.name] == null &&
-        domains[domain]!.any(prefs.containsKey);
+    final root = _root(prefs);
+    return (root['legacyOwners'] as Map)[domain.name] == null &&
+        !domains[domain]!.any(_account(root, expected.scope).containsKey) &&
+        _legacyData(prefs, domain).isNotEmpty;
+  }
+
+  Map<String, dynamic> _legacyData(
+      SharedPreferences prefs, ProfileLegacyDomain domain) {
+    final data = <String, dynamic>{
+      for (final key in domains[domain]!)
+        if (prefs.containsKey(key)) key: prefs.get(key),
+    };
+    _validate(data);
+    bool meaningful(String value) => value.trim().isNotEmpty &&
+        !const {'-', '--', 'null', 'undefined'}.contains(value.trim().toLowerCase());
+    final cleaned = <String, dynamic>{};
+    for (final entry in data.entries) {
+      final value = entry.value;
+      if (value is String && meaningful(value)) {
+        cleaned[entry.key] = value;
+      } else if (value is List) {
+        final items = value.cast<String>().where((item) => meaningful(item) &&
+            (entry.key != childrenKey || meaningful(item.split('|').first))).toList();
+        if (items.isNotEmpty) cleaned[entry.key] = items;
+      } else if (value is bool || value is num) {
+        cleaned[entry.key] = value;
+      }
+    }
+    if (domain == ProfileLegacyDomain.children) return cleaned;
+    if (domain == ProfileLegacyDomain.onboarding) {
+      // These defaults are written without a personal setup or draft.
+      final personalKeys = [familyNameKey, roleKey, rolesKey, agesKey, prioritiesKey];
+      final personal = personalKeys.any(cleaned.containsKey);
+      final chosenRegion = cleaned.containsKey(regionKey) &&
+          (cleaned[regionKey] as String).trim().toUpperCase() != 'NRW';
+      final chosenCountry = cleaned.containsKey(countryKey) &&
+          (cleaned[countryKey] as String).trim().toUpperCase() != 'DE';
+      final order = cleaned[tileOrderKey];
+      final customOrder = order is List<String> &&
+          !listEquals(order, _legacyDefaultTileOrder);
+      return personal || chosenRegion || chosenCountry || customOrder ? cleaned : {};
+    }
+    final lat = cleaned[latitudeKey], lng = cleaned[longitudeKey];
+    final city = cleaned.containsKey(cityKey) || cleaned.containsKey(eventCityKey);
+    final coordinates = lat is num && lng is num && (lat != 0 || lng != 0 || city);
+    if (!coordinates) {
+      cleaned.remove(latitudeKey);
+      cleaned.remove(longitudeKey);
+    }
+    return city || coordinates ? cleaned : {};
   }
 
   Future<T> _serialize<T>(Future<T> Function() operation) {
@@ -252,10 +305,7 @@ class ProfileAccountStore extends ChangeNotifier {
       if (keys.any(data.containsKey)) {
         throw StateError('Account data already exists; claim would overwrite it');
       }
-      final legacy = <String, dynamic>{
-        for (final key in keys)
-          if (prefs.containsKey(key)) key: prefs.get(key),
-      };
+      final legacy = _legacyData(prefs, domain);
       if (legacy.isEmpty) throw StateError('No unassigned local data');
       _validate(legacy);
       data.addAll(legacy);

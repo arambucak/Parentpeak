@@ -55,22 +55,54 @@ void main() {
   });
 
   testWidgets('conflicting account data displays failure without overwrite', (tester) async {
-    SharedPreferences.setMockInitialValues({
-      'profile.children': ['Private legacy|4'],
-      ProfileAccountStore.storageKey: jsonEncode({
-        'version': 1, 'legacyOwners': {},
-        'accounts': {store.scope: {
-          'owner': store.scope,
-          'data': {'profile.children': ['Own|3']},
-        }},
-      }),
-    });
     await mount(tester); await tester.pumpAndSettle();
+    // A conflicting value appears after the availability check.
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(ProfileAccountStore.storageKey, jsonEncode({
+      'version': 1, 'legacyOwners': {},
+      'accounts': {store.scope: {
+        'owner': store.scope,
+        'data': {'profile.children': ['Own|3']},
+      }},
+    }));
     await tester.tap(find.text(text('profile_claim_confirm')));
     await tester.pump(const Duration(milliseconds: 300));
     await tester.tap(find.text(text('profile_claim_confirm')).last);
     await tester.pumpAndSettle();
     expect(find.text(text('profile_account_failed')), findsOneWidget);
     expect((await store.read(store.ticket))['profile.children'], ['Own|3']);
+  });
+
+  testWidgets('new user with only default/empty local fields sees no legacy sections',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'profile.children': <String>[],
+      'onboarding.family_name': '',
+      'onboarding.completed': false,
+      'holiday.country': 'DE', 'holiday.region': 'NRW',
+      'location.city': ' ', 'location.method': 'manual',
+    });
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: Column(children: [
+      for (final domain in ProfileLegacyDomain.values)
+        ProfileLegacyClaim(domain: domain, store: store),
+    ]))));
+    await tester.pumpAndSettle();
+    expect(find.byType(ListTile), findsNothing);
+    expect(find.text(text('profile_claim_confirm')), findsNothing);
+  });
+
+  testWidgets('real setup and event search location display the corresponding claims',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'onboarding.family_name': 'Our family',
+      'events.saved_city': 'Berlin',
+    });
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: Column(children: [
+      ProfileLegacyClaim(domain: ProfileLegacyDomain.onboarding, store: store),
+      ProfileLegacyClaim(domain: ProfileLegacyDomain.location, store: store),
+    ]))));
+    await tester.pumpAndSettle();
+    expect(find.text(text('profile_legacy_onboarding')), findsOneWidget);
+    expect(find.text(text('profile_legacy_location')), findsOneWidget);
   });
 }

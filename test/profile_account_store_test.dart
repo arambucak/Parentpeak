@@ -90,7 +90,7 @@ void main() {
     await expectLater(store.claim(store.ticket, ProfileLegacyDomain.children,
         confirmOwnership: () async => true), throwsStateError);
     expect((await store.read(store.ticket))[ProfileAccountStore.childrenKey], ['Own|5']);
-    expect(await store.hasLegacy(store.ticket, ProfileLegacyDomain.children), true);
+    expect(await store.hasLegacy(store.ticket, ProfileLegacyDomain.children), false);
   });
 
   test('parallel claims cannot both commit; owner marker is in the same write', () async {
@@ -150,6 +150,71 @@ void main() {
     await expectLater(store.read(store.ticket), throwsFormatException);
     expect(() => store.write(store.ticket, {ProfileAccountStore.latitudeKey: 1000}),
         throwsFormatException);
+  });
+
+  test('empty keys, default region and method-only location are not claimable', () async {
+    SharedPreferences.setMockInitialValues({
+      ProfileAccountStore.childrenKey: ['', ' ', '|0', '-'],
+      ProfileAccountStore.familyNameKey: ' ',
+      ProfileAccountStore.roleKey: '',
+      ProfileAccountStore.rolesKey: <String>[],
+      ProfileAccountStore.agesKey: <String>[],
+      ProfileAccountStore.prioritiesKey: <String>[],
+      ProfileAccountStore.completedKey: false,
+      ProfileAccountStore.countryKey: 'DE',
+      ProfileAccountStore.regionKey: 'NRW',
+      ProfileAccountStore.tileOrderKey: [
+        'Impulse & Entwicklung', 'KI Elternberatung', 'Kalender', 'Organisation',
+        'Eltern Match', 'Events & Aktivitäten', 'Verschenkmarkt', 'GemeinsamSatt',
+        'Finanzen & Budget',
+      ],
+      ProfileAccountStore.cityKey: '',
+      ProfileAccountStore.eventCityKey: '-',
+      ProfileAccountStore.methodKey: 'manual',
+      ProfileAccountStore.latitudeKey: 0.0,
+      ProfileAccountStore.longitudeKey: 0.0,
+    });
+    for (final domain in ProfileLegacyDomain.values) {
+      expect(await store.hasLegacy(store.ticket, domain), false);
+      await expectLater(store.claim(store.ticket, domain,
+        confirmOwnership: () async => true), throwsStateError);
+    }
+    expect(await store.read(store.ticket), isEmpty);
+  });
+
+  test('real setup and city-only or coordinate location remain adoptable', () async {
+    SharedPreferences.setMockInitialValues({
+      ProfileAccountStore.familyNameKey: 'Our family',
+      ProfileAccountStore.roleKey: '',
+      ProfileAccountStore.countryKey: 'DE',
+      ProfileAccountStore.cityKey: 'Berlin',
+      ProfileAccountStore.methodKey: 'manual',
+    });
+
+    for (final domain in [ProfileLegacyDomain.onboarding, ProfileLegacyDomain.location]) {
+      expect(await store.hasLegacy(store.ticket, domain), true);
+      await store.claim(store.ticket, domain, confirmOwnership: () async => true);
+    }
+    final adopted = await store.read(store.ticket);
+    expect(adopted[ProfileAccountStore.familyNameKey], 'Our family');
+    expect(adopted[ProfileAccountStore.cityKey], 'Berlin');
+    expect(adopted.containsKey(ProfileAccountStore.roleKey), false);
+  });
+
+  test('custom legacy order and a complete coordinate pair remain claimable', () async {
+    SharedPreferences.setMockInitialValues({
+      ProfileAccountStore.tileOrderKey: ['calendar', 'chat'],
+      ProfileAccountStore.latitudeKey: 0.0,
+      ProfileAccountStore.longitudeKey: 13.0,
+    });
+    for (final domain in [ProfileLegacyDomain.onboarding, ProfileLegacyDomain.location]) {
+      expect(await store.hasLegacy(store.ticket, domain), true);
+      await store.claim(store.ticket, domain, confirmOwnership: () async => true);
+    }
+    final data = await store.read(store.ticket);
+    expect(data[ProfileAccountStore.tileOrderKey], ['calendar', 'chat']);
+    expect(data[ProfileAccountStore.latitudeKey], 0.0);
+    expect(data[ProfileAccountStore.longitudeKey], 13.0);
   });
 
   test('account switch during acknowledged write never commits into the new owner', () async {
