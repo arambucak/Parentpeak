@@ -1,4 +1,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Benachrichtigungen (Kalender-Erinnerungen). POST_NOTIFICATIONS ist ab
+         Android 13 Pflicht, sonst werden Benachrichtigungen nie angezeigt.
+         Exact-Alarm-Permissions sorgen dafür, dass Erinnerungen pünktlich und
+         nicht gedrosselt feuern. RECEIVE_BOOT_COMPLETED + der Boot-Receiver
+         unten stellen geplante Erinnerungen nach einem Neustart wieder her. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+
     <application
         android:label="Parentpeak"
         android:name="${applicationName}"
@@ -40,6 +51,22 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- flutter_local_notifications: stellt geplante Kalender-Erinnerungen
+             nach einem Geräte-Neustart wieder her und zeigt exakte Alarme an. -->
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"
+            android:exported="false" />
+        <receiver
+            android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

@@ -52,6 +52,8 @@ const appLocalizationsEsExtra = <String, String>{
   'chat_thread_rename_title': 'Renombrar la conversación',
   'chat_thread_rename_hint': 'Título de la conversación',
   'more_options': 'Más opciones',
+  'calendar_reminder_web_hint':
+      'En el navegador no podemos avisarte por push. Para recordatorios fiables, instala la app de ParentPeak en tu teléfono.',
   'date_this_week': 'Esta semana',
   'date_earlier': 'Antes',
   'chat_thread_active': 'Activo',
