@@ -17,6 +17,7 @@ import 'package:parentpeak/ui/widgets/chat_account_modal.dart';
 import 'package:parentpeak/logic/pedagogical_chat_backend.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/logic/ai_memory_service.dart';
+import 'package:parentpeak/logic/chat_history_store.dart';
 import 'package:parentpeak/models/ai_memory.dart';
 import 'package:parentpeak/ui/ai_memory_settings_screen.dart';
 import 'package:parentpeak/main.dart';
@@ -26,6 +27,7 @@ class ChatScreen extends StatefulWidget {
   final PedagogicalChatBackend? chatBackend;
   final ChatAccountStore? accountStore;
   final AiMemoryService? memoryService;
+  final ChatHistoryStore? historyStore;
 
   const ChatScreen({
     super.key,
@@ -33,6 +35,7 @@ class ChatScreen extends StatefulWidget {
     this.chatBackend,
     this.accountStore,
     this.memoryService,
+    this.historyStore,
   });
 
   @override
@@ -131,6 +134,7 @@ class _ChatScreenState extends State<ChatScreen> {
   late String _consentScope;
   late final ChatAccountStore _store;
   late final AiMemoryService _memoryService;
+  late final ChatHistoryStore _historyStore;
   late ChatAccountTicket _ticket;
   int _requestGeneration = 0;
   StreamIterator<String>? _replyIterator;
@@ -152,13 +156,14 @@ class _ChatScreenState extends State<ChatScreen> {
   void initState() {
     super.initState();
     _consent = widget.chatBackend?.consent ?? ChatAiConsent.instance;
-    _store =
-        widget.accountStore ??
+    _store = widget.accountStore ??
         widget.chatBackend?.accountStore ??
         ChatAccountStore.instance;
     _ticket = _store.ticket;
     _memoryService =
         widget.memoryService ?? AiMemoryService(accountStore: _store);
+    _historyStore =
+        widget.historyStore ?? ChatHistoryStore(accountStore: _store);
     _store.addListener(_onAccountChanged);
     _consentScope = _consent.scope;
     AuthService.instance.addListener(_onConsentScopeChanged);
@@ -167,7 +172,35 @@ class _ChatScreenState extends State<ChatScreen> {
     _loadCountryCode();
     _loadActiveChildProfile();
     _initializeGemini();
+    _loadPersistedHistory();
     _maybeSendInitialMessage();
+  }
+
+  /// Lädt den gespeicherten Chatverlauf des aktuellen Kontos, damit eine frühere
+  /// Unterhaltung nach dem Wiederöffnen sichtbar bleibt.
+  Future<void> _loadPersistedHistory() async {
+    final ticket = _ticket;
+    try {
+      final stored = await _historyStore.load(ticket);
+      if (stored.isEmpty || !_isCurrent(ticket)) return;
+      // Nicht überschreiben, wenn inzwischen schon Nachrichten da sind
+      // (z. B. durch eine initiale Nachricht).
+      if (_messages.isNotEmpty) return;
+      setState(() => _messages.addAll(stored));
+      _scrollToBottom();
+    } catch (error) {
+      debugPrint('Chat history load failed: $error');
+    }
+  }
+
+  /// Persistiert den aktuellen Verlauf für das Konto des [ticket] (best-effort).
+  Future<void> _persistHistory(ChatAccountTicket ticket) async {
+    try {
+      await _historyStore.save(
+          ticket, List<Map<String, dynamic>>.from(_messages));
+    } catch (error) {
+      debugPrint('Chat history save failed: $error');
+    }
   }
 
   bool _isCurrent(ChatAccountTicket ticket, [int? request]) {
@@ -234,6 +267,10 @@ class _ChatScreenState extends State<ChatScreen> {
     _loadTopicInsights();
     _loadCountryCode();
     _loadActiveChildProfile();
+    // Bewusst KEIN _loadPersistedHistory() hier: Nach einem Konto-/Logout-
+    // Wechsel wird der Verlauf NICHT automatisch wieder eingeblendet
+    // (Datenschutz auf geteilten Geräten). Der gespeicherte Verlauf wird vom
+    // Account-Store-Listener gelöscht (siehe _purgeHistoryOnAccountChange).
   }
 
   void _onConsentScopeChanged() {
@@ -295,12 +332,12 @@ class _ChatScreenState extends State<ChatScreen> {
     final accounts = ProfileAccountStore.instance;
     final profileTicket = accounts.ticket;
     try {
-    final data = await accounts.read(profileTicket);
-    final country = data[ProfileAccountStore.countryKey] as String?;
-    accounts.require(profileTicket);
-    if (_isCurrent(ticket) && country != null && country.trim().isNotEmpty) {
-      setState(() => _countryCode = country.trim());
-    }
+      final data = await accounts.read(profileTicket);
+      final country = data[ProfileAccountStore.countryKey] as String?;
+      accounts.require(profileTicket);
+      if (_isCurrent(ticket) && country != null && country.trim().isNotEmpty) {
+        setState(() => _countryCode = country.trim());
+      }
     } on ProfileAccountChanged {
       // The new chat session reloads its own country.
     } catch (error) {
@@ -330,7 +367,9 @@ class _ChatScreenState extends State<ChatScreen> {
       if (_isCurrent(ticket)) {
         setState(() {
           _activeChildProfileId = activeId;
-          _activeChildName = activeId == null ? null : children.firstWhere((child) => child.id == activeId).name;
+          _activeChildName = activeId == null
+              ? null
+              : children.firstWhere((child) => child.id == activeId).name;
         });
       }
     } catch (error) {
@@ -564,7 +603,9 @@ class _ChatScreenState extends State<ChatScreen> {
         _showError('chat_memory_load_failed');
       }
       final smartPrompt = ChatContextPolicy.tipPrompt(
-        tipText, languageService.currentLanguage, childAge,
+        tipText,
+        languageService.currentLanguage,
+        childAge,
       );
 
       if (!_isCurrent(ticket, request)) return;
@@ -590,16 +631,18 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<bool> _canSendWithRateLimit(
-    ChatAccountTicket ticket, int request,
+    ChatAccountTicket ticket,
+    int request,
   ) async {
     await AIRateLimiter.initialize();
     if (!_isCurrent(ticket, request)) return false;
     if (AIRateLimiter.canMakeRequest()) return true;
     setState(() => _messages.add({
-      'role': 'assistant',
-      'content': context.tr('chat_daily_limit', values: {'limit': '${AIRateLimiter.dailyLimit}'}),
-      'timestamp': DateTime.now(),
-    }));
+          'role': 'assistant',
+          'content': context.tr('chat_daily_limit',
+              values: {'limit': '${AIRateLimiter.dailyLimit}'}),
+          'timestamp': DateTime.now(),
+        }));
     return false;
   }
 
@@ -634,6 +677,7 @@ class _ChatScreenState extends State<ChatScreen> {
         _currentResponse = '';
         _controller.clear();
       });
+      await _persistHistory(ticket);
       await _consumeReply(text, ticket, request);
       if (_isCurrent(ticket, request)) await AIRateLimiter.recordRequest();
     } catch (error) {
@@ -664,8 +708,12 @@ class _ChatScreenState extends State<ChatScreen> {
     _replyChildName = childName;
     final iterator = StreamIterator(
       _chatBackend!.streamReply(
-        history: _messages.take(_messages.length - 1)
-            .map((entry) => <String, dynamic>{'role': entry['role'], 'content': entry['content']})
+        history: _messages
+            .take(_messages.length - 1)
+            .map((entry) => <String, dynamic>{
+                  'role': entry['role'],
+                  'content': entry['content']
+                })
             .toList(),
         userMessage: text,
         languageCode: languageService.currentLanguage,
@@ -683,6 +731,7 @@ class _ChatScreenState extends State<ChatScreen> {
         _scrollToBottom();
       }
       guard();
+      var appended = false;
       setState(() {
         if (_currentResponse.isNotEmpty) {
           _messages.add({
@@ -691,9 +740,11 @@ class _ChatScreenState extends State<ChatScreen> {
             'displayChildName': childName,
             'timestamp': DateTime.now(),
           });
+          appended = true;
         }
         _currentResponse = '';
       });
+      if (appended) await _persistHistory(ticket);
     } finally {
       if (identical(_replyIterator, iterator)) _replyIterator = null;
       unawaited(_cancelIterator(iterator));
@@ -741,6 +792,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _clearChat() {
+    final ticket = _ticket;
     _invalidateReply();
     setState(() {
       _messages.clear();
@@ -748,6 +800,10 @@ class _ChatScreenState extends State<ChatScreen> {
       _currentResponse = '';
       _isStreaming = false;
     });
+    // Auch den gespeicherten Verlauf des Kontos entfernen (best-effort).
+    unawaited(_historyStore.clear(ticket).catchError((Object error) {
+      debugPrint('Chat history clear failed: $error');
+    }));
   }
 
   Future<void> _confirmClearChat() async {
@@ -872,8 +928,8 @@ class _ChatScreenState extends State<ChatScreen> {
                 Text(
                   context.tr('chat_topic_analysis_title'),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                        fontWeight: FontWeight.w700,
+                      ),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -1026,10 +1082,10 @@ class _ChatScreenState extends State<ChatScreen> {
     final greetingKey = hour < 11
         ? 'chat_greeting_morning'
         : hour < 17
-        ? 'chat_greeting_day'
-        : hour < 22
-        ? 'chat_greeting_evening'
-        : 'chat_greeting_night';
+            ? 'chat_greeting_day'
+            : hour < 22
+                ? 'chat_greeting_evening'
+                : 'chat_greeting_night';
 
     final topics = [
       {
@@ -1197,9 +1253,8 @@ class _ChatScreenState extends State<ChatScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
-        mainAxisAlignment: isUser
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
+        mainAxisAlignment:
+            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!isUser) ...[
@@ -1262,7 +1317,8 @@ class _ChatScreenState extends State<ChatScreen> {
                     )
                   : _buildFormattedText(
                       (message['content'] as String).replaceAll(
-                        '[CHILD_1]', message['displayChildName'] as String? ?? '[CHILD_1]',
+                        '[CHILD_1]',
+                        message['displayChildName'] as String? ?? '[CHILD_1]',
                       ),
                     ),
             ),
@@ -1823,26 +1879,26 @@ class _ChatScreenState extends State<ChatScreen> {
                       decoration: BoxDecoration(
                         gradient:
                             _isStreaming || _controller.text.trim().isEmpty
-                            ? null
-                            : const LinearGradient(
-                                colors: [_kBrand, _kBrand2],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
+                                ? null
+                                : const LinearGradient(
+                                    colors: [_kBrand, _kBrand2],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
                         color: _isStreaming || _controller.text.trim().isEmpty
                             ? const Color(0xFFEDE9FE)
                             : null,
                         shape: BoxShape.circle,
                         boxShadow:
                             _isStreaming || _controller.text.trim().isEmpty
-                            ? null
-                            : [
-                                BoxShadow(
-                                  color: _kBrand.withValues(alpha: 0.35),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
+                                ? null
+                                : [
+                                    BoxShadow(
+                                      color: _kBrand.withValues(alpha: 0.35),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 3),
+                                    ),
+                                  ],
                       ),
                       child: _isStreaming
                           ? const Padding(
