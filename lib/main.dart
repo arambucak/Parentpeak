@@ -104,9 +104,9 @@ void main() {
       };
       PlatformDispatcher.instance.onError =
           (Object error, StackTrace stackTrace) {
-            _reportAppError('PlatformDispatcher.onError', error, stackTrace);
-            return true;
-          };
+        _reportAppError('PlatformDispatcher.onError', error, stackTrace);
+        return true;
+      };
 
       await _startApp();
     },
@@ -142,23 +142,62 @@ Future<void> _startApp() async {
     debugPrint('Konfigurationshinweis: ${releaseConfigIssues.join('; ')}');
   }
 
+  // Fehlerberichte früh aktivieren, damit auch Startfehler erfasst werden.
   await ErrorReportingService.instance.initialize();
 
-  await BackgroundSyncManager.initialize();
-  if (!kIsWeb) {
-    await NotificationService.instance.initialize();
-  }
+  // Auth muss vor dem ersten Frame bereit sein: Das AuthGate entscheidet
+  // anhand des Anmeldestatus, welcher Screen zuerst erscheint. Ohne diese
+  // Initialisierung würde kurz der falsche Screen aufblitzen.
   await AuthService.instance.initialize();
-  await FeatureFlagService.instance.initialize();
-  await EntitlementService.instance.initialize();
-  await BlockReportService.instance.initialize();
-  await LocationService.instance.initialize();
-  await PremiumService.instance.initialize();
-  await EventsLimitService.instance.initialize();
-  await ProviderPackageService.instance.initialize();
-  await DevelopmentReportLimitService.instance.initialize();
 
-  // Stripe publishable key (from .env or compile-time dart-define).
+  // Ab hier zeigen wir die App sofort. Optionale Dienste (Benachrichtigungen,
+  // Standort, Berechtigungen, Zahlungen, Push-Registrierung) werden hinter der
+  // sichtbaren Oberfläche nachgeladen und nicht vor dem ersten Frame erwartet.
+  runApp(
+    DemoApp(
+      key: demoAppKey,
+      startupInviteInput: startupInviteInput,
+      startupFriendCode: _extractStartupFriendCode(),
+      startupReferralCode: _extractStartupReferralCode(),
+    ),
+  );
+
+  unawaited(_initializeBackgroundServices());
+}
+
+/// Initialisiert die nicht-kritischen Dienste nach dem ersten Frame.
+///
+/// Diese Dienste werden von der Oberfläche nicht synchron beim ersten Build
+/// gebraucht: Das [AuthGate] hängt nur am [AuthService] und löst den
+/// Entitlement-Refresh selbst aus. So erscheint die App-Shell schneller,
+/// während Benachrichtigungen, Standort, Zahlungen usw. im Hintergrund bereit
+/// werden.
+Future<void> _initializeBackgroundServices() async {
+  Future<void> step(String label, Future<void> Function() run) async {
+    try {
+      await run();
+    } catch (error) {
+      // Ein fehlgeschlagener optionaler Dienst darf den Start nicht blockieren.
+      debugPrint('Hintergrund-Init fehlgeschlagen ($label): $error');
+    }
+  }
+
+  await step('BackgroundSyncManager', BackgroundSyncManager.initialize);
+  if (!kIsWeb) {
+    await step('NotificationService', NotificationService.instance.initialize);
+  }
+  await step('FeatureFlagService', FeatureFlagService.instance.initialize);
+  await step('EntitlementService', EntitlementService.instance.initialize);
+  await step('BlockReportService', BlockReportService.instance.initialize);
+  await step('LocationService', LocationService.instance.initialize);
+  await step('PremiumService', PremiumService.instance.initialize);
+  await step('EventsLimitService', EventsLimitService.instance.initialize);
+  await step(
+      'ProviderPackageService', ProviderPackageService.instance.initialize);
+  await step('DevelopmentReportLimitService',
+      DevelopmentReportLimitService.instance.initialize);
+
+  // Stripe publishable key (aus .env oder compile-time dart-define).
   final stripeKey = APIConfig.getStripePublishableKey()?.trim();
   final stripeSupported = APIConfig.isStripePaymentSheetSupportedPlatform();
   if (!kIsWeb &&
@@ -172,29 +211,22 @@ Future<void> _startApp() async {
     }
   }
 
-  // Wire FCM push notifications for the already-authenticated user.
+  // FCM-Push für den bereits angemeldeten Nutzer verdrahten.
   final currentUser = AuthService.instance.currentUser;
   if (currentUser != null) {
     final apiClient = BackendServiceFactory.createApiClient();
     unawaited(
-      NotificationService.instance.initFcm(
+      NotificationService.instance
+          .initFcm(
         apiClient: apiClient,
         userId: currentUser.uid,
         onNotificationTap: _handleNotificationTap,
-      ).catchError((Object error) {
+      )
+          .catchError((Object error) {
         debugPrint('Startup notification binding failed: $error');
       }),
     );
   }
-
-  runApp(
-    DemoApp(
-      key: demoAppKey,
-      startupInviteInput: startupInviteInput,
-      startupFriendCode: _extractStartupFriendCode(),
-      startupReferralCode: _extractStartupReferralCode(),
-    ),
-  );
 }
 
 Future<bool> _loadOptionalDotEnv() async {
@@ -345,9 +377,8 @@ class DemoAppState extends State<DemoApp> with WidgetsBindingObserver {
     themeService.initialize().then((_) {
       if (mounted) {
         setState(() {
-          _currentThemeMode = themeService.isDarkMode
-              ? ThemeMode.dark
-              : ThemeMode.light;
+          _currentThemeMode =
+              themeService.isDarkMode ? ThemeMode.dark : ThemeMode.light;
           debugPrint(
             '✅ Theme initialized: isDarkMode=${themeService.isDarkMode}, _currentThemeMode=$_currentThemeMode',
           );
@@ -369,9 +400,8 @@ class DemoAppState extends State<DemoApp> with WidgetsBindingObserver {
       debugPrint('   isDarkMode=${themeService.isDarkMode}');
       debugPrint('   OLD _currentThemeMode=$_currentThemeMode');
       setState(() {
-        _currentThemeMode = themeService.isDarkMode
-            ? ThemeMode.dark
-            : ThemeMode.light;
+        _currentThemeMode =
+            themeService.isDarkMode ? ThemeMode.dark : ThemeMode.light;
         debugPrint('   NEW _currentThemeMode=$_currentThemeMode');
       });
     }
@@ -662,17 +692,15 @@ class _AuthGateState extends State<AuthGate> {
 
   String? get _debugScreen {
     if (!_allowWebQueryBypass) return null;
-    final value = Uri.base.queryParameters['pp_debug_screen']
-        ?.trim()
-        .toLowerCase();
+    final value =
+        Uri.base.queryParameters['pp_debug_screen']?.trim().toLowerCase();
     if (value == null || value.isEmpty) return null;
     return value;
   }
 
   void _refresh() {
     final ticket = _accounts.ticket;
-    final changed =
-        _onboardingTicket == null ||
+    final changed = _onboardingTicket == null ||
         ticket.scope != _onboardingTicket!.scope ||
         ticket.generation != _onboardingTicket!.generation;
     if (mounted) {
