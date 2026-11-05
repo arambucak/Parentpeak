@@ -2,6 +2,7 @@
 ///
 /// Pro Sozialleistung: Unterlagen-Checkliste, Schritt-für-Schritt-Anleitung,
 /// Links, KI-Prompt-Vorlage, Erinnerungs-Info.
+library;
 
 class BenefitApplicationData {
   final String benefitId;

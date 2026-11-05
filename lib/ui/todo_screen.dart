@@ -317,7 +317,7 @@ class _TodoScreenState extends State<TodoScreen> {
                 ),
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );

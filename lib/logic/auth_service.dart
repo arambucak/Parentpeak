@@ -10,6 +10,7 @@
 ///   - Passwort-Hashing: SHA-256 mit zufälligem Salt (hex)
 ///   - Sessions über SharedPreferences (für Prod: flutter_secure_storage)
 ///   - Input-Sanitierung vor jeder Datenbankoperation
+library;
 
 import 'dart:async';
 import 'dart:convert';

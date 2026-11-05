@@ -5,6 +5,7 @@
 /// - Liste moeglicher Sozialleistungen
 /// - Typische Meilenstein-Kosten für Kinder
 /// - Kategorien für den Monats-Schnellcheck
+library;
 
 class CountryFinanceConfig {
   final String code; // "de", "at", "tr", "gb", "generic"

@@ -1,5 +1,6 @@
 /// Smart Parent Matching Service with intelligent algorithm
 /// Uses geographic proximity + interests + child compatibility scoring
+library;
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';

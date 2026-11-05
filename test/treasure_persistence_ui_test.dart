@@ -21,7 +21,7 @@ import 'package:parentpeak/ui/widgets/treasure_handover_text.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _Photo extends XFile {
-  _Photo(String path) : super(path);
+  _Photo(super.path);
   @override
   Future<Uint8List> readAsBytes() async => Uint8List.fromList([1, 2, 3]);
 }

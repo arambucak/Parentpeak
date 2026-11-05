@@ -10,6 +10,7 @@
 /// Sicherheit:
 ///   - Kein API-Key im Client; das Backend verwaltet den Schlüssel.
 ///   - Inputs werden vor dem Prompt sanitiert.
+library;
 
 import 'dart:convert';
 import 'package:flutter/foundation.dart';

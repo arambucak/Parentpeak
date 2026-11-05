@@ -107,7 +107,6 @@ class ElternNetzwerkScreen extends StatefulWidget {
 }
 
 class _ScreenState extends State<ElternNetzwerkScreen> {
-
   Future<bool?> _sendQuotaCheckedRequest(String uid, {String? source}) async {
     try {
       return await FriendshipService.instance.sendRequest(uid, source: source);
@@ -118,20 +117,23 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
   }
 
   Future<ParentMatchActionResult> _sendQuotaCheckedAction({
-    required String profileId, required String action, String? userId,
+    required String profileId,
+    required String action,
+    String? userId,
   }) async {
     try {
       return await _matching.sendAction(
-        profileId: profileId, action: action, userId: userId);
+          profileId: profileId, action: action, userId: userId);
     } on FeatureQuotaException catch (error) {
       if (mounted) await showFeatureQuotaNotice(context, error.feature);
-      return const ParentMatchActionResult(connected: false, matchState: 'quota');
+      return const ParentMatchActionResult(
+          connected: false, matchState: 'quota');
     }
   }
+
   // 0 = Entdecken, 1 = Momente, 2 = Chats, 3 = Meine Familie
   int _index = 0;
-  final GlobalKey<MomentsFeedState> _momentsKey =
-      GlobalKey<MomentsFeedState>();
+  final GlobalKey<MomentsFeedState> _momentsKey = GlobalKey<MomentsFeedState>();
   final _matching = ParentMatchingBackendService(
     apiClient: BackendServiceFactory.createApiClient(),
   );
@@ -275,17 +277,17 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
     try {
       final assigned = await PlaymateProfileService(matchingService: _matching)
           .adoptUnassignedDraft(
-            uid,
-            confirmOwnership: () async {
-              final confirmed = await confirmPlaymateDraftOwnership(
-                context,
-                AuthService.instance.currentUser?.displayName ?? uid,
-              );
-              return mounted &&
-                  AuthService.instance.currentUser?.uid == uid &&
-                  confirmed;
-            },
+        uid,
+        confirmOwnership: () async {
+          final confirmed = await confirmPlaymateDraftOwnership(
+            context,
+            AuthService.instance.currentUser?.displayName ?? uid,
           );
+          return mounted &&
+              AuthService.instance.currentUser?.uid == uid &&
+              confirmed;
+        },
+      );
       if (!mounted || AuthService.instance.currentUser?.uid != uid) return;
       if (assigned) await _refreshProfile();
     } catch (e) {
@@ -367,7 +369,7 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
     await _loadConversations();
   }
 
-  /// Einladungslink (/f/<token>) verarbeiten: Einladenden auflösen und eine
+  /// Einladungslink (`/f/<token>`) verarbeiten: Einladenden auflösen und eine
   /// Freundschaftsanfrage senden — 1 Tap, kein Code-Abtippen.
   Future<void> _handleInviteToken(String token) async {
     final resolved = await FriendshipService.instance.resolveInvite(token);
@@ -480,15 +482,16 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
 
     // NEUES FUNDAMENT: den app-weiten Anzeigenamen serverseitig sichern
     // (uid -> displayName). Kommt aus der Registrierung; hier nur gespiegelt.
-    final myName =
-        AuthService.instance.currentUser?.displayName ??
+    final myName = AuthService.instance.currentUser?.displayName ??
         _profile?.displayName ??
         'Familie';
-    unawaited(UserProfileService.instance.setDisplayName(myName, ticket: ticket).catchError((Object error) {
+    unawaited(UserProfileService.instance
+        .setDisplayName(myName, ticket: ticket)
+        .catchError((Object error) {
       debugPrint('Network profile identity sync failed: $error');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_t('profile_account_failed'))));
+            SnackBar(content: Text(_t('profile_account_failed'))));
       }
     }));
     // Neue UID-Freundschaften + offene Anfragen laden.
@@ -531,16 +534,17 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
               ),
             )
           : showChatFab
-          ? FloatingActionButton.extended(
-              onPressed: _showNewChatOptions,
-              backgroundColor: theme.colorScheme.primary,
-              icon: const Icon(Icons.add_comment_rounded, color: Colors.white),
-              label: Text(
-                _t('network_new_chat'),
-                style: const TextStyle(color: Colors.white),
-              ),
-            )
-          : null,
+              ? FloatingActionButton.extended(
+                  onPressed: _showNewChatOptions,
+                  backgroundColor: theme.colorScheme.primary,
+                  icon: const Icon(Icons.add_comment_rounded,
+                      color: Colors.white),
+                  label: Text(
+                    _t('network_new_chat'),
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                )
+              : null,
       body: IndexedStack(
         index: _index,
         children: [
@@ -638,9 +642,8 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
             child: Text(_t('edit_btn')),
           ),
           TextButton(
-            onPressed: _deletingProfile
-                ? null
-                : () => _confirmDeleteProfile(theme),
+            onPressed:
+                _deletingProfile ? null : () => _confirmDeleteProfile(theme),
             child: Text(_t('delete')),
           ),
         ],
@@ -703,9 +706,8 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
           ),
           const SizedBox(height: 8),
           TextButton.icon(
-            onPressed: _deletingProfile
-                ? null
-                : () => _confirmDeleteProfile(theme),
+            onPressed:
+                _deletingProfile ? null : () => _confirmDeleteProfile(theme),
             icon: Icon(
               Icons.delete_outline_rounded,
               size: 18,
@@ -825,21 +827,21 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
             child: _loadingConversations
                 ? _chatsLoadingSkeleton(theme)
                 : filtered.isEmpty
-                ? _chatsEmptyState(theme)
-                : ListView.separated(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(8, 4, 8, 90),
-                    itemCount: filtered.length,
-                    separatorBuilder: (_, __) => Divider(
-                      height: 1,
-                      indent: 76,
-                      color: theme.colorScheme.outlineVariant.withValues(
-                        alpha: 0.3,
+                    ? _chatsEmptyState(theme)
+                    : ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(8, 4, 8, 90),
+                        itemCount: filtered.length,
+                        separatorBuilder: (_, __) => Divider(
+                          height: 1,
+                          indent: 76,
+                          color: theme.colorScheme.outlineVariant.withValues(
+                            alpha: 0.3,
+                          ),
+                        ),
+                        itemBuilder: (_, i) =>
+                            _conversationTile(theme, filtered[i]),
                       ),
-                    ),
-                    itemBuilder: (_, i) =>
-                        _conversationTile(theme, filtered[i]),
-                  ),
           ),
         ),
       ],
@@ -850,13 +852,13 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
     final title = c.isGroup
         ? (c.name ?? _t('network_group'))
         : (c.lastAuthorName.isNotEmpty && c.lastAuthorUserId != _myUid
-              ? c.lastAuthorName
-              : (c.name ?? _t('network_chat')));
+            ? c.lastAuthorName
+            : (c.name ?? _t('network_chat')));
     final preview = c.lastMessage.isEmpty
         ? _t('network_no_messages_yet')
         : (c.lastAuthorUserId == _myUid
-              ? '${_t('network_you_prefix')} ${c.lastMessage}'
-              : c.lastMessage);
+            ? '${_t('network_you_prefix')} ${c.lastMessage}'
+            : c.lastMessage);
 
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -1037,7 +1039,9 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
         ],
       ),
     );
-    if (confirmed != true || !ProfileAccountStore.instance.isCurrent(ticket)) return;
+    if (confirmed != true || !ProfileAccountStore.instance.isCurrent(ticket)) {
+      return;
+    }
     final uid = AuthService.instance.currentUser?.uid ?? '';
     if (uid.isEmpty) return;
     final ok = forAll
@@ -1197,7 +1201,8 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
               subtitle: Text(_t('network_start_direct_chat_hint')),
               onTap: () {
                 Navigator.pop(sheetCtx);
-                setState(() => _index = 3); // Zu 'Meine Familie' (Verbindungen/Freunde)
+                setState(() =>
+                    _index = 3); // Zu 'Meine Familie' (Verbindungen/Freunde)
               },
             ),
             ListTile(
@@ -1493,7 +1498,9 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
       memberNames: memberNames,
       photoUrl: photoUrl,
     );
-    if (!mounted || !ProfileAccountStore.instance.isCurrent(ticket)) return false;
+    if (!mounted || !ProfileAccountStore.instance.isCurrent(ticket)) {
+      return false;
+    }
     if (group == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1535,9 +1542,8 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
             child: Text(_t('edit_btn')),
           ),
           TextButton(
-            onPressed: _deletingProfile
-                ? null
-                : () => _confirmDeleteProfile(theme),
+            onPressed:
+                _deletingProfile ? null : () => _confirmDeleteProfile(theme),
             child: Text(_t('delete')),
           ),
         ],
@@ -1548,11 +1554,11 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
   }
 
   Widget _profileStatusPanel() => PlaymateProfileStatusPanel(
-    status: _profileStatus,
-    hasUnassignedDraft: _hasUnassignedDraft,
-    onRetry: _refreshProfile,
-    onAssignDraft: _assigningDraft ? null : _assignDraft,
-  );
+        status: _profileStatus,
+        hasUnassignedDraft: _hasUnassignedDraft,
+        onRetry: _refreshProfile,
+        onAssignDraft: _assigningDraft ? null : _assignDraft,
+      );
 
   Widget _profileSetup(ThemeData theme) {
     return PlaymateSetupLayout(
@@ -1560,11 +1566,11 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           _profileStatusPanel(),
-          if (_profile == null && _profileStatus == PlaymateProfileStatus.active)
+          if (_profile == null &&
+              _profileStatus == PlaymateProfileStatus.active)
             TextButton(
-              onPressed: _deletingProfile
-                  ? null
-                  : () => _confirmDeleteProfile(theme),
+              onPressed:
+                  _deletingProfile ? null : () => _confirmDeleteProfile(theme),
               child: Text(_t('delete')),
             ),
         ],
@@ -1586,21 +1592,20 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
             return;
           }
           try {
-            final result =
-                await PlaymateProfileService(
-                  matchingService: _matching,
-                ).publishProfile(
-                  p,
-                  uid,
-                  confirmPublication: () async {
-                    final confirmed = await confirmPlaymatePublication(
-                      context,
-                    );
-                    return mounted &&
-                        AuthService.instance.currentUser?.uid == uid &&
-                        confirmed;
-                  },
+            final result = await PlaymateProfileService(
+              matchingService: _matching,
+            ).publishProfile(
+              p,
+              uid,
+              confirmPublication: () async {
+                final confirmed = await confirmPlaymatePublication(
+                  context,
                 );
+                return mounted &&
+                    AuthService.instance.currentUser?.uid == uid &&
+                    confirmed;
+              },
+            );
             if (!mounted || result == PlaymatePublicationResult.cancelled) {
               return;
             }
@@ -1624,7 +1629,6 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
       ),
     );
   }
-
 
   /// Laedt echte Familien in der Naehe ueber das bestehende Matching-Backend.
   Future<void> _loadMatches() async {
@@ -1674,8 +1678,8 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
           _loadingMatches = false;
           _matchesErrorKey =
               e is BackendApiException && (e.isUnauthorized || e.isForbidden)
-              ? 'network_discovery_auth_failed'
-              : 'network_discovery_failed';
+                  ? 'network_discovery_auth_failed'
+                  : 'network_discovery_failed';
         });
       }
     }
@@ -1797,9 +1801,7 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
             .join(', '),
     ].join('  \u{2022}  ');
     final tags = <String>[
-      ...p.valuesFocus
-          .take(2)
-          .map(
+      ...p.valuesFocus.take(2).map(
             (code) => networkWizardOptionLabel(
               languageService.currentLanguage,
               'values',
@@ -1807,9 +1809,7 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
               code,
             ),
           ),
-      ...p.interests
-          .take(2)
-          .map(
+      ...p.interests.take(2).map(
             (code) => networkWizardOptionLabel(
               languageService.currentLanguage,
               'looking',
@@ -1946,129 +1946,129 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
 
   Widget _netzwerkSections(ThemeData theme) {
     return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Einladungs-Karte: verbinden per Link/QR (1 Tap) ────────────────
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Einladungs-Karte: verbinden per Link/QR (1 Tap) ────────────────
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                theme.colorScheme.primary,
+                Color.lerp(
                   theme.colorScheme.primary,
-                  Color.lerp(
-                    theme.colorScheme.primary,
-                    theme.colorScheme.tertiary,
-                    0.35,
-                  )!,
-                ],
-              ),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.3),
-                  blurRadius: 28,
-                  offset: const Offset(0, 10),
-                ),
+                  theme.colorScheme.tertiary,
+                  0.35,
+                )!,
               ],
             ),
-            child: Column(
-              children: [
-                const Icon(
-                  Icons.group_add_rounded,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                blurRadius: 28,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              const Icon(
+                Icons.group_add_rounded,
+                color: Colors.white,
+                size: 34,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                _t('network_copy_invite_hero_title'),
+                style: const TextStyle(
                   color: Colors.white,
-                  size: 34,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w900,
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  _t('network_copy_invite_hero_title'),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w900,
-                  ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                _t('network_copy_invite_hero_description'),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.85),
+                  fontSize: 12,
+                  height: 1.4,
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  _t('network_copy_invite_hero_description'),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.85),
-                    fontSize: 12,
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 18),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _shareActionBtn(
-                        Icons.ios_share_rounded,
-                        _t('network_copy_share'),
-                        () async {
-                          final box = context.findRenderObject() as RenderBox?;
-                          // Frischen Einladungslink erzeugen (1-Tap-Verbinden).
-                          final link = await FriendshipService.instance
-                              .createInviteLink();
-                          if (link == null) {
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    _t('network_link_create_failed'),
-                                  ),
-                                  behavior: SnackBarBehavior.floating,
-                                ),
-                              );
-                            }
-                            return;
-                          }
-                          await Share.share(
-                            _t(
-                              'network_share_message',
-                            ).replaceAll('{link}', link),
-                            sharePositionOrigin: box != null
-                                ? box.localToGlobal(Offset.zero) & box.size
-                                : null,
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _shareActionBtn(
-                        Icons.qr_code_2_rounded,
-                        _t('network_qr_code'),
-                        () async {
-                          final link = await FriendshipService.instance
-                              .createInviteLink();
-                          if (!mounted) return;
-                          if (link == null) {
+              ),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Expanded(
+                    child: _shareActionBtn(
+                      Icons.ios_share_rounded,
+                      _t('network_copy_share'),
+                      () async {
+                        final box = context.findRenderObject() as RenderBox?;
+                        // Frischen Einladungslink erzeugen (1-Tap-Verbinden).
+                        final link =
+                            await FriendshipService.instance.createInviteLink();
+                        if (link == null) {
+                          if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text(_t('network_qr_create_failed')),
+                                content: Text(
+                                  _t('network_link_create_failed'),
+                                ),
                                 behavior: SnackBarBehavior.floating,
                               ),
                             );
-                            return;
                           }
-                          _showFriendQR(theme, link);
-                        },
-                      ),
+                          return;
+                        }
+                        await Share.share(
+                          _t(
+                            'network_share_message',
+                          ).replaceAll('{link}', link),
+                          sharePositionOrigin: box != null
+                              ? box.localToGlobal(Offset.zero) & box.size
+                              : null,
+                        );
+                      },
                     ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _shareActionBtn(
+                      Icons.qr_code_2_rounded,
+                      _t('network_qr_code'),
+                      () async {
+                        final link =
+                            await FriendshipService.instance.createInviteLink();
+                        if (!mounted) return;
+                        if (link == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(_t('network_qr_create_failed')),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                          return;
+                        }
+                        _showFriendQR(theme, link);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          const SizedBox(height: 32),
+        ),
+        const SizedBox(height: 32),
 
-          // NEUES UID-Fundament: offene Anfragen + Freundesliste vom Server.
-          _friendRequestsSection(theme),
-          _uidFriendsSection(theme),
-        ],
+        // NEUES UID-Fundament: offene Anfragen + Freundesliste vom Server.
+        _friendRequestsSection(theme),
+        _uidFriendsSection(theme),
+      ],
     );
   }
 
@@ -2103,9 +2103,8 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
               children: [
                 CircleAvatar(
                   backgroundColor: _avatarColor(f.name),
-                  backgroundImage: f.avatarUrl != null
-                      ? NetworkImage(f.avatarUrl!)
-                      : null,
+                  backgroundImage:
+                      f.avatarUrl != null ? NetworkImage(f.avatarUrl!) : null,
                   child: f.avatarUrl == null
                       ? Text(
                           f.name.isNotEmpty ? f.name[0].toUpperCase() : '?',
@@ -2257,9 +2256,8 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
           CircleAvatar(
             radius: 23,
             backgroundColor: _avatarColor(f.name),
-            backgroundImage: f.avatarUrl != null
-                ? NetworkImage(f.avatarUrl!)
-                : null,
+            backgroundImage:
+                f.avatarUrl != null ? NetworkImage(f.avatarUrl!) : null,
             child: f.avatarUrl == null
                 ? Text(
                     f.name.isNotEmpty ? f.name[0].toUpperCase() : '?',
@@ -2656,7 +2654,8 @@ class _ScreenState extends State<ElternNetzwerkScreen> {
                                 : _t('network_copy_request_failed'),
                           ),
                           behavior: SnackBarBehavior.floating,
-                          backgroundColor: ok ? theme.colorScheme.primary : null,
+                          backgroundColor:
+                              ok ? theme.colorScheme.primary : null,
                         ),
                       );
                     }
@@ -2923,56 +2922,56 @@ class PlaymateSetupLayout extends StatelessWidget {
     final theme = Theme.of(context);
     return LayoutBuilder(
       builder: (context, constraints) => KeyboardAwareBuilder(
-      builder: (_, compact) => Column(
-        children: [
-          CollapsibleFormHeader(
-            visible: !compact,
-            maxHeight: constraints.maxHeight * 0.4,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                status,
-                const SizedBox(height: 16),
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF8B5CF6), Color(0xFFA78BFA)],
+        builder: (_, compact) => Column(
+          children: [
+            CollapsibleFormHeader(
+              visible: !compact,
+              maxHeight: constraints.maxHeight * 0.4,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  status,
+                  const SizedBox(height: 16),
+                  Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF8B5CF6), Color(0xFFA78BFA)],
+                      ),
+                      borderRadius: BorderRadius.circular(18),
                     ),
-                    borderRadius: BorderRadius.circular(18),
+                    child: const Center(
+                      child: Text('\u{1F46A}', style: TextStyle(fontSize: 28)),
+                    ),
                   ),
-                  child: const Center(
-                    child: Text('\u{1F46A}', style: TextStyle(fontSize: 28)),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  _t('find_playmates'),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 4),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
-                  child: Text(
-                    _t('network_copy_setup_hint'),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      height: 1.3,
+                  const SizedBox(height: 12),
+                  Text(
+                    _t('find_playmates'),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                ),
-                const SizedBox(height: 16),
-              ],
+                  const SizedBox(height: 4),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(
+                      _t('network_copy_setup_hint'),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        height: 1.3,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
             ),
-          ),
-          Expanded(child: form),
-        ],
-      ),
+            Expanded(child: form),
+          ],
+        ),
       ),
     );
   }
@@ -3098,9 +3097,8 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
     final districtMissing = _districtCtrl.text.trim().isEmpty;
     setState(() {
       _nameError = nameMissing ? _t('network_field_name_required') : null;
-      _districtError = districtMissing
-          ? _t('network_field_district_required')
-          : null;
+      _districtError =
+          districtMissing ? _t('network_field_district_required') : null;
     });
     if (!nameMissing && !districtMissing) return true;
     final target = nameMissing ? _nameFocus : _districtFocus;
@@ -3252,8 +3250,9 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
                   color: done
                       ? const Color(0xFF16A34A)
                       : active
-                      ? const Color(0xFF8B5CF6)
-                      : theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+                          ? const Color(0xFF8B5CF6)
+                          : theme.colorScheme.outlineVariant
+                              .withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(5),
                 ),
               );
@@ -3270,14 +3269,13 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
             maxLines: compact ? 1 : 2,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
-            style:
-                (compact
-                        ? theme.textTheme.labelLarge
-                        : theme.textTheme.titleSmall)
-                    ?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: const Color(0xFF8B5CF6),
-                    ),
+            style: (compact
+                    ? theme.textTheme.labelLarge
+                    : theme.textTheme.titleSmall)
+                ?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFF8B5CF6),
+            ),
           ),
         ),
         SizedBox(height: compact ? 6 : 16),
@@ -3334,50 +3332,50 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
               Flexible(
                 child: _step < _totalSteps - 1
                     ? FilledButton.icon(
-                  onPressed: _saving ? null : _next,
-                  icon: const Icon(Icons.arrow_forward_rounded, size: 18),
-                  label: _navLabel(
-                    AppStringsManager.getString(
-                      languageService.currentLanguage,
-                      'next_btn_wizard',
-                    ),
-                    compact,
-                  ),
-                  style: FilledButton.styleFrom(
-                    visualDensity: compact ? VisualDensity.compact : null,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                )
-                    : FilledButton.icon(
-                  onPressed: _saving ? null : _submit,
-                  icon: _saving
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
+                        onPressed: _saving ? null : _next,
+                        icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                        label: _navLabel(
+                          AppStringsManager.getString(
+                            languageService.currentLanguage,
+                            'next_btn_wizard',
                           ),
-                        )
-                      : const Icon(Icons.check_rounded, size: 18),
-                  label: _navLabel(
-                    _saving
-                        ? _t('network_copy_save')
-                        : widget.initialProfile != null
-                        ? _t('save')
-                        : _t('network_copy_create_profile'),
-                    compact,
-                  ),
-                  style: FilledButton.styleFrom(
-                    visualDensity: compact ? VisualDensity.compact : null,
-                    backgroundColor: const Color(0xFF16A34A),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                ),
+                          compact,
+                        ),
+                        style: FilledButton.styleFrom(
+                          visualDensity: compact ? VisualDensity.compact : null,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                      )
+                    : FilledButton.icon(
+                        onPressed: _saving ? null : _submit,
+                        icon: _saving
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.check_rounded, size: 18),
+                        label: _navLabel(
+                          _saving
+                              ? _t('network_copy_save')
+                              : widget.initialProfile != null
+                                  ? _t('save')
+                                  : _t('network_copy_create_profile'),
+                          compact,
+                        ),
+                        style: FilledButton.styleFrom(
+                          visualDensity: compact ? VisualDensity.compact : null,
+                          backgroundColor: const Color(0xFF16A34A),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                      ),
               ),
             ],
           ),
@@ -3387,11 +3385,11 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
   }
 
   Widget _navLabel(String text, bool compact) => Text(
-    text,
-    maxLines: compact ? 1 : 2,
-    overflow: TextOverflow.ellipsis,
-    textAlign: TextAlign.center,
-  );
+        text,
+        maxLines: compact ? 1 : 2,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+      );
 
   String _stepLabel(int step) => _t('network_copy_step_${step + 1}');
 
@@ -3515,8 +3513,8 @@ class _ProfileFormState extends State<PlaymateProfileForm> {
           ),
           const SizedBox(height: 14),
           ..._children.asMap().entries.map(
-            (entry) => _childCard(theme, entry.key, entry.value),
-          ),
+                (entry) => _childCard(theme, entry.key, entry.value),
+              ),
           const SizedBox(height: 12),
           Center(
             child: TextButton.icon(
@@ -4327,7 +4325,7 @@ class _ChildData {
   final Set<String> interests = {};
 
   _ChildData({ChildEntry? initial})
-    : maxAgeMonths = (initial?.ageMonths ?? 36).clamp(216, 240) {
+      : maxAgeMonths = (initial?.ageMonths ?? 36).clamp(216, 240) {
     _ageMonths = initial?.ageMonths ?? 36;
     birthDate = initial?.birthDate;
     nameCtrl.text = initial?.name ?? '';
@@ -4432,17 +4430,17 @@ class _LocationAutocompleteFieldState
                     ),
                   )
                 : widget.controller.text.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.close_rounded, size: 18),
-                    onPressed: () {
-                      widget.controller.clear();
-                      setState(() {
-                        _suggestions = [];
-                        _showSuggestions = false;
-                      });
-                    },
-                  )
-                : null,
+                    ? IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 18),
+                        onPressed: () {
+                          widget.controller.clear();
+                          setState(() {
+                            _suggestions = [];
+                            _showSuggestions = false;
+                          });
+                        },
+                      )
+                    : null,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),

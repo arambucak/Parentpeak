@@ -8,6 +8,7 @@
 ///   - Kein API-Key im Client; alles läuft über den Backend-KI-Proxy.
 ///   - Immer graceful: Bei Fehlern/leerer Antwort kommt null zurück, nie ein Crash.
 ///   - Web-kompatibel: nutzt Uint8List statt dart:io File.
+library;
 
 import 'dart:convert';
 

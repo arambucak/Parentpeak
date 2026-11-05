@@ -4,7 +4,7 @@ import 'package:parentpeak/l10n/app_localizations.dart';
 class RevokeConfirmationDialog extends StatefulWidget {
   final String deviceName;
 
-  const RevokeConfirmationDialog({Key? key, required this.deviceName}) : super(key: key);
+  const RevokeConfirmationDialog({super.key, required this.deviceName});
 
   @override
   State<RevokeConfirmationDialog> createState() => _RevokeConfirmationDialogState();

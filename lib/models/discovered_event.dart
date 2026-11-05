@@ -1,5 +1,6 @@
 /// Datenmodell für KI-entdeckte Events aus dem Internet.
 /// Vom AI-Agent gefüllt, auf der Discover-Karte angezeigt.
+library;
 
 enum DiscoveredEventCategory {
   theater,

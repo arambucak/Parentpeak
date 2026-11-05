@@ -9,12 +9,10 @@ class FridgePhotoConsentRequiredException implements Exception {
 
 class FridgePhotoConsent extends AccountAiConsent {
   FridgePhotoConsent({
-    String Function()? scopeProvider,
-    Future<bool> Function(String key, bool value)? persist,
+    super.scopeProvider,
+    super.persist,
   }) : super(
          storagePrefix: 'fridge.ai_photo_consent.v1',
-         scopeProvider: scopeProvider,
-         persist: persist,
          requiredException: () => const FridgePhotoConsentRequiredException(),
        );
 
