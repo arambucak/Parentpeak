@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -28,8 +29,8 @@ class NotificationService {
   String? _sessionOwner;
   BackendApiClient? _sessionApiClient;
   late final _binding = NotificationAccountBinding(
-    currentUserId: () => Firebase.apps.isEmpty
-        ? null : FirebaseAuth.instance.currentUser?.uid,
+    currentUserId: () =>
+        Firebase.apps.isEmpty ? null : FirebaseAuth.instance.currentUser?.uid,
     getToken: () async => kIsWeb ? null : FirebaseMessaging.instance.getToken(),
     deleteToken: () async {
       if (!kIsWeb && Firebase.apps.isNotEmpty) {
@@ -54,7 +55,23 @@ class NotificationService {
       return;
     }
     tz.initializeTimeZones();
-    tz.setLocalLocation(tz.getLocation('Europe/Berlin'));
+    // Echte Gerätezeitzone verwenden, damit Erinnerungen weltweit zur
+    // richtigen lokalen Uhrzeit feuern (vorher hart Europe/Berlin → für
+    // Eltern in AT/CH/TR/GB verschoben). Berlin bleibt sicherer Fallback.
+    var timeZoneName = 'Europe/Berlin';
+    try {
+      final deviceTz = await FlutterTimezone.getLocalTimezone();
+      if (deviceTz.trim().isNotEmpty) timeZoneName = deviceTz.trim();
+    } catch (error) {
+      _logIgnoredError('NotificationService: Gerätezeitzone unlesbar', error);
+    }
+    try {
+      tz.setLocalLocation(tz.getLocation(timeZoneName));
+    } catch (error) {
+      _logIgnoredError(
+          'NotificationService: Zeitzone "$timeZoneName" unbekannt', error);
+      tz.setLocalLocation(tz.getLocation('Europe/Berlin'));
+    }
 
     if (kDebugMode && defaultTargetPlatform == TargetPlatform.iOS) {
       _initialized = true;
@@ -81,7 +98,17 @@ class NotificationService {
 
     final android = _plugin.resolvePlatformSpecificImplementation<
         AndroidFlutterLocalNotificationsPlugin>();
+    // Android 13+: Laufzeit-Erlaubnis für Benachrichtigungen. Ohne sie wird
+    // nichts angezeigt, egal wie gut geplant.
     await android?.requestNotificationsPermission();
+    // Android 12+: Erlaubnis für exakte Alarme, damit Erinnerungen pünktlich
+    // feuern. Verweigert der Nutzer, fällt zonedSchedule auf inexakt zurück
+    // (siehe _resolveAndroidScheduleMode) — die App funktioniert weiter.
+    try {
+      await android?.requestExactAlarmsPermission();
+    } catch (error) {
+      _logIgnoredError('NotificationService: Exact-Alarm-Permission', error);
+    }
     await android?.createNotificationChannel(const AndroidNotificationChannel(
       'parentpeak_events',
       'Terminerinnerungen',
@@ -92,6 +119,26 @@ class NotificationService {
     _initialized = true;
   }
 
+  /// Wählt den Android-Alarmmodus: exakt, wenn erlaubt; sonst inexakt (statt
+  /// stiller Fehlschlag). So überlebt die Erinnerung auch ohne Exact-Alarm-
+  /// Erlaubnis, nur ggf. etwas ungenauer.
+  Future<AndroidScheduleMode> _resolveAndroidScheduleMode() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+      return AndroidScheduleMode.exactAllowWhileIdle;
+    }
+    try {
+      final android = _plugin.resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>();
+      final canExact = await android?.canScheduleExactNotifications();
+      return canExact == false
+          ? AndroidScheduleMode.inexactAllowWhileIdle
+          : AndroidScheduleMode.exactAllowWhileIdle;
+    } catch (error) {
+      _logIgnoredError('NotificationService: Exact-Alarm-Check', error);
+      return AndroidScheduleMode.inexactAllowWhileIdle;
+    }
+  }
+
   /// Wire up FCM: request permission, get token, register with backend,
   /// and handle foreground messages as local notifications.
   Future<void> initFcm({
@@ -100,7 +147,9 @@ class NotificationService {
     NotificationTapHandler? onNotificationTap,
   }) async {
     _onNotificationTap = onNotificationTap ?? _onNotificationTap;
-    if (kIsWeb || apiClient == null || userId == null ||
+    if (kIsWeb ||
+        apiClient == null ||
+        userId == null ||
         Firebase.apps.isEmpty ||
         FirebaseAuth.instance.currentUser?.uid != userId) {
       return;
@@ -112,11 +161,13 @@ class NotificationService {
     }
     final generation = _sessionGeneration;
     void requireSession() {
-      if (_sessionOwner != userId || _sessionGeneration != generation ||
+      if (_sessionOwner != userId ||
+          _sessionGeneration != generation ||
           FirebaseAuth.instance.currentUser?.uid != userId) {
         throw const NotificationAccountChanged();
       }
     }
+
     if (kDebugMode && !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
       return; // Skip on iOS Simulator in debug
     }
@@ -139,7 +190,8 @@ class NotificationService {
       final idToken = await FirebaseAuth.instance.currentUser!.getIdToken();
       requireSession();
       if (idToken == null || idToken.isEmpty) {
-        throw StateError('A Firebase token is required for notification binding');
+        throw StateError(
+            'A Firebase token is required for notification binding');
       }
       // Retain the originating credential for deregistration after a UID switch,
       // never resolve a new account's credential for an old account's DELETE.
@@ -163,7 +215,10 @@ class NotificationService {
 
         // Show foreground FCM messages as local notifications.
         FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-          if (!_binding.acceptsMessage(message.data['accountUserId'] as String?)) return;
+          if (!_binding
+              .acceptsMessage(message.data['accountUserId'] as String?)) {
+            return;
+          }
           final notification = message.notification;
           if (notification != null) {
             showLocalNotification(
@@ -173,14 +228,18 @@ class NotificationService {
           }
         });
         FirebaseMessaging.onMessageOpenedApp.listen((message) {
-          if (!_binding.acceptsMessage(message.data['accountUserId'] as String?)) return;
+          if (!_binding
+              .acceptsMessage(message.data['accountUserId'] as String?)) {
+            return;
+          }
           _onNotificationTap?.call(message.data);
         });
       }
       final initialMessage = await messaging.getInitialMessage();
       requireSession();
       if (initialMessage != null &&
-          _binding.acceptsMessage(initialMessage.data['accountUserId'] as String?)) {
+          _binding.acceptsMessage(
+              initialMessage.data['accountUserId'] as String?)) {
         _onNotificationTap?.call(initialMessage.data);
       }
     }
@@ -215,10 +274,11 @@ class NotificationService {
     if (idToken == null || idToken.isEmpty) {
       throw StateError('Missing Firebase credential for token refresh');
     }
-    await _binding.refresh(token, client: BackendApiClient(
-      baseUrl: api.baseUrl,
-      authToken: idToken,
-    ));
+    await _binding.refresh(token,
+        client: BackendApiClient(
+          baseUrl: api.baseUrl,
+          authToken: idToken,
+        ));
   }
 
   /// Display an immediate local notification (no scheduling).
@@ -267,6 +327,8 @@ class NotificationService {
       priority: Priority.high,
     );
     const iosDetails = DarwinNotificationDetails();
+    final scheduleMode = await _resolveAndroidScheduleMode();
+    if (generation != _sessionGeneration) return;
 
     await _plugin.zonedSchedule(
       id: id,
@@ -278,7 +340,7 @@ class NotificationService {
         iOS: iosDetails,
         macOS: iosDetails,
       ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: scheduleMode,
     );
     if (generation != _sessionGeneration) await _plugin.cancelAll();
   }
@@ -309,6 +371,8 @@ class NotificationService {
       priority: Priority.high,
     );
     const iosDetails = DarwinNotificationDetails();
+    final scheduleMode = await _resolveAndroidScheduleMode();
+    if (generation != _sessionGeneration) return;
 
     await _plugin.zonedSchedule(
       id: id,
@@ -320,9 +384,30 @@ class NotificationService {
         iOS: iosDetails,
         macOS: iosDetails,
       ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: scheduleMode,
     );
     if (generation != _sessionGeneration) await _plugin.cancelAll();
+  }
+
+  /// Reine, testbare Berechnung der "Smart"-Erinnerungszeitpunkte:
+  /// 1 Woche vorher, 1 Tag vorher und zum Termin. Nur Zeitpunkte in der
+  /// Zukunft (relativ zu [now]) werden zurückgegeben — vergangene (z. B. die
+  /// "1 Woche vorher"-Erinnerung bei einem kurzfristig angelegten Termin)
+  /// fallen bewusst weg.
+  static List<({String key, DateTime when})> smartReminderTimes(
+    DateTime eventStart, {
+    DateTime? now,
+  }) {
+    final reference = now ?? DateTime.now();
+    final candidates = <({String key, DateTime when})>[
+      (key: 'week_before', when: eventStart.subtract(const Duration(days: 7))),
+      (key: 'day_before', when: eventStart.subtract(const Duration(days: 1))),
+      (key: 'event_day', when: eventStart),
+    ];
+    return [
+      for (final c in candidates)
+        if (c.when.isAfter(reference)) c,
+    ];
   }
 
   Future<void> scheduleStandardCalendarReminders({
@@ -332,11 +417,7 @@ class NotificationService {
     required String body,
   }) async {
     final generation = _sessionGeneration;
-    final entries = <({String key, DateTime when})>[
-      (key: 'week_before', when: eventStart.subtract(const Duration(days: 7))),
-      (key: 'day_before', when: eventStart.subtract(const Duration(days: 1))),
-      (key: 'event_day', when: eventStart),
-    ];
+    final entries = smartReminderTimes(eventStart);
 
     for (final entry in entries) {
       if (generation != _sessionGeneration) return;

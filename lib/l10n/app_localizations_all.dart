@@ -3106,6 +3106,8 @@ class AppStringsManager {
       'chat_thread_rename_title': 'Gespräch umbenennen',
       'chat_thread_rename_hint': 'Titel des Gesprächs',
       'more_options': 'Weitere Optionen',
+      'calendar_reminder_web_hint':
+          'Im Browser können wir dich nicht per Push erinnern. Für zuverlässige Erinnerungen installiere die ParentPeak-App auf deinem Handy.',
       'date_this_week': 'Diese Woche',
       'date_earlier': 'Früher',
       'chat_thread_active': 'Aktiv',
@@ -6007,6 +6009,8 @@ class AppStringsManager {
       'chat_thread_rename_title': 'Rename conversation',
       'chat_thread_rename_hint': 'Conversation title',
       'more_options': 'More options',
+      'calendar_reminder_web_hint':
+          'In the browser we can\'t remind you via push. For reliable reminders, install the ParentPeak app on your phone.',
       'date_this_week': 'This week',
       'date_earlier': 'Earlier',
       'chat_thread_active': 'Active',
@@ -16185,6 +16189,8 @@ class AppStringsManager {
       'chat_thread_rename_title': 'Navê axaftinê biguhere',
       'chat_thread_rename_hint': 'Sernavê axaftinê',
       'more_options': 'Vebijarkên din',
+      'calendar_reminder_web_hint':
+          'Di geroknê de em nikarin bi push bîra te bînin. Ji bo bîranînên pêbawer, sepana ParentPeak li telefona xwe saz bike.',
       'date_this_week': 'Vê hefteyê',
       'date_earlier': 'Berê',
       'chat_thread_active': 'Çalak',
@@ -22829,6 +22835,8 @@ class AppStringsManager {
       'chat_thread_rename_title': 'Sohbeti yeniden adlandır',
       'chat_thread_rename_hint': 'Sohbet başlığı',
       'more_options': 'Diğer seçenekler',
+      'calendar_reminder_web_hint':
+          'Tarayıcıda seni push ile hatırlatamayız. Güvenilir hatırlatmalar için ParentPeak uygulamasını telefonuna kur.',
       'date_this_week': 'Bu hafta',
       'date_earlier': 'Daha önce',
       'chat_thread_active': 'Etkin',

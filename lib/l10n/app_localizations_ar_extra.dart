@@ -50,6 +50,8 @@ const appLocalizationsArExtra = <String, String>{
   'chat_thread_rename_title': 'إعادة تسمية المحادثة',
   'chat_thread_rename_hint': 'عنوان المحادثة',
   'more_options': 'خيارات أخرى',
+  'calendar_reminder_web_hint':
+      'في المتصفح لا يمكننا تذكيرك عبر الإشعارات. للحصول على تذكيرات موثوقة، ثبّت تطبيق ParentPeak على هاتفك.',
   'date_this_week': 'هذا الأسبوع',
   'date_earlier': 'سابقًا',
   'chat_thread_active': 'نشط',

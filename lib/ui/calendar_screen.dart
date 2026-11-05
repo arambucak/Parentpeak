@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:parentpeak/config/api_config.dart';
@@ -943,6 +944,31 @@ class _CalendarScreenState extends State<CalendarScreen>
                                 }
                               },
                             ),
+                            // Ehrlicher Hinweis: Im Browser kann die App keine
+                            // Push-Erinnerungen zustellen. Nur auf Web und nur
+                            // wenn überhaupt eine Erinnerung gewählt ist.
+                            if (kIsWeb && reminder != 0)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Icon(Icons.info_outline_rounded,
+                                        size: 16, color: Color(0xFF8B5CF6)),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        _t('calendar_reminder_web_hint'),
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Color(0xFF6B7280),
+                                          height: 1.35,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             const SizedBox(height: 12),
                             DropdownButtonFormField<String>(
                               key: ValueKey('endmode_$endMode'),
@@ -1769,17 +1795,18 @@ class _CalendarScreenState extends State<CalendarScreen>
                   child: FilledButton(
                     onPressed: () async {
                       try {
-                      await HolidayService.setSelection(tempCountry, tempRegion, ticket);
-                      ProfileAccountStore.instance.require(ticket);
-                      await CalendarBackendService.setSyncEnabled(
-                          tempSyncEnabled);
-                      if (mounted) setState(() {});
-                      if (ctx.mounted) Navigator.pop(ctx);
+                        await HolidayService.setSelection(
+                            tempCountry, tempRegion, ticket);
+                        ProfileAccountStore.instance.require(ticket);
+                        await CalendarBackendService.setSyncEnabled(
+                            tempSyncEnabled);
+                        if (mounted) setState(() {});
+                        if (ctx.mounted) Navigator.pop(ctx);
                       } catch (error) {
                         debugPrint('Account holiday selection failed: $error');
                         if (ctx.mounted) {
-                          ScaffoldMessenger.of(ctx).showSnackBar(
-                            SnackBar(content: Text(_t('profile_account_failed'))));
+                          ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+                              content: Text(_t('profile_account_failed'))));
                         }
                       }
                     },

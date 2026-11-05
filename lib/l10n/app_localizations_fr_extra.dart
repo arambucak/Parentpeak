@@ -52,6 +52,8 @@ const appLocalizationsFrExtra = <String, String>{
   'chat_thread_rename_title': 'Renommer la conversation',
   'chat_thread_rename_hint': 'Titre de la conversation',
   'more_options': 'Plus d\'options',
+  'calendar_reminder_web_hint':
+      'Dans le navigateur, nous ne pouvons pas te notifier par push. Pour des rappels fiables, installe l\'application ParentPeak sur ton téléphone.',
   'date_this_week': 'Cette semaine',
   'date_earlier': 'Plus tôt',
   'chat_thread_active': 'Actif',
