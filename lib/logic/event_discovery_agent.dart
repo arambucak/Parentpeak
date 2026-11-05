@@ -87,7 +87,9 @@ class EventDiscoveryAgent {
   Keinen Termin aus einem Angebots-Enddatum ableiten. Bei unbestätigtem Tag/Uhrzeit eventDate=null (bei wiederkehrenden/offenen Angeboten den Rhythmus in recurringNote statt in eventDate). Nur echte, belegte Angebote ausgeben; ohne Treffer [].
 ''';
 
-    return _callWithGrounding(groundingPrompt, city);
+    return _callWithGrounding(groundingPrompt, city, {
+      'city': cleanCity, 'radiusHint': cleanRadius, 'childAges': childAges,
+    });
   }
 
   // ─── Backend-Proxy mit Google Search Grounding ─────────────────────────────
@@ -97,12 +99,13 @@ class EventDiscoveryAgent {
   static const String _groundingModel = 'gemini-3.5-flash';
 
   Future<List<DiscoveredEvent>> _callWithGrounding(
-      String prompt, String city) async {
+      String prompt, String city, Map<String, dynamic> input) async {
     // Großzügiges Timeout: Grounding-Gemini-Calls über Mobilfunk brauchen
     // länger. Der Backend-Proxy selbst bricht nach 35s ab; der Client wartet
     // etwas darüber, damit eine echte Serverantwort nicht clientseitig abreißt.
     final response = await _aiService
-        .generate(prompt, useGoogleSearch: true)
+        .generate(prompt, useGoogleSearch: true, proxyPurpose: 'events',
+          featureInput: input)
         .timeout(const Duration(seconds: 45));
     final parsed = _parseAgentResponse(response.text, city);
     return _confirmLocations(parsed);

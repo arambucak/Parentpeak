@@ -18,6 +18,7 @@ import 'package:parentpeak/logic/pedagogical_chat_backend.dart';
 import 'package:parentpeak/logic/treasure_photo_consent.dart';
 import 'package:parentpeak/ui/chat_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'quota_test_support.dart';
 
 const _question = 'Wie begleiten wir das Einschlafen abends?';
 const _reply =
@@ -51,6 +52,7 @@ void main() {
   }
 
   setUp(() {
+    disableQuotasForTest();
     SharedPreferences.setMockInitialValues({});
     scope = 'account.chat-a';
     consent = ChatAiConsent(scopeProvider: () => scope);

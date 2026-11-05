@@ -17,6 +17,7 @@ import 'package:parentpeak/models/event_participation.dart';
 import 'package:parentpeak/models/meetup_event.dart';
 import 'package:parentpeak/ui/event_detail_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'quota_test_support.dart';
 
 class _Participation extends ParticipationService {
   int reads = 0;
@@ -172,6 +173,7 @@ Future<void> _delete(WidgetTester tester) async {
 
 void main() {
   setUp(() async {
+    disableQuotasForTest();
     SharedPreferences.setMockInitialValues({});
     await AuthService.instance.debugSeedSessionForTesting();
   });

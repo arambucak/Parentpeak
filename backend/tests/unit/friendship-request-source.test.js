@@ -14,6 +14,11 @@ function slice(start, end) {
 function fixture({ isPrivate = true, profileExists = true, blocked = false } = {}) {
   const routes = new Map(), writes = [];
   const context = {
+    featureQuotas: { ...require('../../feature_quota_store'), limitsEnabled: () => false },
+    requireContactQuota: async (_req, _res, _uid, operation) => {
+      await operation(context.prisma);
+      return true;
+    },
     app: Object.fromEntries(['get', 'post', 'delete'].map(method => [
       method, (route, ...handlers) => routes.set(`${method.toUpperCase()} ${route}`, handlers),
     ])),

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:parentpeak/services/feature_quota_service.dart';
 import 'package:parentpeak/logic/profile_account_store.dart';
 import 'package:parentpeak/logic/user_profile_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -188,6 +189,11 @@ class FriendshipService extends ChangeNotifier {
       await load();
       store.require(ticket);
       return true;
+    } on BackendApiException catch (error) {
+      final quota = FeatureQuotaException.fromBackend(error);
+      if (quota != null) throw quota;
+      debugPrint('FriendshipService.sendRequest failed: $error');
+      return false;
     } catch (e) {
       debugPrint('FriendshipService.sendRequest failed: $e');
       return false;

@@ -39,6 +39,11 @@ function fixture({ app, failTable, failSchema = false, friends = true,
   const markers = [], memberships = [], tokens = [];
   const friendship = { userLow: 'a', userHigh: 'b', requestedBy, status: 'pending' };
   const context = {
+    featureQuotas: { ...require('../../feature_quota_store'), limitsEnabled: () => false },
+    requireContactQuota: async (_req, _res, _uid, operation) => {
+      await operation(context.prisma);
+      return true;
+    },
     app: app || Object.fromEntries(['get', 'post', 'delete'].map(method => [
       method, (route, ...handlers) => routes.set(`${method.toUpperCase()} ${route}`, handlers),
     ])),

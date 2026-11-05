@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:parentpeak/services/feature_quota_service.dart';
+import 'package:parentpeak/ui/widgets/feature_quota_gate.dart';
 import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
@@ -993,16 +995,23 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
       borderRadius: borderRadius,
       child: InkWell(
         borderRadius: borderRadius,
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => BenefitGuideScreen(
-              country: _country,
-              isSingleParent: _isSingleParent,
-              now: widget.now,
-            ),
-          ),
-        ),
+        onTap: () async {
+          try {
+            await FeatureQuotaService.instance.financeAccess();
+            if (!mounted) return;
+            await Navigator.push(context, MaterialPageRoute(
+              builder: (_) => BenefitGuideScreen(country: _country,
+                isSingleParent: _isSingleParent, now: widget.now)));
+          } on FeatureQuotaException catch (error) {
+            if (!mounted) return;
+            await showFeatureQuotaNotice(context, error.feature);
+          } catch (error) {
+            debugPrint('Finance feature access failed: $error');
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(context.tr('quota_access_failed'))));
+          }
+        },
         child: Ink(
           decoration: BoxDecoration(
             borderRadius: borderRadius,
@@ -1698,6 +1707,11 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
   // FEATURE 2: Eligibility Quick-Check
   // ═══════════════════════════════════════════════════════════════════════════
   Widget _buildEligibilityCheck(ThemeData theme) {
+    return FeatureQuotaGate(feature: QuotaFeature.finance, embedded: true,
+      child: _eligibilityContent(theme));
+  }
+
+  Widget _eligibilityContent(ThemeData theme) {
     if (_eligibilityDone) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),

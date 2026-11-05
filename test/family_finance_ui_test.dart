@@ -18,9 +18,11 @@ import 'package:parentpeak/ui/antragshelfer_screen.dart';
 import 'package:parentpeak/ui/benefit_guide_screen.dart';
 import 'package:parentpeak/ui/familien_geld_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'quota_test_support.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(disableQuotasForTest);
 
   testWidgets(
     'explicit finance claim, document persistence and logout remove account RAM',

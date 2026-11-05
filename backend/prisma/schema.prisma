@@ -35,6 +35,7 @@ model User {
   eventParticipations   EventParticipation[]
   paymentTransactions   PaymentTransaction[]
   entitlement           UserEntitlement?
+  featureQuotas         FeatureQuota[]
   adsConsent            AdsConsent?
   messages              Message[]
   chatReports           ChatReport[]
@@ -43,6 +44,36 @@ model User {
   
   @@index([email])
   @@index([createdAt])
+}
+
+model FeatureQuota {
+  userId      String
+  feature     String
+  periodStart DateTime @db.Timestamptz
+  count       Int      @default(0)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items       FeatureQuotaItem[]
+
+  @@id([userId, feature, periodStart])
+}
+
+model FeatureQuotaItem {
+  id          String   @id
+  userId      String
+  feature     String
+  periodStart DateTime @db.Timestamptz
+  itemKey     String
+  expiresAt   DateTime @db.Timestamptz
+  aiUsed      Boolean  @default(false)
+  result      Json?
+  quota       FeatureQuota @relation(fields: [userId, feature, periodStart], references: [userId, feature, periodStart], onDelete: Cascade)
+
+  @@unique([userId, feature, periodStart, itemKey])
+}
+
+model DiscoveredEventDetail {
+  id   String @id
+  data Json
 }
 
 model UserEntitlement {

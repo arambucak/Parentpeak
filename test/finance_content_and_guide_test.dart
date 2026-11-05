@@ -14,6 +14,7 @@ import 'package:parentpeak/logic/benefit_guide_consent.dart';
 import 'package:parentpeak/logic/finance_link_policy.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'quota_test_support.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -188,6 +189,7 @@ void main() {
 
   late BenefitGuideConsent consent;
   setUp(() {
+    disableQuotasForTest();
     SharedPreferences.setMockInitialValues({});
     consent = BenefitGuideConsent(scopeProvider: () => 'guest');
   });

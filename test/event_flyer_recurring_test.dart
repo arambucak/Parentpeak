@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:parentpeak/logic/event_flyer_scanner_service.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/services/feature_quota_service.dart';
 
 class _FakeGemini extends GeminiAIService {
   _FakeGemini(this.result);
@@ -21,6 +22,10 @@ class _FakeGemini extends GeminiAIService {
     String? appLanguage,
     String? childProfileId,
     void Function()? requestGuard,
+    QuotaFeature feature = QuotaFeature.chat,
+    Map<String, dynamic>? featureInput,
+    String? recipeReceipt,
+    String? proxyPurpose,
   }) async {
     lastPrompt = prompt;
     return GeminiProxyResponse(text: result, groundingUrls: const []);

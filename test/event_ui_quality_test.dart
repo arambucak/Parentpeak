@@ -14,6 +14,7 @@ import 'package:parentpeak/ui/widgets/event_host_identity.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/ui/widgets/user_avatar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'quota_test_support.dart';
 
 class _UiParticipation extends ParticipationService {
   ParticipationStatus? status;
@@ -153,6 +154,7 @@ Future<void> _openDetail(
 void main() {
   final originalFactory = AuthService.backendApiClientFactory;
   setUp(() async {
+    disableQuotasForTest();
     SharedPreferences.setMockInitialValues({});
     AuthService.backendApiClientFactory = () => null;
     await AuthService.instance.debugSeedSessionForTesting();

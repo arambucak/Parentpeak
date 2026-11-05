@@ -13,6 +13,7 @@ import 'package:parentpeak/models/kind_dossier.dart';
 import 'package:parentpeak/ui/familien_kueche_screen.dart';
 import 'package:parentpeak/ui/widgets/family_recipe_consent_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'quota_test_support.dart';
 
 class _FailingConsent extends FamilyRecipeConsent {
   _FailingConsent() : super(scopeProvider: () => 'account.audit-a');
@@ -31,6 +32,7 @@ void main() {
   late List<http.Request> requests;
 
   setUp(() async {
+    disableQuotasForTest();
     SharedPreferences.setMockInitialValues({});
     scope = 'account.audit-a';
     consent = FamilyRecipeConsent(scopeProvider: () => scope);
@@ -88,9 +90,9 @@ void main() {
     },
   );
 
-  test('local inspiration preserves allergy safety without any request', () {
+  test('local inspiration preserves allergy safety without any AI request', () async {
     for (final language in ['de', 'en', 'tr', 'ku']) {
-      final recipe = service.localRecipe(languageCode: language);
+      final recipe = await service.localRecipe(languageCode: language);
       expect(recipe, isNotNull);
       expect(AllergenGuard.isRecipeSafe(recipe!, {'milch'}), isTrue);
       expect(recipe.minChildAge, lessThanOrEqualTo(3));

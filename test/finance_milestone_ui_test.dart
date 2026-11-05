@@ -16,9 +16,11 @@ import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/ui/benefit_guide_screen.dart';
 import 'package:parentpeak/ui/familien_geld_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'quota_test_support.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(disableQuotasForTest);
 
   testWidgets('real cards, savings, five years, share and guide use birthday timeline', (
     tester,

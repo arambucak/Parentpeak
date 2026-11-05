@@ -21,8 +21,6 @@ import 'package:parentpeak/ui/event_invitations_screen.dart';
 import 'package:parentpeak/ui/widgets/location_picker_widget.dart';
 import 'package:parentpeak/ui/widgets/native_ad_slot.dart';
 import 'package:parentpeak/ui/widgets/event_host_identity.dart';
-import 'package:parentpeak/services/events_limit_service.dart';
-import 'package:parentpeak/ui/widgets/premium_gate.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/main.dart';
@@ -1870,33 +1868,6 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
   }
 
   void _showAiDetails(_UnifiedFeedItem item) {
-    // Events-Limit prüfen (nur wenn Monetarisierung aktiv)
-    if (EventsLimitService.instance.isLimitReached) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => Scaffold(
-            appBar: AppBar(
-              title: Text(
-                AppStringsManager.getString(
-                  languageService.currentLanguage,
-                  'events_activities_title',
-                ),
-              ),
-            ),
-            body: PremiumGate(
-              featureLabel: context.tr('events_activities_title'),
-              gateType: PremiumGateType.events,
-              child: const SizedBox.shrink(),
-            ),
-          ),
-        ),
-      );
-      return;
-    }
-    // View registrieren
-    EventsLimitService.instance.recordEventView();
-
     // Finde das originale DiscoveredEvent
     final discoveredEvent =
         _aiEvents.where((e) => e.id == item.eventId).firstOrNull;

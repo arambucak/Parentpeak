@@ -11,6 +11,8 @@ import 'package:parentpeak/ui/widgets/account_ai_consent_dialog.dart';
 import 'package:parentpeak/models/family_recipe.dart';
 import 'package:parentpeak/models/shopping_item.dart';
 import 'package:parentpeak/services/ai_rate_limiter.dart';
+import 'package:parentpeak/services/feature_quota_service.dart';
+import 'package:parentpeak/ui/widgets/feature_quota_gate.dart';
 import 'package:parentpeak/ui/widgets/account_suspended_notice.dart';
 import 'package:parentpeak/ui/widgets/safe_image.dart';
 import 'package:parentpeak/ui/widgets/family_hub_account_boundary.dart';
@@ -183,6 +185,11 @@ class _FridgeRecipeScreenState extends State<_ScopedFridgeRecipeScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.tr('fridge_consent_failed'))),
       );
+      return;
+    } on FeatureQuotaException catch (error) {
+      if (!mounted) return;
+      setState(() => _phase = _Phase.ingredients);
+      await showFeatureQuotaNotice(context, error.feature);
       return;
     } on AiRateLimitException catch (e) {
       if (!mounted) return;

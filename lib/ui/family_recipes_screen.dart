@@ -13,6 +13,8 @@ import 'package:parentpeak/main.dart';
 import 'package:parentpeak/models/family_recipe.dart';
 import 'package:parentpeak/models/shared_family_recipe.dart';
 import 'package:parentpeak/services/ai_rate_limiter.dart';
+import 'package:parentpeak/services/feature_quota_service.dart';
+import 'package:parentpeak/ui/widgets/feature_quota_gate.dart';
 import 'package:parentpeak/ui/widgets/account_suspended_notice.dart';
 import 'package:parentpeak/ui/widgets/safe_image.dart';
 import 'package:parentpeak/ui/widgets/family_recipe_consent_dialog.dart';
@@ -188,6 +190,10 @@ class _FamilyRecipesScreenState extends State<_ScopedFamilyRecipesScreen> {
           ),
         );
       }
+    } on FeatureQuotaException catch (error) {
+      if (!mounted) return;
+      setState(() => _generatingAi = false);
+      await showFeatureQuotaNotice(context, error.feature);
     } on AiRateLimitException catch (e) {
       if (!mounted) return;
       setState(() => _generatingAi = false);

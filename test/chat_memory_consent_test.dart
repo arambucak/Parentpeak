@@ -18,6 +18,7 @@ import 'package:parentpeak/logic/pedagogical_chat_backend.dart';
 import 'package:parentpeak/ui/ai_memory_settings_screen.dart';
 import 'package:parentpeak/ui/chat_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'quota_test_support.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -55,6 +56,7 @@ void main() {
   );
 
   setUp(() {
+    disableQuotasForTest();
     SharedPreferences.setMockInitialValues({});
     uid = 'a';
     store = ChatAccountStore(userIdProvider: () => uid);

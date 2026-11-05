@@ -11,7 +11,7 @@ import 'package:parentpeak/models/family_recipe.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/models/kind_dossier.dart';
 import 'package:parentpeak/logic/allergen_guard.dart';
-import 'package:parentpeak/services/ai_rate_limiter.dart';
+import 'package:parentpeak/services/feature_quota_service.dart';
 
 /// Phase 3b: KI-Kühlschrank-Foto.
 ///
@@ -99,11 +99,6 @@ class FridgeRecipeService {
     final imageBytes = await image.readAsBytes();
     guard();
     await consent.require(expectedScope);
-    await AIRateLimiter.initialize();
-    if (!AIRateLimiter.canMakeRequest()) {
-      debugPrint('FridgeRecipeService: Rate limit erreicht');
-      throw AiRateLimitException(AIRateLimiter.limitReachedMessage);
-    }
 
     final outputLanguage = _outputLanguage(languageCode);
     final prompt =
@@ -127,6 +122,8 @@ Antworte NUR mit einem gültigen JSON-Array aus Strings (kein Markdown, kein Tex
       guard();
       final raw = await (_aiService ?? GeminiAIService(modelName: modelName)).generateText(
         prompt,
+        proxyPurpose: 'fridge_scan',
+        featureInput: const {},
         systemInstruction:
             'Du erkennst Lebensmittel auf Fotos. Antworte IMMER NUR mit einem '
             'gültigen JSON-Array aus Zutaten-Namen auf $outputLanguage. Kein Markdown.',
@@ -137,7 +134,6 @@ Antworte NUR mit einem gültigen JSON-Array aus Strings (kein Markdown, kein Tex
       );
       guard();
       await consent.require(expectedScope);
-      await AIRateLimiter.recordRequest();
       guard();
       await consent.require(expectedScope);
       return _parseIngredientList(raw);
@@ -171,11 +167,8 @@ Antworte NUR mit einem gültigen JSON-Array aus Strings (kein Markdown, kein Tex
         .toList();
     if (clean.isEmpty) return null;
 
-    await AIRateLimiter.initialize();
-    if (!AIRateLimiter.canMakeRequest()) {
-      debugPrint('FridgeRecipeService: Rate limit erreicht (generate)');
-      throw AiRateLimitException(AIRateLimiter.limitReachedMessage);
-    }
+    final receipt = await FeatureQuotaService.instance.reserveRecipe();
+    guard();
 
     final outputLanguage = _outputLanguage(languageCode);
     final prompt =
@@ -218,6 +211,10 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
       guard();
       final raw = await (_aiService ?? GeminiAIService(modelName: modelName)).generateText(
         prompt,
+        feature: QuotaFeature.recipes,
+        recipeReceipt: receipt,
+        featureInput: {'childAge': _childAgeYears, 'allergies': _allergies,
+          'ingredients': clean},
         systemInstruction:
             'Du bist ein Familien-Koch-Assistent. Antworte IMMER NUR mit gültigem '
             'JSON. Kein Markdown, kein Text davor oder danach. Nur ein JSON-Objekt.',
@@ -226,7 +223,6 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
       );
       guard();
       await consent.require(expectedScope);
-      await AIRateLimiter.recordRequest();
       guard();
       await consent.require(expectedScope);
       final recipe = _parseRecipe(raw);
@@ -237,10 +233,14 @@ Antworte NUR mit einem gültigen JSON-Objekt (kein Markdown, kein Text davor/dan
         debugPrint('FridgeRecipeService: Rezept enthält Allergen → verworfen');
         return null;
       }
+      await FeatureQuotaService.instance.saveRecipe(receipt, recipe.toJson());
+      guard();
       return recipe;
     } on FamilyHubAccountChanged {
       rethrow;
     } on FridgePhotoConsentRequiredException {
+      rethrow;
+    } on FeatureQuotaException {
       rethrow;
     } catch (e) {
       debugPrint('FridgeRecipeService.generateFromIngredients: $e');

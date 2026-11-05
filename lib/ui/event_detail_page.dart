@@ -6,6 +6,8 @@ import 'package:parentpeak/services/block_report_service.dart';
 import 'package:parentpeak/ui/widgets/event_safety_widgets.dart';
 import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/ui/widgets/event_photo.dart';
+import 'package:parentpeak/services/feature_quota_service.dart';
+import 'package:parentpeak/ui/widgets/feature_quota_gate.dart';
 
 /// Event-Detail Seite — zeigt alle Infos zu einem Event.
 class EventDetailPage extends StatelessWidget {
@@ -14,7 +16,13 @@ class EventDetailPage extends StatelessWidget {
   const EventDetailPage({super.key, required this.event});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => FeatureQuotaGate(
+    feature: QuotaFeature.events,
+    eventKey: 'discovered:${event.id}',
+    child: _content(context),
+  );
+
+  Widget _content(BuildContext context) {
     final theme = Theme.of(context);
 
     return Scaffold(

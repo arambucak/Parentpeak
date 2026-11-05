@@ -1,13 +1,14 @@
 /// Zentrale Monetarisierungs-Konfiguration für Parentpeak.
 ///
-/// Alle Feature-Flags hier. Für Beta: alles `false`.
-/// Nach Beta: Schalter umlegen → Monetarisierung aktiv.
+/// Legacy-Client-Flags für Werbung und weitere Angebote.
+/// Die Website-Abokontingente werden ausschließlich durch den Backend-Schalter
+/// PP_ABO_LIMITS_ENABLED gesteuert, nicht durch diese lokalen Werte.
 class MonetizationConfig {
   MonetizationConfig._();
 
   // ─── Master-Schalter ──────────────────────────────────────────────────────
 
-  /// Monetarisierung global an/aus. Wenn false → alles kostenlos, keine Ads.
+  /// Lokale Monetarisierungsangebote an/aus; kein Schalter für Serverkontingente.
   static const bool enabled = false;
 
   // ─── Premium ──────────────────────────────────────────────────────────────

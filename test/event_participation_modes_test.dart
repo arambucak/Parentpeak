@@ -14,6 +14,7 @@ import 'package:parentpeak/models/meetup_event.dart';
 import 'package:parentpeak/ui/create_event_screen.dart';
 import 'package:parentpeak/ui/event_detail_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'quota_test_support.dart';
 
 class _Fixture {
   _Fixture({ParticipationMode mode = ParticipationMode.direct,
@@ -100,6 +101,7 @@ Future<void> _tap(WidgetTester tester, String key, {bool settle = true}) async {
 
 void main() {
   setUp(() async {
+    disableQuotasForTest();
     SharedPreferences.setMockInitialValues({});
     await AuthService.instance.debugSeedSessionForTesting();
   });

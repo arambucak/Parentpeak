@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
+import 'package:parentpeak/services/feature_quota_service.dart';
 
 class ParentMatchActionResult {
   final bool connected;
@@ -568,6 +569,11 @@ class ParentMatchingBackendService {
         connected: connected,
         matchState: matchState,
       );
+    } on BackendApiException catch (error) {
+      final quota = FeatureQuotaException.fromBackend(error);
+      if (quota != null) throw quota;
+      lastSyncError = 'Aktion konnte nicht gespeichert werden: $error';
+      return const ParentMatchActionResult(connected: false, matchState: 'error');
     } catch (e) {
       lastSyncError = 'Aktion konnte nicht gespeichert werden: $e';
       return const ParentMatchActionResult(
@@ -757,6 +763,10 @@ class ParentMatchingBackendService {
       return true;
     } catch (e) {
       lastSyncError = 'Fehler beim Speichern der Aktion: $e';
+      if (e is BackendApiException) {
+        final quota = FeatureQuotaException.fromBackend(e);
+        if (quota != null) throw quota;
+      }
       return false;
     }
   }

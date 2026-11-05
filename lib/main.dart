@@ -19,7 +19,6 @@ import 'package:parentpeak/ui/treasure_handover_screen.dart';
 import 'package:parentpeak/ui/treasure_upload_screen.dart';
 import 'package:parentpeak/ui/finance_budget_screen.dart';
 import 'package:parentpeak/ui/auth/login_screen.dart';
-import 'package:parentpeak/ui/auth/paywall_screen.dart';
 import 'package:parentpeak/ui/onboarding/onboarding_screen.dart';
 import 'package:parentpeak/logic/onboarding_sync_service.dart';
 import 'package:parentpeak/logic/profile_account_store.dart';
@@ -772,15 +771,6 @@ class _AuthGateState extends State<AuthGate> {
       );
     }
 
-    // Trial abgelaufen & kein Premium → Paywall
-    if (!user.hasFullAccess) {
-      return PaywallScreen(
-        onSubscribed: () {
-          _refresh();
-        },
-      );
-    }
-
     // Onboarding noch nicht abgeschlossen → Onboarding zeigen
     if (_onboardingCompleted == false) {
       return OnboardingScreen(
@@ -794,7 +784,6 @@ class _AuthGateState extends State<AuthGate> {
       );
     }
 
-    // Eingeloggt & Zugang vorhanden → Haupt-App
     return ParentpeakAppShell(
       key: ValueKey('shell.${ticket.scope}.${ticket.generation}'),
       devices: widget.devices,

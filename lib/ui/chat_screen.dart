@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/logic/profile_account_store.dart';
 import 'package:parentpeak/config/api_config.dart';
-import 'package:parentpeak/services/ai_rate_limiter.dart';
+import 'package:parentpeak/services/feature_quota_service.dart';
+import 'package:parentpeak/ui/widgets/feature_quota_gate.dart';
 import 'package:parentpeak/models/family_profile_model.dart';
 import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/logic/account_ai_consent.dart';
@@ -713,7 +714,6 @@ class _ChatScreenState extends State<ChatScreen> {
         });
       });
       await _consumeReply(smartPrompt, ticket, request);
-      if (_isCurrent(ticket, request)) await AIRateLimiter.recordRequest();
     } catch (error) {
       _handleRequestError(error, ticket, request);
     } finally {
@@ -730,16 +730,9 @@ class _ChatScreenState extends State<ChatScreen> {
     ChatAccountTicket ticket,
     int request,
   ) async {
-    await AIRateLimiter.initialize();
+    await FeatureQuotaService.instance.check(QuotaFeature.chat);
     if (!_isCurrent(ticket, request)) return false;
-    if (AIRateLimiter.canMakeRequest()) return true;
-    setState(() => _messages.add({
-          'role': 'assistant',
-          'content': context.tr('chat_daily_limit',
-              values: {'limit': '${AIRateLimiter.dailyLimit}'}),
-          'timestamp': DateTime.now(),
-        }));
-    return false;
+    return true;
   }
 
   Future<void> _sendMessage(String text) async {
@@ -775,7 +768,6 @@ class _ChatScreenState extends State<ChatScreen> {
       });
       await _persistHistory(ticket);
       await _consumeReply(text, ticket, request);
-      if (_isCurrent(ticket, request)) await AIRateLimiter.recordRequest();
     } catch (error) {
       _handleRequestError(error, ticket, request);
     } finally {
@@ -854,7 +846,9 @@ class _ChatScreenState extends State<ChatScreen> {
   ) {
     debugPrint('Chat request failed: $error');
     if (!_isCurrent(ticket, request)) return;
-    if (error is ChatMemoryConsentRequiredException) {
+    if (error is FeatureQuotaException) {
+      unawaited(showFeatureQuotaNotice(context, error.feature));
+    } else if (error is ChatMemoryConsentRequiredException) {
       setState(() {
         _activeChildProfileId = null;
         _activeChildName = null;

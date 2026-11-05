@@ -6,9 +6,11 @@ import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/family_finance_store.dart';
 import 'package:parentpeak/ui/familien_geld_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'quota_test_support.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(disableQuotasForTest);
 
   testWidgets(
     'tax illustration and all-country benefits remain honest after the quick check',
