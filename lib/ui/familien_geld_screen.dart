@@ -33,8 +33,8 @@ class FamilienGeldScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => FamilyHubAccountBoundary(
-    builder: (_) => _ScopedFamilienGeldScreen(store: store, now: now),
-  );
+        builder: (_) => _ScopedFamilienGeldScreen(store: store, now: now),
+      );
 }
 
 class _ScopedFamilienGeldScreen extends StatefulWidget {
@@ -127,8 +127,7 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
             ? CountryFinanceData.germany
             : CountryFinanceData.getByCode(code);
         _countrySelected = code != null;
-        _monthlyAmounts =
-            amounts?.map(
+        _monthlyAmounts = amounts?.map(
               (key, value) => MapEntry(key, (value as num).toDouble()),
             ) ??
             {};
@@ -165,7 +164,8 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
       {bool mergeAmounts = false}) async {
     setState(() => _pendingWrites++);
     try {
-      await _store.write(values, expectedScope: _scope, mergeAmounts: mergeAmounts);
+      await _store.write(values,
+          expectedScope: _scope, mergeAmounts: mergeAmounts);
       _store.requireScope(_scope);
       if (!mounted) return false;
       setState(commit);
@@ -197,8 +197,8 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
         final amount = entry.key == 'savings_total'
             ? _totalSaved
             : entry.key == 'savings_goal'
-            ? _monthlySavingsGoal
-            : _monthlyAmounts[entry.key] ?? 0;
+                ? _monthlySavingsGoal
+                : _monthlyAmounts[entry.key] ?? 0;
         entry.value.text = amount == 0 ? '' : _inputAmount(amount);
       }
     } finally {
@@ -246,9 +246,8 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
     if (id == 'savings_total' || id == 'savings_goal') {
       changes = {
         id == 'savings_total'
-                ? FamilyFinanceStore.savedKey
-                : FamilyFinanceStore.savingsGoalKey:
-            value,
+            ? FamilyFinanceStore.savedKey
+            : FamilyFinanceStore.savingsGoalKey: value,
       };
       commit = () {
         if (id == 'savings_total') {
@@ -258,11 +257,13 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
         }
       };
     } else {
-      changes = {FamilyFinanceStore.amountsKey: {id: value}};
+      changes = {
+        FamilyFinanceStore.amountsKey: {id: value}
+      };
       commit = () => _monthlyAmounts[id] = value;
     }
     final saved = await _write(changes, commit,
-      mergeAmounts: id != 'savings_total' && id != 'savings_goal');
+        mergeAmounts: id != 'savings_total' && id != 'savings_goal');
     if (!mounted || _fieldRevisions[id] != revision) return;
     if (!saved) {
       setState(() => _fieldErrors[id] = context.tr('family_hub_save_error'));
@@ -305,8 +306,8 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
         final amount = entry.key == 'savings_total'
             ? _totalSaved
             : entry.key == 'savings_goal'
-            ? _monthlySavingsGoal
-            : _monthlyAmounts[entry.key] ?? 0;
+                ? _monthlySavingsGoal
+                : _monthlyAmounts[entry.key] ?? 0;
         entry.value.text = amount > 0 ? _inputAmount(amount) : '';
       }
     } catch (error) {
@@ -363,8 +364,8 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
       final symbol = b.status == BenefitStatus.universal
           ? '\u2705'
           : b.status == BenefitStatus.incomeDependent
-          ? '\u{1F7E0}'
-          : '\u{1F535}';
+              ? '\u{1F7E0}'
+              : '\u{1F535}';
       sb.writeln(
         '$symbol ${_benefitText(b, 'name')}${b.amount != null ? ' \u00B7 ${_benefitText(b, 'amount')}' : ''}',
       );
@@ -375,7 +376,8 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
       final now = _now;
       for (final child in _children) {
         final upcoming = FinanceMilestoneTimeline.upcoming(
-          _country.milestones, child.birthDate, now).take(2);
+                _country.milestones, child.birthDate, now)
+            .take(2);
         for (final estimate in upcoming) {
           final m = estimate.milestone;
           sb.writeln(
@@ -411,21 +413,27 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
       context.tr('finance_milestone_${milestone.id}');
 
   String _estimateTime(FinanceMilestoneEstimate estimate) => context.tr(
-    estimate.monthsLeft == 1 ? 'finance_estimated_one_month' : 'finance_estimated_months',
-    values: {'months': estimate.monthsLeft, 'year': estimate.date.year},
-  );
+        estimate.monthsLeft == 1
+            ? 'finance_estimated_one_month'
+            : 'finance_estimated_months',
+        values: {'months': estimate.monthsLeft, 'year': estimate.date.year},
+      );
 
   String? _milestoneNote(MilestoneCost milestone) {
     if (milestone.note == null) return null;
     if (_country.code != 'de') {
-      return financeContent(milestone.note!, Localizations.localeOf(context).languageCode);
+      return financeContent(
+          milestone.note!, Localizations.localeOf(context).languageCode);
     }
     return context.tr('finance_milestone_${milestone.id}_note');
   }
 
   String _benefitText(SocialBenefit benefit, String field) {
     return financeBenefitText(
-      benefit, _country.code, Localizations.localeOf(context).languageCode, field,
+      benefit,
+      _country.code,
+      Localizations.localeOf(context).languageCode,
+      field,
     );
   }
 
@@ -597,23 +605,27 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
           children: [
             Text(_country.flag, style: const TextStyle(fontSize: 18)),
             const SizedBox(width: 8),
-            Text(
+            Flexible(
+                child: Text(
               AppStringsManager.getString(
                 languageService.currentLanguage,
                 'familien_geld_title',
               ),
-            ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            )),
           ],
         ),
         elevation: 0,
         actions: [
-          Builder(builder: (buttonContext) => IconButton(
-            icon: const Icon(Icons.ios_share_rounded, size: 20),
-            tooltip: context.tr('tooltip_share_overview'),
-            onPressed: _pendingWrites > 0 || _fieldErrors.isNotEmpty
-                ? null
-                : () => _shareOverview(buttonContext),
-          )),
+          Builder(
+              builder: (buttonContext) => IconButton(
+                    icon: const Icon(Icons.ios_share_rounded, size: 20),
+                    tooltip: context.tr('tooltip_share_overview'),
+                    onPressed: _pendingWrites > 0 || _fieldErrors.isNotEmpty
+                        ? null
+                        : () => _shareOverview(buttonContext),
+                  )),
           IconButton(
             icon: const Icon(Icons.language_rounded, size: 20),
             tooltip: context.tr('tooltip_change_country'),
@@ -624,6 +636,8 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
         ],
         bottom: TabBar(
           controller: _tabs,
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
           tabs: [
             Tab(text: context.tr('finance_tab_overview')),
             Tab(text: context.tr('finance_tab_benefits')),
@@ -999,9 +1013,13 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
           try {
             await FeatureQuotaService.instance.financeAccess();
             if (!mounted) return;
-            await Navigator.push(context, MaterialPageRoute(
-              builder: (_) => BenefitGuideScreen(country: _country,
-                isSingleParent: _isSingleParent, now: widget.now)));
+            await Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => BenefitGuideScreen(
+                        country: _country,
+                        isSingleParent: _isSingleParent,
+                        now: widget.now)));
           } on FeatureQuotaException catch (error) {
             if (!mounted) return;
             await showFeatureQuotaNotice(context, error.feature);
@@ -1009,7 +1027,7 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
             debugPrint('Finance feature access failed: $error');
             if (!mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(context.tr('quota_access_failed'))));
+                SnackBar(content: Text(context.tr('quota_access_failed'))));
           }
         },
         child: Ink(
@@ -1106,16 +1124,16 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Text(
-                  _benefitText(b, 'name'),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+              Text(
+                _benefitText(b, 'name'),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
                 ),
               ),
+              const SizedBox(height: 6),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
@@ -1127,13 +1145,13 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
                   children: [
                     Icon(statusIcon, size: 12, color: statusColor),
                     const SizedBox(width: 3),
-                    Text(
-                      statusLabel,
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w700,
-                        color: statusColor,
-                      ),
+                    Flexible(
+                      child: Text(statusLabel,
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                            color: statusColor,
+                          )),
                     ),
                   ],
                 ),
@@ -1302,7 +1320,7 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
   Widget _childMilestones(ThemeData theme, ChildEntry child) {
     final now = _now;
     final upcoming = FinanceMilestoneTimeline.upcoming(
-      _country.milestones, child.birthDate, now);
+        _country.milestones, child.birthDate, now);
 
     if (upcoming.isEmpty) return const SizedBox.shrink();
 
@@ -1318,16 +1336,15 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
             ),
           ),
         ),
-        ...upcoming.take(4).map((estimate) =>
-            _milestoneCard(theme, estimate.milestone, estimate)),
+        ...upcoming.take(4).map(
+            (estimate) => _milestoneCard(theme, estimate.milestone, estimate)),
         const SizedBox(height: 12),
       ],
     );
   }
 
-  Widget _milestoneCard(ThemeData theme, MilestoneCost m,
-      FinanceMilestoneEstimate? estimate) {
-
+  Widget _milestoneCard(
+      ThemeData theme, MilestoneCost m, FinanceMilestoneEstimate? estimate) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
@@ -1402,15 +1419,15 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
     double totalUpcoming = 0;
     for (final child in _children) {
       for (final estimate in FinanceMilestoneTimeline.withinFiveYears(
-        _country.milestones, child.birthDate, now)) {
+          _country.milestones, child.birthDate, now)) {
         totalUpcoming += estimate.milestone.estimatedCost;
       }
     }
 
     if (totalUpcoming == 0) return const SizedBox.shrink();
 
-    final monthlyTarget = (totalUpcoming / 60)
-        .ceilToDouble(); // 5 Jahre = 60 Monate
+    final monthlyTarget =
+        (totalUpcoming / 60).ceilToDouble(); // 5 Jahre = 60 Monate
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -1693,9 +1710,8 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
             value,
             style: theme.textTheme.labelSmall?.copyWith(
               fontWeight: highlight ? FontWeight.w700 : FontWeight.w500,
-              color: highlight
-                  ? const Color(0xFF047857)
-                  : const Color(0xFF065F46),
+              color:
+                  highlight ? const Color(0xFF047857) : const Color(0xFF065F46),
             ),
           ),
         ],
@@ -1707,8 +1723,10 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
   // FEATURE 2: Eligibility Quick-Check
   // ═══════════════════════════════════════════════════════════════════════════
   Widget _buildEligibilityCheck(ThemeData theme) {
-    return FeatureQuotaGate(feature: QuotaFeature.finance, embedded: true,
-      child: _eligibilityContent(theme));
+    return FeatureQuotaGate(
+        feature: QuotaFeature.finance,
+        embedded: true,
+        child: _eligibilityContent(theme));
   }
 
   Widget _eligibilityContent(ThemeData theme) {
@@ -1886,9 +1904,8 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF7C3AED),
               ),
-              onPressed: _pendingWrites > 0
-                  ? null
-                  : () => _saveEligibility(true),
+              onPressed:
+                  _pendingWrites > 0 ? null : () => _saveEligibility(true),
               child: Text(
                 context.tr('finance_save_orientation'),
               ),
@@ -1943,8 +1960,9 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
     if (_children.isNotEmpty) {
       for (final child in _children) {
         for (final estimate in FinanceMilestoneTimeline.upcoming(
-          _country.milestones, child.birthDate, now)) {
-          if (nextEstimate == null || estimate.date.isBefore(nextEstimate.date)) {
+            _country.milestones, child.birthDate, now)) {
+          if (nextEstimate == null ||
+              estimate.date.isBefore(nextEstimate.date)) {
             nextEstimate = estimate;
             nextMilestone = estimate.milestone;
           }
@@ -1953,14 +1971,16 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
     } else {
       // Ohne Kinderprofil: erstes Meilenstein zeigen
       if (_country.milestones.isNotEmpty) {
-        nextMilestone = FinanceMilestoneTimeline.sorted(_country.milestones).first;
+        nextMilestone =
+            FinanceMilestoneTimeline.sorted(_country.milestones).first;
       }
     }
 
     if (nextMilestone == null) return const SizedBox.shrink();
 
     final target = nextMilestone.estimatedCost;
-    final monthsLeft = nextEstimate?.monthsLeft ?? nextMilestone.childAgeYears * 12;
+    final monthsLeft =
+        nextEstimate?.monthsLeft ?? nextMilestone.childAgeYears * 12;
     final needed = (target - _totalSaved).clamp(0, target);
     final autoGoal = monthsLeft > 0 ? (needed / monthsLeft) : 0.0;
     final progress = (_totalSaved / target).clamp(0.0, 1.0);
@@ -2019,8 +2039,10 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
             ),
           ),
           const SizedBox(height: 6),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            spacing: 12,
+            runSpacing: 4,
             children: [
               Text(
                 '${context.tr('saved_amount')} ${_country.formatAmount(_totalSaved)}',
@@ -2059,7 +2081,8 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
                   ),
                   controller: _controllerFor('savings_total', _totalSaved),
                   onChanged: (v) async => await _saveNumber('savings_total', v),
-                  onSubmitted: (v) async => await _saveNumber('savings_total', v),
+                  onSubmitted: (v) async =>
+                      await _saveNumber('savings_total', v),
                 ),
               ),
               const SizedBox(width: 10),
@@ -2085,7 +2108,8 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
                     _monthlySavingsGoal,
                   ),
                   onChanged: (v) async => await _saveNumber('savings_goal', v),
-                  onSubmitted: (v) async => await _saveNumber('savings_goal', v),
+                  onSubmitted: (v) async =>
+                      await _saveNumber('savings_goal', v),
                 ),
               ),
             ],
@@ -2145,21 +2169,21 @@ class _FamilienGeldScreenState extends State<_ScopedFamilienGeldScreen>
             ),
           ]
         : _country.code == 'at'
-        ? [
-            ('finance_support_at_food', 'https://www.wienertafel.at/'),
-            ('finance_support_debt', 'https://www.schuldnerberatung.at/'),
-            (
-              'finance_support_caritas',
-              'https://www.caritas.at/hilfe-beratung',
-            ),
-          ]
-        : [
-            ('finance_support_food_bank', 'https://eurofoodbank.org/'),
-            (
-              'finance_support_family_advice',
-              'https://www.unicef.org/parenting/',
-            ),
-          ];
+            ? [
+                ('finance_support_at_food', 'https://www.wienertafel.at/'),
+                ('finance_support_debt', 'https://www.schuldnerberatung.at/'),
+                (
+                  'finance_support_caritas',
+                  'https://www.caritas.at/hilfe-beratung',
+                ),
+              ]
+            : [
+                ('finance_support_food_bank', 'https://eurofoodbank.org/'),
+                (
+                  'finance_support_family_advice',
+                  'https://www.unicef.org/parenting/',
+                ),
+              ];
 
     return Column(
       children: [

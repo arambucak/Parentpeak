@@ -111,9 +111,8 @@ class _TischmomentScreenState extends State<TischmomentScreen> {
             icon: Icon(_showTreasure
                 ? Icons.edit_note_rounded
                 : Icons.auto_awesome_rounded),
-            tooltip: context.tr(_showTreasure
-              ? 'table_moment_new'
-              : 'table_moment_treasure'),
+            tooltip: context.tr(
+                _showTreasure ? 'table_moment_new' : 'table_moment_treasure'),
             onPressed: () => setState(() => _showTreasure = !_showTreasure),
           ),
         ],
@@ -171,10 +170,12 @@ class _TischmomentScreenState extends State<TischmomentScreen> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                _childChip(context.tr('table_moment_whole_family'), _selectedChild == null,
+                _childChip(
+                    context.tr('table_moment_whole_family'),
+                    _selectedChild == null,
                     () => setState(() => _selectedChild = null)),
-                ..._childNames.map((n) => _childChip(
-                    n, _selectedChild == n, () => setState(() => _selectedChild = n))),
+                ..._childNames.map((n) => _childChip(n, _selectedChild == n,
+                    () => setState(() => _selectedChild = n))),
               ],
             ),
             const SizedBox(height: 24),
@@ -291,9 +292,11 @@ class _TischmomentScreenState extends State<TischmomentScreen> {
       children: [
         Icon(Icons.lock_rounded, size: 14, color: theme.colorScheme.outline),
         const SizedBox(width: 6),
-        Text(context.tr('table_moment_local_only'),
-            style: theme.textTheme.labelSmall
-                ?.copyWith(color: theme.colorScheme.outline)),
+        Flexible(
+            child: Text(context.tr('table_moment_local_only'),
+                textAlign: TextAlign.center,
+                style: theme.textTheme.labelSmall
+                    ?.copyWith(color: theme.colorScheme.outline))),
       ],
     );
   }
@@ -406,9 +409,7 @@ class _TischmomentScreenState extends State<TischmomentScreen> {
                   children: [
                     Expanded(
                       child: Text(
-                        e.childName.isNotEmpty
-                            ? e.childName
-                            : 'Ganze Familie',
+                        e.childName.isNotEmpty ? e.childName : 'Ganze Familie',
                         style: theme.textTheme.bodyMedium
                             ?.copyWith(fontWeight: FontWeight.w700),
                       ),
@@ -420,8 +421,8 @@ class _TischmomentScreenState extends State<TischmomentScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(feeling.label,
-                    style: theme.textTheme.labelSmall
-                        ?.copyWith(color: _accent, fontWeight: FontWeight.w600)),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                        color: _accent, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 4),
                 Text(e.question,
                     style: theme.textTheme.labelSmall

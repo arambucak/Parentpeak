@@ -20,8 +20,8 @@ class FamilienZentraleScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => FamilyHubAccountBoundary(
-    builder: (_) => const _ScopedFamilienZentraleScreen(),
-  );
+        builder: (_) => const _ScopedFamilienZentraleScreen(),
+      );
 }
 
 class _ScopedFamilienZentraleScreen extends StatefulWidget {
@@ -101,9 +101,9 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
       final importId = unnamed
           ? 'profile_unnamed_${child.birthDate.toIso8601String()}'
           : null;
-      if (unnamed && _dossierService.dossiers.any((dossier) =>
-          dossier.id == importId ||
-          dossier.childName == 'Kind')) {
+      if (unnamed &&
+          _dossierService.dossiers.any((dossier) =>
+              dossier.id == importId || dossier.childName == 'Kind')) {
         continue;
       }
       if (_dossierService.findByName(name) != null) continue;
@@ -201,8 +201,7 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
     if (items.isEmpty) return;
     final lines = items
         .map(
-          (i) =>
-              '• ${i.emoji} ${i.name}'
+          (i) => '• ${i.emoji} ${i.name}'
               '${i.quantity != null ? ' (${i.quantity})' : ''}',
         )
         .join('\n');
@@ -315,6 +314,8 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
         ],
         bottom: TabBar(
           controller: _tabs,
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
           tabs: [
             Tab(
               icon: const Icon(Icons.shopping_cart_rounded, size: 20),
@@ -325,38 +326,26 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
               text: context.tr('family_hub_tab_todo'),
             ),
             Tab(
-              child: SizedBox(
-                height: 46,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        const Icon(Icons.child_care_rounded, size: 20),
-                        if (_urgentExamCount > 0)
-                          Positioned(
-                            right: -5,
-                            top: -3,
-                            child: Container(
-                              width: 8,
-                              height: 8,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFDC2626),
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                          ),
-                      ],
+              icon: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(Icons.child_care_rounded, size: 20),
+                  if (_urgentExamCount > 0)
+                    Positioned(
+                      right: -5,
+                      top: -3,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFDC2626),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      context.tr('family_hub_tab_children'),
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ],
-                ),
+                ],
               ),
+              text: context.tr('family_hub_tab_children'),
             ),
           ],
         ),
@@ -777,9 +766,8 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
                 : Colors.transparent,
             shape: BoxShape.circle,
             border: Border.all(
-              color: isDone
-                  ? const Color(0xFF2563EB)
-                  : theme.colorScheme.outline,
+              color:
+                  isDone ? const Color(0xFF2563EB) : theme.colorScheme.outline,
               width: 1.5,
             ),
           ),
@@ -819,8 +807,9 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
     final text = _todoCtrl.text.trim();
     if (text.isEmpty) return;
     if (!await _performWrite(
-      () => _replaceTodos(_todoService.add(_scope, text)),
-    ) || !mounted) {
+          () => _replaceTodos(_todoService.add(_scope, text)),
+        ) ||
+        !mounted) {
       return;
     }
     _todoCtrl.clear();
@@ -914,8 +903,8 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
                     ageYears < 2
                         ? '\u{1F476}'
                         : ageYears < 6
-                        ? '\u{1F9D2}'
-                        : '\u{1F466}',
+                            ? '\u{1F9D2}'
+                            : '\u{1F466}',
                     style: const TextStyle(fontSize: 22),
                   ),
                 ),
@@ -1090,9 +1079,8 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
           subtitle: Text(
             subtitle,
             style: theme.textTheme.bodySmall?.copyWith(
-              color: hasDue
-                  ? const Color(0xFF92400E)
-                  : theme.colorScheme.outline,
+              color:
+                  hasDue ? const Color(0xFF92400E) : theme.colorScheme.outline,
             ),
           ),
           children: dossier.uExams
@@ -1137,8 +1125,8 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
               color: exam.isDone
                   ? const Color(0xFF16A34A)
                   : (isDue
-                        ? const Color(0xFFD97706)
-                        : theme.colorScheme.outline),
+                      ? const Color(0xFFD97706)
+                      : theme.colorScheme.outline),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -1149,9 +1137,8 @@ class _FamilienZentraleScreenState extends State<_ScopedFamilienZentraleScreen>
                     UExaminationData.localizedLabel(exam, lang),
                     style: theme.textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.w600,
-                      decoration: exam.isDone
-                          ? TextDecoration.lineThrough
-                          : null,
+                      decoration:
+                          exam.isDone ? TextDecoration.lineThrough : null,
                       color: exam.isDone ? theme.colorScheme.outline : null,
                     ),
                   ),
@@ -1367,9 +1354,19 @@ class _DossierEditorState extends State<_DossierEditor> {
   @override
   void dispose() {
     for (final controller in [
-      nameCtrl, clothingCtrl, shoeCtrl, allergiesCtrl, doctorCtrl, doctorPhoneCtrl,
-      bloodCtrl, emergCtrl, emergPhoneCtrl, kitaCtrl, kitaGroupCtrl,
-      kitaTeacherCtrl, notesCtrl,
+      nameCtrl,
+      clothingCtrl,
+      shoeCtrl,
+      allergiesCtrl,
+      doctorCtrl,
+      doctorPhoneCtrl,
+      bloodCtrl,
+      emergCtrl,
+      emergPhoneCtrl,
+      kitaCtrl,
+      kitaGroupCtrl,
+      kitaTeacherCtrl,
+      notesCtrl,
     ]) {
       controller.dispose();
     }
@@ -1385,171 +1382,171 @@ class _DossierEditorState extends State<_DossierEditor> {
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: DraggableScrollableSheet(
-          initialChildSize: 0.85,
-          minChildSize: 0.5,
-          maxChildSize: 0.95,
-          builder: (_, scroll) => Container(
-            decoration: BoxDecoration(
-              color: Theme.of(ctx).colorScheme.surface,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(24),
-              ),
-            ),
-            child: ListView(
-              controller: scroll,
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              padding: const EdgeInsets.all(24),
-              children: [
-                Center(
-                  child: Container(
-                    width: 36,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Theme.of(ctx).colorScheme.outlineVariant,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  context.tr(
-                    'family_hub_edit_child',
-                    values: {'name': dossier.childName},
-                  ),
-                  style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _editField(
-                  nameCtrl,
-                  context.tr('family_hub_child_name'),
-                  context.tr('family_hub_child_name_hint'),
-                ),
-                _editField(
-                  clothingCtrl,
-                  context.tr('family_hub_clothing_size'),
-                  context.tr('family_hub_clothing_hint'),
-                ),
-                _editField(
-                  shoeCtrl,
-                  context.tr('family_hub_shoe_size'),
-                  context.tr('family_hub_shoe_hint'),
-                ),
-                _editField(
-                  allergiesCtrl,
-                  context.tr('family_hub_allergies_csv'),
-                  context.tr('family_hub_allergies_hint'),
-                ),
-                _editField(
-                  doctorCtrl,
-                  context.tr('family_hub_pediatrician_name'),
-                  context.tr('family_hub_pediatrician_hint'),
-                ),
-                _editField(
-                  doctorPhoneCtrl,
-                  context.tr('family_hub_pediatrician_phone'),
-                  context.tr('family_hub_phone_hint'),
-                ),
-                _editField(
-                  bloodCtrl,
-                  context.tr('family_hub_blood_type_plain'),
-                  context.tr('family_hub_blood_type_hint'),
-                ),
-                _editField(
-                  emergCtrl,
-                  context.tr('family_hub_emergency_contact_name'),
-                  context.tr('family_hub_emergency_contact_hint'),
-                ),
-                _editField(
-                  emergPhoneCtrl,
-                  context.tr('family_hub_emergency_phone_plain'),
-                  context.tr('family_hub_emergency_phone_hint'),
-                ),
-                _editField(
-                  kitaCtrl,
-                  context.tr('family_hub_daycare_school'),
-                  context.tr('family_hub_daycare_hint'),
-                ),
-                _editField(
-                  kitaGroupCtrl,
-                  context.tr('family_hub_daycare_group'),
-                  context.tr('family_hub_daycare_group_hint'),
-                ),
-                _editField(
-                  kitaTeacherCtrl,
-                  context.tr('family_hub_daycare_teacher'),
-                  context.tr('family_hub_daycare_teacher_hint'),
-                ),
-                _editField(
-                  notesCtrl,
-                  context.tr('family_hub_notes'),
-                  context.tr('family_hub_notes_hint'),
-                  maxLines: 3,
-                ),
-                const SizedBox(height: 20),
-                FilledButton(
-                  onPressed: () async {
-                    String? trimOrNull(String s) =>
-                        s.trim().isEmpty ? null : s.trim();
-                    // Namensfeld darf nicht leer gespeichert werden —
-                    // sonst würde das Kind aus der Liste "verschwinden".
-                    final newName = nameCtrl.text.trim().isEmpty
-                        ? dossier.childName
-                        : nameCtrl.text.trim();
-                    // Direkter Konstruktor mit explizit übergebener id (statt
-                    // copyWith): Das Formular setzt bewusst ALLE Felder, auch
-                    // geleerte sollen auf null gehen. Die stabile Dossier-id wird
-                    // weitergereicht, damit Umbenennen dasselbe Dossier
-                    // aktualisiert statt ein zweites anzulegen. birthDate und
-                    // uExams bleiben erhalten.
-                    final updated = KindDossier(
-                      id: dossier.id,
-                      childName: newName,
-                      birthDate: dossier.birthDate,
-                      clothingSize: trimOrNull(clothingCtrl.text),
-                      shoeSize: trimOrNull(shoeCtrl.text),
-                      allergies: allergiesCtrl.text.trim().isEmpty
-                          ? <String>[]
-                          : allergiesCtrl.text
-                                .split(',')
-                                .map((s) => s.trim())
-                                .where((s) => s.isNotEmpty)
-                                .toList(),
-                      doctorName: trimOrNull(doctorCtrl.text),
-                      doctorPhone: trimOrNull(doctorPhoneCtrl.text),
-                      bloodType: trimOrNull(bloodCtrl.text),
-                      emergencyContact: trimOrNull(emergCtrl.text),
-                      emergencyPhone: trimOrNull(emergPhoneCtrl.text),
-                      kitaSchool: trimOrNull(kitaCtrl.text),
-                      kitaGroup: trimOrNull(kitaGroupCtrl.text),
-                      kitaTeacher: trimOrNull(kitaTeacherCtrl.text),
-                      notes: trimOrNull(notesCtrl.text),
-                      uExams: dossier.uExams,
-                    );
-                    if (!await widget.onSave(updated) || !context.mounted) {
-                      return;
-                    }
-                    if (ModalRoute.of(context)?.isCurrent != true) return;
-                    Navigator.pop(context);
-                  },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF16A34A),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  child: Text(
-                    AppStringsManager.getString(
-                      languageService.currentLanguage,
-                      'save_btn',
-                    ),
-                  ),
-                ),
-              ],
+        initialChildSize: 0.85,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (_, scroll) => Container(
+          decoration: BoxDecoration(
+            color: Theme.of(ctx).colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(24),
             ),
           ),
+          child: ListView(
+            controller: scroll,
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.all(24),
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Theme.of(ctx).colorScheme.outlineVariant,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                context.tr(
+                  'family_hub_edit_child',
+                  values: {'name': dossier.childName},
+                ),
+                style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+              ),
+              const SizedBox(height: 16),
+              _editField(
+                nameCtrl,
+                context.tr('family_hub_child_name'),
+                context.tr('family_hub_child_name_hint'),
+              ),
+              _editField(
+                clothingCtrl,
+                context.tr('family_hub_clothing_size'),
+                context.tr('family_hub_clothing_hint'),
+              ),
+              _editField(
+                shoeCtrl,
+                context.tr('family_hub_shoe_size'),
+                context.tr('family_hub_shoe_hint'),
+              ),
+              _editField(
+                allergiesCtrl,
+                context.tr('family_hub_allergies_csv'),
+                context.tr('family_hub_allergies_hint'),
+              ),
+              _editField(
+                doctorCtrl,
+                context.tr('family_hub_pediatrician_name'),
+                context.tr('family_hub_pediatrician_hint'),
+              ),
+              _editField(
+                doctorPhoneCtrl,
+                context.tr('family_hub_pediatrician_phone'),
+                context.tr('family_hub_phone_hint'),
+              ),
+              _editField(
+                bloodCtrl,
+                context.tr('family_hub_blood_type_plain'),
+                context.tr('family_hub_blood_type_hint'),
+              ),
+              _editField(
+                emergCtrl,
+                context.tr('family_hub_emergency_contact_name'),
+                context.tr('family_hub_emergency_contact_hint'),
+              ),
+              _editField(
+                emergPhoneCtrl,
+                context.tr('family_hub_emergency_phone_plain'),
+                context.tr('family_hub_emergency_phone_hint'),
+              ),
+              _editField(
+                kitaCtrl,
+                context.tr('family_hub_daycare_school'),
+                context.tr('family_hub_daycare_hint'),
+              ),
+              _editField(
+                kitaGroupCtrl,
+                context.tr('family_hub_daycare_group'),
+                context.tr('family_hub_daycare_group_hint'),
+              ),
+              _editField(
+                kitaTeacherCtrl,
+                context.tr('family_hub_daycare_teacher'),
+                context.tr('family_hub_daycare_teacher_hint'),
+              ),
+              _editField(
+                notesCtrl,
+                context.tr('family_hub_notes'),
+                context.tr('family_hub_notes_hint'),
+                maxLines: 3,
+              ),
+              const SizedBox(height: 20),
+              FilledButton(
+                onPressed: () async {
+                  String? trimOrNull(String s) =>
+                      s.trim().isEmpty ? null : s.trim();
+                  // Namensfeld darf nicht leer gespeichert werden —
+                  // sonst würde das Kind aus der Liste "verschwinden".
+                  final newName = nameCtrl.text.trim().isEmpty
+                      ? dossier.childName
+                      : nameCtrl.text.trim();
+                  // Direkter Konstruktor mit explizit übergebener id (statt
+                  // copyWith): Das Formular setzt bewusst ALLE Felder, auch
+                  // geleerte sollen auf null gehen. Die stabile Dossier-id wird
+                  // weitergereicht, damit Umbenennen dasselbe Dossier
+                  // aktualisiert statt ein zweites anzulegen. birthDate und
+                  // uExams bleiben erhalten.
+                  final updated = KindDossier(
+                    id: dossier.id,
+                    childName: newName,
+                    birthDate: dossier.birthDate,
+                    clothingSize: trimOrNull(clothingCtrl.text),
+                    shoeSize: trimOrNull(shoeCtrl.text),
+                    allergies: allergiesCtrl.text.trim().isEmpty
+                        ? <String>[]
+                        : allergiesCtrl.text
+                            .split(',')
+                            .map((s) => s.trim())
+                            .where((s) => s.isNotEmpty)
+                            .toList(),
+                    doctorName: trimOrNull(doctorCtrl.text),
+                    doctorPhone: trimOrNull(doctorPhoneCtrl.text),
+                    bloodType: trimOrNull(bloodCtrl.text),
+                    emergencyContact: trimOrNull(emergCtrl.text),
+                    emergencyPhone: trimOrNull(emergPhoneCtrl.text),
+                    kitaSchool: trimOrNull(kitaCtrl.text),
+                    kitaGroup: trimOrNull(kitaGroupCtrl.text),
+                    kitaTeacher: trimOrNull(kitaTeacherCtrl.text),
+                    notes: trimOrNull(notesCtrl.text),
+                    uExams: dossier.uExams,
+                  );
+                  if (!await widget.onSave(updated) || !context.mounted) {
+                    return;
+                  }
+                  if (ModalRoute.of(context)?.isCurrent != true) return;
+                  Navigator.pop(context);
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF16A34A),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: Text(
+                  AppStringsManager.getString(
+                    languageService.currentLanguage,
+                    'save_btn',
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -461,7 +461,10 @@ class _RitualRuheScreenState extends State<_ScopedRitualRuheScreen> {
 
   Future<void> _suggestPlan() async {
     final child = _child;
-    if (child == null || _planLoading || _storyLoading || _consentPending ||
+    if (child == null ||
+        _planLoading ||
+        _storyLoading ||
+        _consentPending ||
         _selectedSection == 'night') {
       return;
     }
@@ -474,22 +477,25 @@ class _RitualRuheScreenState extends State<_ScopedRitualRuheScreen> {
     try {
       _RitualPlan plan;
       try {
-      final response = await _aiService.generate(
-        'Erstelle eine kurze Ritualvorlage für ein Kind im Alter von $_ageYears Jahren. Tageszeit: $_sectionTitle. Liefere ausschließlich JSON mit name, time, weekdays und steps. steps ist eine Liste aus title, subtitle, icon und timerSeconds. Maximal 6 Schritte. Keine Namen und keine persönlichen Daten.',
-        systemInstruction:
-            'Du bist eine pädagogische, inklusive Familienbegleitung. Erstelle sanfte, realistische und druckfreie Rituale. Nutze nur JSON, keine Markdown-Zeichen. Keine Punkte, Streaks, Strafen oder Leistungsdruck.',
-        languageCode: _localeCode,
-        expectedScope: owner,
-        requestGuard: () => _guardAiContext(child, section),
-      );
-      final jsonStr = extractRitualJsonObject(response);
-      if (jsonStr == null) throw const FormatException('Kein JSON im KI-Text');
-      plan = _RitualPlan.fromJson(jsonDecode(jsonStr) as Map<String, dynamic>);
+        final response = await _aiService.generate(
+          'Erstelle eine kurze Ritualvorlage für ein Kind im Alter von $_ageYears Jahren. Tageszeit: $_sectionTitle. Liefere ausschließlich JSON mit name, time, weekdays und steps. steps ist eine Liste aus title, subtitle, icon und timerSeconds. Maximal 6 Schritte. Keine Namen und keine persönlichen Daten.',
+          systemInstruction:
+              'Du bist eine pädagogische, inklusive Familienbegleitung. Erstelle sanfte, realistische und druckfreie Rituale. Nutze nur JSON, keine Markdown-Zeichen. Keine Punkte, Streaks, Strafen oder Leistungsdruck.',
+          languageCode: _localeCode,
+          expectedScope: owner,
+          requestGuard: () => _guardAiContext(child, section),
+        );
+        final jsonStr = extractRitualJsonObject(response);
+        if (jsonStr == null) {
+          throw const FormatException('Kein JSON im KI-Text');
+        }
+        plan =
+            _RitualPlan.fromJson(jsonDecode(jsonStr) as Map<String, dynamic>);
       } on AccountAiConsentRequiredException {
         rethrow;
       } catch (error) {
-      debugPrint('Ritual plan generation failed: ${error.runtimeType}');
-      plan = _fallbackPlan(_selectedSection, _ageYears);
+        debugPrint('Ritual plan generation failed: ${error.runtimeType}');
+        plan = _fallbackPlan(_selectedSection, _ageYears);
       }
       if (!mounted) return;
       _guardAiContext(child, section);
@@ -533,7 +539,8 @@ class _RitualRuheScreenState extends State<_ScopedRitualRuheScreen> {
               ],
       );
 
-  Future<void> _editPlan(_RitualPlan initial, {void Function()? requestGuard}) async {
+  Future<void> _editPlan(_RitualPlan initial,
+      {void Function()? requestGuard}) async {
     final edited = await showModalBottomSheet<_RitualPlan>(
       context: context,
       isScrollControlled: true,
@@ -617,7 +624,9 @@ class _RitualRuheScreenState extends State<_ScopedRitualRuheScreen> {
 
   Future<void> _generateStory() async {
     final child = _child;
-    if (child == null || _storyLoading || _planLoading || _consentPending) return;
+    if (child == null || _storyLoading || _planLoading || _consentPending) {
+      return;
+    }
     final owner = _aiService.consent.scope;
     final section = _selectedSection;
     if (!await _ensureAiConsent() || !mounted) return;
@@ -626,14 +635,14 @@ class _RitualRuheScreenState extends State<_ScopedRitualRuheScreen> {
     try {
       String story;
       try {
-      story = await _aiService.generate(
-        'Schreibe eine kurze Gute-Nacht-Geschichte für ein Kind, etwa $_ageYears Jahre alt. Thema: Mut, Geborgenheit und ein kleiner freundlicher Moment. 350 bis 500 Wörter. Verwende keine Namen und keine persönlichen Daten.',
-        systemInstruction:
-            'Du bist eine ruhige, inklusive Kinderbuchautorin. Schreibe warm, beruhigend und altersgerecht in der angefragten App-Sprache. Keine Angst, Gewalt, Diagnosen oder Leistungsdruck. Gib nur die Geschichte zurück, ohne Überschrift oder Erklärung.',
-        languageCode: _localeCode,
-        expectedScope: owner,
-        requestGuard: () => _guardAiContext(child, section),
-      );
+        story = await _aiService.generate(
+          'Schreibe eine kurze Gute-Nacht-Geschichte für ein Kind, etwa $_ageYears Jahre alt. Thema: Mut, Geborgenheit und ein kleiner freundlicher Moment. 350 bis 500 Wörter. Verwende keine Namen und keine persönlichen Daten.',
+          systemInstruction:
+              'Du bist eine ruhige, inklusive Kinderbuchautorin. Schreibe warm, beruhigend und altersgerecht in der angefragten App-Sprache. Keine Angst, Gewalt, Diagnosen oder Leistungsdruck. Gib nur die Geschichte zurück, ohne Überschrift oder Erklärung.',
+          languageCode: _localeCode,
+          expectedScope: owner,
+          requestGuard: () => _guardAiContext(child, section),
+        );
       } on AccountAiConsentRequiredException {
         rethrow;
       } catch (error) {
@@ -682,25 +691,26 @@ class _RitualRuheScreenState extends State<_ScopedRitualRuheScreen> {
           ? const Center(child: CircularProgressIndicator())
           : _loadError
               ? Center(child: Text(_t('family_hub_load_error')))
-          : child == null
-              ? _EmptyChildState(onOpenProfile: () => Navigator.pop(context))
-              : ListView(
-                  padding: const EdgeInsets.fromLTRB(18, 8, 18, 36),
-                  children: [
-                    if (_ageNotice != null) _buildAgeNotice(theme),
-                    if (_children.length > 1) _buildChildSwitcher(theme),
-                    _buildSectionPicker(theme),
-                    _buildWelcome(theme, child),
-                    const SizedBox(height: 18),
-                    _buildRitualCard(theme),
-                    if (_isNightSection) ...[
-                      const SizedBox(height: 16),
-                      _buildStoryCard(theme, child),
-                      const SizedBox(height: 16),
-                      _buildGratitudeCard(theme),
-                    ],
-                  ],
-                ),
+              : child == null
+                  ? _EmptyChildState(
+                      onOpenProfile: () => Navigator.pop(context))
+                  : ListView(
+                      padding: const EdgeInsets.fromLTRB(18, 8, 18, 36),
+                      children: [
+                        if (_ageNotice != null) _buildAgeNotice(theme),
+                        if (_children.length > 1) _buildChildSwitcher(theme),
+                        _buildSectionPicker(theme),
+                        _buildWelcome(theme, child),
+                        const SizedBox(height: 18),
+                        _buildRitualCard(theme),
+                        if (_isNightSection) ...[
+                          const SizedBox(height: 16),
+                          _buildStoryCard(theme, child),
+                          const SizedBox(height: 16),
+                          _buildGratitudeCard(theme),
+                        ],
+                      ],
+                    ),
     );
   }
 
@@ -936,9 +946,10 @@ class _RitualRuheScreenState extends State<_ScopedRitualRuheScreen> {
           Row(children: [
             const Icon(Icons.auto_stories_rounded, color: Color(0xFF6F5A9C)),
             const SizedBox(width: 8),
-            Text(_t('ritual_story_title'),
-                style:
-                    const TextStyle(fontSize: 17, fontWeight: FontWeight.w900)),
+            Expanded(
+                child: Text(_t('ritual_story_title'),
+                    style: const TextStyle(
+                        fontSize: 17, fontWeight: FontWeight.w900))),
           ]),
           const SizedBox(height: 10),
           if (_story == null)
@@ -1176,10 +1187,11 @@ class _RitualPlanEditorState extends State<_RitualPlanEditor> {
         child: Padding(
           padding: EdgeInsets.fromLTRB(
               20, 4, 20, 20 + MediaQuery.viewInsetsOf(context).bottom),
-          child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+          child: SingleChildScrollView(
+              child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                 Text(
                     _t('ritual_edit_title').replaceAll('{title}', widget.title),
                     style: Theme.of(context)
@@ -1241,16 +1253,19 @@ class _RitualPlanEditorState extends State<_RitualPlanEditor> {
                     },
                   ),
                 ),
-                Row(children: [
-                  OutlinedButton.icon(
-                      onPressed: _addStep,
-                      icon: const Icon(Icons.add_rounded),
-                      label: Text(_t('ritual_step'))),
-                  const Spacer(),
-                  FilledButton(
-                      onPressed: _save, child: Text(_t('ritual_save'))),
-                ]),
-              ]),
+                Wrap(
+                    alignment: WrapAlignment.end,
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      OutlinedButton.icon(
+                          onPressed: _addStep,
+                          icon: const Icon(Icons.add_rounded),
+                          label: Text(_t('ritual_step'))),
+                      FilledButton(
+                          onPressed: _save, child: Text(_t('ritual_save'))),
+                    ]),
+              ])),
         ),
       );
 }
@@ -1261,7 +1276,7 @@ class _EmptyChildState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(28),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             const Icon(Icons.child_care_rounded,
