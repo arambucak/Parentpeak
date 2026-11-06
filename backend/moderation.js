@@ -239,7 +239,76 @@ function createModerationService({ prisma, sendEmail, sendPushToUser, adminUserI
     }
   }
 
-  return { notifyModeration, persistModerationReport, loadAdditionalReports, resolveAdditionalReport };
+  // Sicherheitsnetz: fasst offene Meldungen periodisch zusammen und mailt sie.
+  // Fängt den seltenen Fall ab, dass eine Sofort-Benachrichtigung (notifyModeration)
+  // scheiterte, ohne dass der Melde-Request fehlschlagen durfte. Rein lesend +
+  // E-Mail; verändert KEINEN Status, kann also nichts kaputtmachen. Berücksichtigt
+  // nur Meldungen, die mindestens MODERATION_DIGEST_MIN_AGE_MIN alt sind, damit
+  // frische Meldungen (deren Sofort-Mail gerade läuft) nicht doppelt gemailt werden.
+  async function sendPendingDigest() {
+    await ensureSchema();
+    const minAgeMin = Math.max(
+      0, Number.parseInt(env.MODERATION_DIGEST_MIN_AGE_MIN || '30', 10) || 0);
+    const configuredThreshold = Number.parseInt(
+      env.PARENT_MATCHING_REPORT_HIDE_THRESHOLD || '3', 10);
+    const threshold = configuredThreshold > 0 ? configuredThreshold : 3;
+
+    // Offene Meldungen je Ziel: Anzahl, verschiedene Melder, kritisch?, älteste offene.
+    const rows = await prisma.$queryRawUnsafe(`
+      SELECT "source", "targetId",
+             COUNT(*)::int AS "reportCount",
+             COUNT(DISTINCT "reporterUserId")::int AS "distinctReporters",
+             BOOL_OR(LOWER(BTRIM("reason")) IN ('child_safety','sexual_content','violence_threat','self_harm')) AS "critical",
+             MIN("createdAt") AS "oldestAt",
+             MAX("createdAt") AS "newestAt"
+      FROM "ModerationReport"
+      WHERE "status" = 'pending'
+        AND "createdAt" <= NOW() - ($1 || ' minutes')::interval
+      GROUP BY "source", "targetId"
+      ORDER BY "critical" DESC, MIN("createdAt") ASC`, String(minAgeMin));
+
+    // Nur handlungsrelevante: kritische immer, normale ab Melder-Schwelle.
+    const pending = rows.filter(
+      r => r.critical === true || Number(r.distinctReporters) >= threshold);
+    if (pending.length === 0) {
+      return { sent: false, pendingCount: 0 };
+    }
+
+    const criticalCount = pending.filter(r => r.critical === true).length;
+    const fmt = new Intl.DateTimeFormat('de-DE', {
+      timeZone: 'Europe/Berlin', dateStyle: 'medium', timeStyle: 'short',
+    });
+    const lines = pending.map(r => {
+      const tag = r.critical === true ? '[KRITISCH] ' : '';
+      return `${tag}${r.source} · Ziel ${r.targetId} · ${r.distinctReporters} Melder · offen seit ${fmt.format(new Date(r.oldestAt))}`;
+    });
+    const header = `ParentPeak – Offene Meldungen (Sicherheitsnetz)\n\n`
+      + `${pending.length} offene Meldung(en), davon ${criticalCount} kritisch.`
+      + `\nBitte im geschützten Moderations-Dashboard bearbeiten.\n\n`;
+    const text = header + lines.join('\n');
+    const html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#203b35">`
+      + `<h1 style="color:#287568">ParentPeak</h1>`
+      + `<p><strong>${pending.length} offene Meldung(en)</strong>, davon ${criticalCount} kritisch.</p>`
+      + `<ul>${pending.map(r => `<li>${r.critical === true ? '<strong>[KRITISCH]</strong> ' : ''}`
+        + `${r.source} · Ziel ${r.targetId} · ${r.distinctReporters} Melder · offen seit ${fmt.format(new Date(r.oldestAt))}</li>`).join('')}</ul>`
+      + `<p>Bitte im geschützten Moderations-Dashboard bearbeiten.</p></div>`;
+
+    const sent = await bounded(() => sendEmail({
+      to: env.MODERATION_EMAIL || 'support@parentpeak.com',
+      subject: `ParentPeak · ${pending.length} offene Meldung(en)`
+        + (criticalCount > 0 ? ` (${criticalCount} kritisch)` : ''),
+      text, html,
+    }));
+    if (sent !== true) {
+      throw new Error('Digest-E-Mail nicht versendet (Provider fehlt oder false).');
+    }
+    return { sent: true, pendingCount: pending.length, criticalCount };
+  }
+
+  return {
+    notifyModeration, persistModerationReport, loadAdditionalReports,
+    resolveAdditionalReport, sendPendingDigest,
+  };
 }
 
 function buildModerationOverview(groups, safetyReports, additionalReports) {

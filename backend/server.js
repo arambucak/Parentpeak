@@ -168,6 +168,7 @@ const adminUserIds = new Set(
 );
 const {
   notifyModeration, persistModerationReport, loadAdditionalReports, resolveAdditionalReport,
+  sendPendingDigest,
 } = createModerationService({
   prisma: {
     $executeRawUnsafe: (...args) => prisma.$executeRawUnsafe(...args),
@@ -11036,6 +11037,39 @@ async function requireAdmin(req, res, next) {
   req.firebaseUid = uid;
   return next();
 }
+
+// Sicherheitsnetz-Digest: fasst offene Meldungen zusammen und mailt sie an die
+// Moderation. Für einen geplanten Job (GitHub Actions) gedacht, der keinen
+// Firebase-Admin-Login hat — daher Auth über ein dediziertes Shared Secret
+// (MODERATION_DIGEST_SECRET, Bearer oder X-Digest-Secret). Ist kein Secret
+// gesetzt, ist der Endpunkt deaktiviert (sicherer Default: 404).
+function timingSafeSecretMatch(provided, expected) {
+  if (!expected || !provided) return false;
+  const a = Buffer.from(String(provided));
+  const b = Buffer.from(String(expected));
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
+
+app.post('/internal/moderation/digest', async (req, res) => {
+  const expected = process.env.MODERATION_DIGEST_SECRET;
+  if (!expected) {
+    return res.status(404).json({ error: 'Nicht verfügbar' });
+  }
+  const authHeader = (req.headers.authorization || '').toString();
+  const bearer = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+  const provided = bearer || (req.headers['x-digest-secret'] || '').toString();
+  if (!timingSafeSecretMatch(provided, expected)) {
+    return res.status(401).json({ error: 'Nicht autorisiert' });
+  }
+  try {
+    const result = await sendPendingDigest();
+    return res.json({ ok: true, ...result });
+  } catch (error) {
+    console.error('[moderation] Digest fehlgeschlagen:', error.message);
+    return res.status(502).json({ ok: false, error: 'Digest-Versand fehlgeschlagen' });
+  }
+});
 
 // Liste aller Meldungen, gruppiert pro gemeldetem User.
 app.get('/admin/reports', requireAdmin, async (req, res) => {
