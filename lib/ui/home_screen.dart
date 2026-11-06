@@ -638,11 +638,7 @@ class _HomeScreenState extends State<HomeScreen>
         : viewportWidth >= 860
             ? 3
             : 2;
-    final gridAspectRatio = viewportWidth >= 1220
-        ? 1.42
-        : viewportWidth >= 860
-            ? 1.36
-            : 1.38;
+    final textScaler = MediaQuery.textScalerOf(context);
 
     final lang = languageService.currentLanguage;
 
@@ -891,18 +887,21 @@ class _HomeScreenState extends State<HomeScreen>
                         horizontalPadding, 0, horizontalPadding, 10),
                     child: Row(
                       children: [
-                        Text(
-                          AppStringsManager.getString(
-                              lang, 'home_your_features'),
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: Theme.of(context).colorScheme.onSurface,
+                        Expanded(
+                          child: Text(
+                            AppStringsManager.getString(
+                                lang, 'home_your_features'),
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
                           ),
                         ),
-                        const Spacer(),
+                        const SizedBox(width: 12),
                         if (visibleGridActions.length > 4)
                           GestureDetector(
+                            behavior: HitTestBehavior.opaque,
                             onTap: () => _showAllFeatures(visibleGridActions),
                             child: Text(
                               '${AppStringsManager.getString(lang, 'all')} \u{2192}',
@@ -951,7 +950,9 @@ class _HomeScreenState extends State<HomeScreen>
                       crossAxisCount: gridCrossAxisCount,
                       mainAxisSpacing: 7,
                       crossAxisSpacing: 7,
-                      childAspectRatio: gridAspectRatio,
+                      mainAxisExtent: 80 +
+                          textScaler.scale(12.5) * 5.2 +
+                          textScaler.scale(10.5) * 3.6,
                     ),
                   ),
                 ),
@@ -1092,27 +1093,31 @@ class _HomeScreenState extends State<HomeScreen>
     required Color color,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Column(
-        children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(16),
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(icon, color: color, size: 24),
             ),
-            child: Icon(icon, color: color, size: 24),
-          ),
-          const SizedBox(height: 6),
-          Text(label,
-              style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant)),
-        ],
+            const SizedBox(height: 6),
+            Text(label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          ],
+        ),
       ),
     );
   }
@@ -1299,16 +1304,18 @@ class _HomeScreenState extends State<HomeScreen>
               child: GridView.builder(
                 controller: scrollController,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 3,
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
-                  childAspectRatio: 0.9,
+                  mainAxisExtent:
+                      80 + MediaQuery.textScalerOf(context).scale(10) * 6,
                 ),
                 itemCount: actions.length,
                 itemBuilder: (_, i) {
                   final action = actions[i];
                   return GestureDetector(
+                    behavior: HitTestBehavior.opaque,
                     onTap: () {
                       Navigator.pop(ctx);
                       _openFeature(action);
@@ -1331,7 +1338,7 @@ class _HomeScreenState extends State<HomeScreen>
                             style: const TextStyle(
                                 fontSize: 10, fontWeight: FontWeight.w600),
                             textAlign: TextAlign.center,
-                            maxLines: 2,
+                            maxLines: 4,
                             overflow: TextOverflow.ellipsis),
                       ],
                     ),
@@ -1505,7 +1512,7 @@ class _HomeScreenState extends State<HomeScreen>
                     SizedBox(height: compactTile ? 4 : 8),
                     Text(
                       title,
-                      maxLines: compactTile ? 1 : 2,
+                      maxLines: 4,
                       overflow: TextOverflow.ellipsis,
                       style: (compactTile
                               ? theme.textTheme.labelLarge
@@ -1526,7 +1533,7 @@ class _HomeScreenState extends State<HomeScreen>
                         height: compactTile ? 1.2 : 1.3,
                         fontSize: compactTile ? 10.5 : null,
                       ),
-                      maxLines: compactTile ? 1 : 2,
+                      maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                     ),
                     if (!compactTile) ...[
