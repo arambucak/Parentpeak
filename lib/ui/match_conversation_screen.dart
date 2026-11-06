@@ -49,8 +49,10 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
   bool _chatAccountChanged = false;
   bool _chatReadDenied = false;
   bool _chatLoadFailed = false;
-  ProfileAccountStore get _accountStore => widget.accountStore ?? ProfileAccountStore.instance;
-  FriendChatService get _chatService => widget.chatService ?? FriendChatService.instance;
+  ProfileAccountStore get _accountStore =>
+      widget.accountStore ?? ProfileAccountStore.instance;
+  FriendChatService get _chatService =>
+      widget.chatService ?? FriendChatService.instance;
 
   /// Wenn gesetzt: Der Chat ist Nur-Lese. Der Text wird als ruhiger Hinweis
   /// statt des Eingabefelds angezeigt (Freundschaft entfernt oder blockiert).
@@ -63,7 +65,7 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
     final reason = code != 'not_friends'
         ? _t('chat_access_unavailable')
         : 'Ihr seid aktuell nicht mehr verbunden. Frühere Nachrichten kannst '
-              'du weiter nachlesen.';
+            'du weiter nachlesen.';
     if (!mounted) return;
     setState(() => _chatDisabledReason = reason);
   }
@@ -182,52 +184,52 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
     _streamSub = _service
         .streamMessages(profileId: widget.profileId, userId: _currentUserId)
         .listen(
-          (event) {
-            final type = (event['type'] ?? '').toString();
-            if (type == 'ready' || type == 'ping') {
-              if (mounted && !_streamActive) {
-                setState(() => _streamActive = true);
-              }
-              return;
-            }
+      (event) {
+        final type = (event['type'] ?? '').toString();
+        if (type == 'ready' || type == 'ping') {
+          if (mounted && !_streamActive) {
+            setState(() => _streamActive = true);
+          }
+          return;
+        }
 
-            final item = event['item'];
-            if (item is! Map) return;
-            final content = (item['content'] ?? '').toString().trim();
-            if (content.isEmpty) return;
+        final item = event['item'];
+        if (item is! Map) return;
+        final content = (item['content'] ?? '').toString().trim();
+        if (content.isEmpty) return;
 
-            final id = (item['id'] ?? '').toString();
-            final authorUserId = (item['authorUserId'] ?? '').toString();
-            if (!mounted) return;
+        final id = (item['id'] ?? '').toString();
+        final authorUserId = (item['authorUserId'] ?? '').toString();
+        if (!mounted) return;
 
-            if (_messages.any((msg) => msg.id == id && id.isNotEmpty)) {
-              return;
-            }
+        if (_messages.any((msg) => msg.id == id && id.isNotEmpty)) {
+          return;
+        }
 
-            setState(() {
-              _streamActive = true;
-              _messages.add(
-                _Msg(
-                  id: id,
-                  text: content,
-                  isMe: authorUserId == _currentUserId,
-                  createdAt: _parseCreatedAt(item['createdAt']),
-                ),
-              );
-            });
-            _scrollToBottom();
-          },
-          onError: (_) {
-            if (mounted) {
-              setState(() => _streamActive = false);
-            }
-          },
-          onDone: () {
-            if (mounted) {
-              setState(() => _streamActive = false);
-            }
-          },
-        );
+        setState(() {
+          _streamActive = true;
+          _messages.add(
+            _Msg(
+              id: id,
+              text: content,
+              isMe: authorUserId == _currentUserId,
+              createdAt: _parseCreatedAt(item['createdAt']),
+            ),
+          );
+        });
+        _scrollToBottom();
+      },
+      onError: (_) {
+        if (mounted) {
+          setState(() => _streamActive = false);
+        }
+      },
+      onDone: () {
+        if (mounted) {
+          setState(() => _streamActive = false);
+        }
+      },
+    );
   }
 
   Future<void> _loadMessages() async {
@@ -463,99 +465,11 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
   }
 
   void _showReportSheet() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                _t('convo_report_user'),
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _t(
-                  'conversation_report_reason',
-                ).replaceAll('{name}', widget.profileName),
-                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-              ),
-              const SizedBox(height: 16),
-              _reportOption(ctx, 'Beleidigung / Hassrede', 'insult'),
-              _reportOption(ctx, 'Spam / Werbung', 'spam'),
-              _reportOption(ctx, 'Unangemessene Inhalte', 'inappropriate'),
-              _reportOption(ctx, 'Betrug / Fake-Profil', 'fraud'),
-              _reportOption(ctx, 'Sonstiges', 'other'),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _reportOption(BuildContext ctx, String label, String reason) {
-    return ListTile(
-      title: Text(label, style: const TextStyle(fontSize: 14)),
-      leading: const Icon(Icons.flag_outlined, size: 20),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      onTap: () async {
-        Navigator.pop(ctx);
-        final delivered = await BlockReportService.instance.reportContent(
-          reporterUserId: _currentUserId,
-          reportedUserId: _otherPartyId,
-          contentType: 'profile',
-          content: widget.profileName,
-          reason: reason,
-        );
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  Icon(
-                    delivered
-                        ? Icons.check_circle_rounded
-                        : Icons.info_outline_rounded,
-                    color: Colors.white,
-                    size: 18,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _t(delivered
-                          ? 'report_delivery_success'
-                          : 'report_delivery_failed'),
-                      style: const TextStyle(fontSize: 13),
-                    ),
-                  ),
-                ],
-              ),
-              behavior: SnackBarBehavior.floating,
-              backgroundColor: delivered ? const Color(0xFF16A34A) : null,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          );
-        }
-      },
+    showReportSheet(
+      context,
+      userId: _otherPartyId,
+      userName: widget.profileName,
+      contentType: 'profile',
     );
   }
 
@@ -778,170 +692,188 @@ class _MatchConversationScreenState extends State<MatchConversationScreen> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _chatLoadFailed
-                ? Center(child: Text(_t(_chatReadDenied
-                    ? 'chat_access_unavailable' : 'friend_chat_request_failed')))
-                : _messages.isEmpty
-                ? _buildEmptyState(theme)
-                : ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                    itemCount: _messages.length,
-                    itemBuilder: (context, index) {
-                      final msg = _messages[index];
-                      final isMe = msg.isMe;
-                      final showAvatar =
-                          !isMe &&
-                          (index == 0 || _messages[index - 1].isMe != msg.isMe);
-                      final separator = _needsDaySeparator(index)
-                          ? _formatDaySeparator(msg.createdAt!)
-                          : null;
+                    ? Center(
+                        child: Text(_t(_chatReadDenied
+                            ? 'chat_access_unavailable'
+                            : 'friend_chat_request_failed')))
+                    : _messages.isEmpty
+                        ? _buildEmptyState(theme)
+                        : ListView.builder(
+                            controller: _scrollController,
+                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                            itemCount: _messages.length,
+                            itemBuilder: (context, index) {
+                              final msg = _messages[index];
+                              final isMe = msg.isMe;
+                              final showAvatar = !isMe &&
+                                  (index == 0 ||
+                                      _messages[index - 1].isMe != msg.isMe);
+                              final separator = _needsDaySeparator(index)
+                                  ? _formatDaySeparator(msg.createdAt!)
+                                  : null;
 
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // Datums-Trenner (Heute / Gestern / Datum)
-                          if (separator != null)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 10),
-                              child: Center(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: theme
-                                        .colorScheme
-                                        .surfaceContainerHighest
-                                        .withValues(alpha: 0.7),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    separator,
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      color: theme.colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          Padding(
-                            padding: EdgeInsets.only(
-                              bottom: 6,
-                              left: isMe ? 48 : 0,
-                              right: isMe ? 0 : 48,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: isMe
-                                  ? MainAxisAlignment.end
-                                  : MainAxisAlignment.start,
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                if (!isMe && showAvatar)
-                                  CircleAvatar(
-                                    radius: 14,
-                                    backgroundColor:
-                                        theme.colorScheme.primaryContainer,
-                                    child: Text(
-                                      widget.profileName.isNotEmpty
-                                          ? widget.profileName[0].toUpperCase()
-                                          : '?',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w700,
-                                        color: theme.colorScheme.primary,
-                                      ),
-                                    ),
-                                  )
-                                else if (!isMe)
-                                  const SizedBox(width: 28),
-                                if (!isMe) const SizedBox(width: 8),
-                                Flexible(
-                                  child: Column(
-                                    crossAxisAlignment: isMe
-                                        ? CrossAxisAlignment.end
-                                        : CrossAxisAlignment.start,
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 14,
-                                          vertical: 10,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: isMe
-                                              ? theme.colorScheme.primary
-                                              : theme
-                                                    .colorScheme
-                                                    .surfaceContainerHighest,
-                                          borderRadius: BorderRadius.only(
-                                            topLeft: const Radius.circular(16),
-                                            topRight: const Radius.circular(16),
-                                            bottomLeft: Radius.circular(
-                                              isMe ? 16 : 4,
-                                            ),
-                                            bottomRight: Radius.circular(
-                                              isMe ? 4 : 16,
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  // Datums-Trenner (Heute / Gestern / Datum)
+                                  if (separator != null)
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 10),
+                                      child: Center(
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: theme.colorScheme
+                                                .surfaceContainerHighest
+                                                .withValues(alpha: 0.7),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                          ),
+                                          child: Text(
+                                            separator,
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                              color: theme
+                                                  .colorScheme.onSurfaceVariant,
                                             ),
                                           ),
                                         ),
-                                        child: Text(
-                                          msg.text,
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color: isMe
-                                                ? Colors.white
-                                                : theme.colorScheme.onSurface,
-                                            height: 1.4,
-                                          ),
-                                        ),
                                       ),
-                                      // Uhrzeit + 'gesendet'-Haekchen
-                                      Padding(
-                                        padding: const EdgeInsets.only(
-                                          top: 3,
-                                          left: 4,
-                                          right: 4,
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            if (msg.createdAt != null)
-                                              Text(
-                                                _formatTime(msg.createdAt!),
-                                                style: TextStyle(
-                                                  fontSize: 10,
-                                                  color: theme
-                                                      .colorScheme
-                                                      .onSurfaceVariant,
+                                    ),
+                                  Padding(
+                                    padding: EdgeInsets.only(
+                                      bottom: 6,
+                                      left: isMe ? 48 : 0,
+                                      right: isMe ? 0 : 48,
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment: isMe
+                                          ? MainAxisAlignment.end
+                                          : MainAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      children: [
+                                        if (!isMe && showAvatar)
+                                          CircleAvatar(
+                                            radius: 14,
+                                            backgroundColor: theme
+                                                .colorScheme.primaryContainer,
+                                            child: Text(
+                                              widget.profileName.isNotEmpty
+                                                  ? widget.profileName[0]
+                                                      .toUpperCase()
+                                                  : '?',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w700,
+                                                color:
+                                                    theme.colorScheme.primary,
+                                              ),
+                                            ),
+                                          )
+                                        else if (!isMe)
+                                          const SizedBox(width: 28),
+                                        if (!isMe) const SizedBox(width: 8),
+                                        Flexible(
+                                          child: Column(
+                                            crossAxisAlignment: isMe
+                                                ? CrossAxisAlignment.end
+                                                : CrossAxisAlignment.start,
+                                            children: [
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 14,
+                                                  vertical: 10,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: isMe
+                                                      ? theme
+                                                          .colorScheme.primary
+                                                      : theme.colorScheme
+                                                          .surfaceContainerHighest,
+                                                  borderRadius:
+                                                      BorderRadius.only(
+                                                    topLeft:
+                                                        const Radius.circular(
+                                                            16),
+                                                    topRight:
+                                                        const Radius.circular(
+                                                            16),
+                                                    bottomLeft: Radius.circular(
+                                                      isMe ? 16 : 4,
+                                                    ),
+                                                    bottomRight:
+                                                        Radius.circular(
+                                                      isMe ? 4 : 16,
+                                                    ),
+                                                  ),
+                                                ),
+                                                child: Text(
+                                                  msg.text,
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    color: isMe
+                                                        ? Colors.white
+                                                        : theme.colorScheme
+                                                            .onSurface,
+                                                    height: 1.4,
+                                                  ),
                                                 ),
                                               ),
-                                            if (isMe) ...[
-                                              const SizedBox(width: 3),
-                                              Icon(
-                                                msg.sending
-                                                    ? Icons.access_time_rounded
-                                                    : Icons.check_rounded,
-                                                size: 12,
-                                                color: theme
-                                                    .colorScheme
-                                                    .onSurfaceVariant,
+                                              // Uhrzeit + 'gesendet'-Haekchen
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                  top: 3,
+                                                  left: 4,
+                                                  right: 4,
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    if (msg.createdAt != null)
+                                                      Text(
+                                                        _formatTime(
+                                                            msg.createdAt!),
+                                                        style: TextStyle(
+                                                          fontSize: 10,
+                                                          color: theme
+                                                              .colorScheme
+                                                              .onSurfaceVariant,
+                                                        ),
+                                                      ),
+                                                    if (isMe) ...[
+                                                      const SizedBox(width: 3),
+                                                      Icon(
+                                                        msg.sending
+                                                            ? Icons
+                                                                .access_time_rounded
+                                                            : Icons
+                                                                .check_rounded,
+                                                        size: 12,
+                                                        color: theme.colorScheme
+                                                            .onSurfaceVariant,
+                                                      ),
+                                                    ],
+                                                  ],
+                                                ),
                                               ),
                                             ],
-                                          ],
+                                          ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
+                                ],
+                              );
+                            },
                           ),
-                        ],
-                      );
-                    },
-                  ),
           ),
           // Suggestion chips when empty or few messages
           if (_messages.length < 3)

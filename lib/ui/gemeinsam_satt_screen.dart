@@ -1,4 +1,5 @@
 import 'package:parentpeak/l10n/app_localizations_all.dart';
+import 'package:parentpeak/ui/widgets/content_report_form.dart';
 import 'package:parentpeak/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -1893,86 +1894,19 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
       return;
     }
 
-    String selectedReason = 'Spam oder Irrefuehrung';
-    final noteController = TextEditingController();
-    final reasons = <String>[
-      'Spam oder Irrefuehrung',
-      'Unpassender Inhalt',
-      'Betrug oder Unsicherheit',
-      'Andere Sorge',
-    ];
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (dialogContext, setDialogState) {
-            return AlertDialog(
-              title: Text(_t('satt_report_offer')),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Hilf uns, den Bereich sicher und hilfreich für Eltern zu halten.',
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<String>(
-                    initialValue: selectedReason,
-                    items: reasons
-                        .map((reason) => DropdownMenuItem<String>(
-                              value: reason,
-                              child: Text(reason),
-                            ))
-                        .toList(),
-                    onChanged: (value) {
-                      if (value == null || value.isEmpty) return;
-                      setDialogState(() => selectedReason = value);
-                    },
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: noteController,
-                    minLines: 2,
-                    maxLines: 4,
-                    decoration: InputDecoration(
-                      hintText: 'Optional: kurze Notiz für die Moderation',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(false),
-                  child: Text(_t('cancel')),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(true),
-                  child: Text(_t('satt_report')),
-                ),
-              ],
-            );
-          },
-        );
-      },
+    final selection = await selectReportReason(context);
+    if (selection == null || !mounted) return;
+    final ok = await deliverContentReport(
+      context,
+      reason: selection.reason,
+      send: () => _service.reportOffer(
+        recipeId: post.id,
+        userId: _myUserId,
+        reason: selection.reason,
+        note: selection.note,
+      ),
     );
-
-    if (confirmed != true || !mounted) {
-      noteController.dispose();
-      return;
-    }
-
-    final ok = await _service.reportOffer(
-      recipeId: post.id,
-      userId: _myUserId,
-      reason: selectedReason,
-      note: noteController.text.trim(),
-    );
-    noteController.dispose();
-
+    if (!mounted) return;
     if (ok) {
       setState(() {
         _reportedOfferIds = {..._reportedOfferIds, post.id};
