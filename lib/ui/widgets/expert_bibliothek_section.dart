@@ -215,7 +215,10 @@ class _ExpertBibliothekSectionState extends State<ExpertBibliothekSection> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Type badge + expert name
-          Row(
+          Wrap(
+            spacing: 12,
+            runSpacing: 4,
+            alignment: WrapAlignment.spaceBetween,
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -232,7 +235,6 @@ class _ExpertBibliothekSectionState extends State<ExpertBibliothekSection> {
                   ),
                 ),
               ),
-              const Spacer(),
               if (item.duration != null)
                 Text(
                   item.duration!,

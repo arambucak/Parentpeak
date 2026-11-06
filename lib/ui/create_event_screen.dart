@@ -56,6 +56,8 @@ class _EventDateTimeControl extends StatelessWidget {
         child: OutlinedButton(
           onPressed: onPressed,
           style: OutlinedButton.styleFrom(
+            minimumSize:
+                Size(0, 76 * MediaQuery.textScalerOf(context).scale(14) / 14),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
@@ -72,7 +74,7 @@ class _EventDateTimeControl extends StatelessWidget {
                   children: [
                     Text(label, style: theme.textTheme.labelSmall),
                     const SizedBox(height: 4),
-                    Text(value, style: theme.textTheme.bodyMedium, maxLines: 2),
+                    Text(value, style: theme.textTheme.bodyMedium),
                   ],
                 ),
               ),
@@ -368,13 +370,12 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       if (!mounted) return;
       setState(() => _isScanning = true);
       final fileName = picked.name.toLowerCase();
-      final imageMimeType =
-          picked.mimeType ??
+      final imageMimeType = picked.mimeType ??
           (fileName.endsWith('.png')
               ? 'image/png'
               : fileName.endsWith('.webp')
-              ? 'image/webp'
-              : 'image/jpeg');
+                  ? 'image/webp'
+                  : 'image/jpeg');
       final draft = await _flyerScanner.scanFromImage(
         bytes,
         imageMimeType: imageMimeType,
@@ -571,8 +572,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         id: 'event_${DateTime.now().millisecondsSinceEpoch}',
         hosterId: currentUserId,
         title: _titleController.text,
-        description:
-            _includeRecurringNote &&
+        description: _includeRecurringNote &&
                 _recurringNoteController.text.trim().isNotEmpty
             ? '${_descriptionController.text.trim()}\n\n${_t('recurring_event')}: ${_recurringNoteController.text.trim()}'
             : _descriptionController.text,
@@ -596,9 +596,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
             ? ScannedEventDraft.parsePriceAmount(_priceController.text)
             : null,
         visibility: _visibility,
-        shareRadiusKm: _visibility == EventVisibility.publicNearby
-            ? _shareRadiusKm
-            : null,
+        shareRadiusKm:
+            _visibility == EventVisibility.publicNearby ? _shareRadiusKm : null,
         invitedUserIds: _visibility == EventVisibility.inviteOnly
             ? _selectedInvitees.toList()
             : const [],
@@ -760,12 +759,12 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     onSelectionChanged: _isSubmitting
                         ? null
                         : (selection) => setState(() {
-                            _participationMode = selection.single;
-                            if (_participationMode ==
-                                ParticipationMode.interest) {
-                              _visibility = EventVisibility.publicNearby;
-                            }
-                          }),
+                              _participationMode = selection.single;
+                              if (_participationMode ==
+                                  ParticipationMode.interest) {
+                                _visibility = EventVisibility.publicNearby;
+                              }
+                            }),
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -810,8 +809,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   Text(
                     'Grundinformationen',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                          fontWeight: FontWeight.w700,
+                        ),
                   ),
                   const SizedBox(height: 16),
 
@@ -874,8 +873,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   Text(
                     'Sichtbarkeit',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                          fontWeight: FontWeight.w700,
+                        ),
                   ),
                   const SizedBox(height: 8),
                   _VisibilityOptionTile(
@@ -933,7 +932,9 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                         const SizedBox(width: 8),
                         Text(
                           '${_shareRadiusKm.toStringAsFixed(0)} km',
-                          style: Theme.of(context).textTheme.bodyMedium
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
                               ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                       ],
@@ -953,8 +954,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     Text(
                       'Kontakte auswählen',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                            fontWeight: FontWeight.w700,
+                          ),
                     ),
                     const SizedBox(height: 8),
                     if (_familyContacts.isEmpty)
@@ -1025,8 +1026,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   Text(
                     'Zielgruppe (Altersgruppen)',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                          fontWeight: FontWeight.w700,
+                        ),
                   ),
                   const SizedBox(height: 12),
                   Wrap(
@@ -1048,8 +1049,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   Text(
                     'Termin',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                          fontWeight: FontWeight.w700,
+                        ),
                   ),
                   const SizedBox(height: 12),
                   LayoutBuilder(
@@ -1060,14 +1061,12 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                       final width = stacked
                           ? constraints.maxWidth
                           : (constraints.maxWidth - 12) / 2;
-                      final height = 76.0 * (scale < 1 ? 1 : scale);
                       return Wrap(
                         spacing: 12,
                         runSpacing: 12,
                         children: [
                           SizedBox(
                             width: width,
-                            height: height,
                             child: _EventDateTimeControl(
                               key: const ValueKey('event-date-picker'),
                               icon: Icons.calendar_today_outlined,
@@ -1083,7 +1082,6 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                           ),
                           SizedBox(
                             width: width,
-                            height: height,
                             child: _EventDateTimeControl(
                               key: const ValueKey('event-time-picker'),
                               icon: Icons.schedule_outlined,
@@ -1154,15 +1152,14 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   Text(
                     'Event-Foto (optional)',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                          fontWeight: FontWeight.w700,
+                        ),
                   ),
                   const SizedBox(height: 8),
                   OutlinedButton.icon(
                     key: const ValueKey('event-photo-picker'),
-                    onPressed: _isSubmitting || _isPickingPhoto
-                        ? null
-                        : _pickPhoto,
+                    onPressed:
+                        _isSubmitting || _isPickingPhoto ? null : _pickPhoto,
                     icon: const Icon(Icons.photo_library_outlined),
                     label: Text(
                       _selectedPhotoBytes == null
@@ -1234,14 +1231,13 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                           : '${_t('confirm')}: ${_priceController.text} EUR',
                     ),
                     value: _priceConfirmed,
-                    onChanged:
-                        ScannedEventDraft.parsePriceAmount(
+                    onChanged: ScannedEventDraft.parsePriceAmount(
                               _priceController.text,
                             ) ==
                             null
                         ? null
                         : (value) =>
-                              setState(() => _priceConfirmed = value ?? false),
+                            setState(() => _priceConfirmed = value ?? false),
                   ),
                   const SizedBox(height: 16),
 
@@ -1306,9 +1302,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
-                      onPressed: _isSubmitting || _isScanning
-                          ? null
-                          : _submitForm,
+                      onPressed:
+                          _isSubmitting || _isScanning ? null : _submitForm,
                       icon: _isSubmitting
                           ? const SizedBox(
                               width: 16,

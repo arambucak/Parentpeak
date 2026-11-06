@@ -588,9 +588,11 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
                 )
               : GridView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    childAspectRatio: 0.9,
+                    mainAxisExtent: 116 +
+                        MediaQuery.textScalerOf(context).scale(14) * 4.5 +
+                        MediaQuery.textScalerOf(context).scale(12) * 3.5,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
                   ),
@@ -642,9 +644,11 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
                 )
               : GridView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    childAspectRatio: 0.9,
+                    mainAxisExtent: 116 +
+                        MediaQuery.textScalerOf(context).scale(14) * 4.5 +
+                        MediaQuery.textScalerOf(context).scale(12) * 3.5,
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
                   ),
@@ -680,36 +684,40 @@ class _MarketplaceScreenState extends State<MarketplaceScreen>
     }
 
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () {
         setState(() => _selectedCategory = category);
       },
       child: Card(
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 48, color: Colors.blue.shade600),
-            const SizedBox(height: 12),
-            Text(
-              category,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 48, color: Colors.blue.shade600),
+              const SizedBox(height: 12),
+              Text(
+                category,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '${providers.length} Anbieter',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
+              const SizedBox(height: 8),
+              Text(
+                '${providers.length} Anbieter',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

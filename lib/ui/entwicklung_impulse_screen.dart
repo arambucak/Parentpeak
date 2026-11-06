@@ -488,9 +488,11 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
                     Icon(Icons.wifi_off_rounded,
                         size: 14, color: theme.colorScheme.outline),
                     const SizedBox(width: 6),
-                    Text(_t('offline_impulse'),
-                        style: theme.textTheme.labelSmall
-                            ?.copyWith(color: theme.colorScheme.outline)),
+                    Expanded(
+                      child: Text(_t('offline_impulse'),
+                          style: theme.textTheme.labelSmall
+                              ?.copyWith(color: theme.colorScheme.outline)),
+                    ),
                   ],
                 ),
               ),
@@ -1053,7 +1055,8 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
         ..addAll(answers);
       final tQ = _devDomains.fold(0, (int s, d) => s + d.questions.length);
       _devDone = _devAnswers.length >= tQ && tQ > 0;
-      final previous = await _checkinStore.loadPreviousSnapshot(ageGroupId, scope: scope);
+      final previous =
+          await _checkinStore.loadPreviousSnapshot(ageGroupId, scope: scope);
       if (!mounted || epoch != _reportEpoch) return;
       _previousSnapshot = previous;
     }
@@ -1087,8 +1090,8 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
     // PASSENDEN Altersgruppe wiederherstellen, statt stumm zu leeren — so geht
     // ein laufender Check beim Bearbeiten des Profils nicht verloren.
     final restored = await _checkinStore.loadAnswers(profile.ageGroupId);
-    final previous =
-        await _checkinStore.loadPreviousSnapshot(profile.ageGroupId, scope: _reportScope);
+    final previous = await _checkinStore
+        .loadPreviousSnapshot(profile.ageGroupId, scope: _reportScope);
     if (!mounted) return;
     setState(() {
       _childProfile = profile;
@@ -1320,96 +1323,104 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => AnimatedBuilder(
-        animation: AuthService.instance,
-        builder: (context, child) => epoch != _reportEpoch
-            ? const SizedBox.shrink()
-            : Container(
-        constraints:
-            BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.75),
-        decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(24))),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-              child: Row(children: [
-                const Text('\u{1F4C5}', style: TextStyle(fontSize: 20)),
-                const SizedBox(width: 10),
-                Text(_t('report_history'),
-                    style: theme.textTheme.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w800)),
-                const Spacer(),
-                GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => Navigator.pop(ctx),
-                    child: Icon(Icons.close_rounded,
-                        color: theme.colorScheme.outline)),
-              ])),
-          const Divider(height: 1),
-          if (historyRaw.isEmpty)
-            Padding(
-                padding: const EdgeInsets.all(32),
-                child: Text(_t('no_reports_yet'),
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(color: theme.colorScheme.onSurfaceVariant)))
-          else
-            Flexible(
-                child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: historyRaw.length,
-              itemBuilder: (_, i) {
-                final parts = historyRaw[i].split('|||');
-                final date = DateTime.tryParse(parts[0]) ?? DateTime.now();
-                final text = parts.length > 1 ? parts[1] : '';
-                final dateLabel = '${date.day}.${date.month}.${date.year}';
-                return Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                  child: Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerLow,
-                        borderRadius: BorderRadius.circular(14)),
-                    child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(children: [
-                            Icon(Icons.description_rounded,
-                                size: 16, color: theme.colorScheme.primary),
-                            const SizedBox(width: 8),
-                            Text(dateLabel,
-                                style: theme.textTheme.labelMedium?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color: theme.colorScheme.primary)),
-                            if (i == 0) ...[
-                              const SizedBox(width: 8),
-                              Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                      color: theme.colorScheme.primary
-                                          .withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(6)),
-                                  child: Text(_t('current'),
-                                      style: TextStyle(
-                                          fontSize: 9,
-                                          fontWeight: FontWeight.w700,
-                                          color: theme.colorScheme.primary)))
-                            ],
-                          ]),
-                          const SizedBox(height: 8),
-                          Text(text,
-                              style: theme.textTheme.bodySmall
-                                  ?.copyWith(height: 1.4),
-                              maxLines: 6,
-                              overflow: TextOverflow.ellipsis),
-                        ]),
-                  ),
-                );
-              },
-            )),
-        ]),
-      )),
+          animation: AuthService.instance,
+          builder: (context, child) => epoch != _reportEpoch
+              ? const SizedBox.shrink()
+              : Container(
+                  constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(ctx).size.height * 0.75),
+                  decoration: BoxDecoration(
+                      color: theme.colorScheme.surface,
+                      borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(24))),
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+                        child: Row(children: [
+                          const Text('\u{1F4C5}',
+                              style: TextStyle(fontSize: 20)),
+                          const SizedBox(width: 10),
+                          Text(_t('report_history'),
+                              style: theme.textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w800)),
+                          const Spacer(),
+                          GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () => Navigator.pop(ctx),
+                              child: Icon(Icons.close_rounded,
+                                  color: theme.colorScheme.outline)),
+                        ])),
+                    const Divider(height: 1),
+                    if (historyRaw.isEmpty)
+                      Padding(
+                          padding: const EdgeInsets.all(32),
+                          child: Text(_t('no_reports_yet'),
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant)))
+                    else
+                      Flexible(
+                          child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: historyRaw.length,
+                        itemBuilder: (_, i) {
+                          final parts = historyRaw[i].split('|||');
+                          final date =
+                              DateTime.tryParse(parts[0]) ?? DateTime.now();
+                          final text = parts.length > 1 ? parts[1] : '';
+                          final dateLabel =
+                              '${date.day}.${date.month}.${date.year}';
+                          return Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                            child: Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                  color: theme.colorScheme.surfaceContainerLow,
+                                  borderRadius: BorderRadius.circular(14)),
+                              child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(children: [
+                                      Icon(Icons.description_rounded,
+                                          size: 16,
+                                          color: theme.colorScheme.primary),
+                                      const SizedBox(width: 8),
+                                      Text(dateLabel,
+                                          style: theme.textTheme.labelMedium
+                                              ?.copyWith(
+                                                  fontWeight: FontWeight.w700,
+                                                  color: theme
+                                                      .colorScheme.primary)),
+                                      if (i == 0) ...[
+                                        const SizedBox(width: 8),
+                                        Container(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                                color: theme.colorScheme.primary
+                                                    .withValues(alpha: 0.1),
+                                                borderRadius:
+                                                    BorderRadius.circular(6)),
+                                            child: Text(_t('current'),
+                                                style: TextStyle(
+                                                    fontSize: 9,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: theme
+                                                        .colorScheme.primary)))
+                                      ],
+                                    ]),
+                                    const SizedBox(height: 8),
+                                    Text(text,
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(height: 1.4),
+                                        maxLines: 6,
+                                        overflow: TextOverflow.ellipsis),
+                                  ]),
+                            ),
+                          );
+                        },
+                      )),
+                  ]),
+                )),
     );
   }
 
@@ -2109,33 +2120,40 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
         border: Border.all(
             color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Text(
-                AppStringsManager.getString(
-                    languageService.currentLanguage, 'how_are_you'),
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(fontWeight: FontWeight.w600)),
+          Text(
+              AppStringsManager.getString(
+                  languageService.currentLanguage, 'how_are_you'),
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            children: [
+              ('😮‍💨', _t('mood_exhausted'), 1),
+              ('😌', _t('mood_okay'), 2),
+              ('🌟', _t('mood_great'), 3),
+            ]
+                .map((item) => GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => _saveMood(item.$3),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        child:
+                            Column(mainAxisSize: MainAxisSize.min, children: [
+                          Text(item.$1, style: const TextStyle(fontSize: 22)),
+                          Text(item.$2,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  fontSize: 9)),
+                        ]),
+                      ),
+                    ))
+                .toList(),
           ),
-          ...[
-            ('😮‍💨', _t('mood_exhausted'), 1),
-            ('😌', _t('mood_okay'), 2),
-            ('🌟', _t('mood_great'), 3),
-          ].map((item) => GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => _saveMood(item.$3),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    Text(item.$1, style: const TextStyle(fontSize: 22)),
-                    Text(item.$2,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                            fontSize: 9)),
-                  ]),
-                ),
-              )),
         ],
       ),
     );
