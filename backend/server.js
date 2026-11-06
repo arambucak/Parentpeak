@@ -3991,6 +3991,10 @@ function isNoTokenWritePath(reqPath) {
 }
 
 async function firebaseAuthMiddleware(req, res, next) {
+  // This exact job endpoint authenticates locally with its dedicated secret.
+  if (req.method === 'POST' && req.path === '/internal/moderation/digest') {
+    return next();
+  }
   // Stripe authenticates this one public callback using its raw-body signature.
   if (req.method === 'POST' && req.path === '/payments/stripe/webhook') {
     return next();
@@ -4162,6 +4166,12 @@ app.use(async (req, res, next) => {
 
 app.use(async (req, res, next) => {
   if (!isWriteRequest(req)) {
+    next();
+    return;
+  }
+
+  // Keep the digest's route-local secret check independent of Firebase.
+  if (req.method === 'POST' && req.path === '/internal/moderation/digest') {
     next();
     return;
   }

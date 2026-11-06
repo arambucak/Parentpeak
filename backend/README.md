@@ -68,13 +68,45 @@ tokenlosen Push-Helper erwarteter No-op. Push und E-Mail laufen unabhaengig.
 
 Die HTTP-Handler starten Benachrichtigungen nach durablem Speichern ohne
 darauf zu warten, mit abschliessendem Fehler-Handler. Provider-Timeouts
-blockieren die Antwort nicht. Es gibt keinen garantierten Outbox-/Retry-Dienst:
-ohne naechste Meldung erfolgt kein automatischer Wiederholungsversuch.
+blockieren die Antwort nicht. Es gibt keinen garantierten Outbox-/Retry-Dienst.
+Ein konfigurierter Pending-Digest kann offene Meldungen auch ohne neue Meldung
+periodisch zusammenfassen; siehe Einrichtung unten.
 Ein Timeout kann einen noch laufenden Provideraufruf nicht abbrechen; eine
 spaetere Zustellung plus Wiederholung kann daher doppelte E-Mail erzeugen.
 Fehler werden protokolliert, gespeicherte Meldungen bleiben
 erfolgreich (`ok: true`). E-Mails enthalten nur Grund, Bereich, Anzahl und
 Berlin-Zeit, keine Melderidentitaet, Inhalte oder Freitexte.
+
+### Pending-Digest einrichten und pruefen
+
+Der Workflow [Moderation Pending Digest](../.github/workflows/moderation-digest.yml)
+ruft `POST /internal/moderation/digest` alle drei Stunden oder manuell auf.
+Einen Zufallswert mit `openssl rand -hex 32` erzeugen und identisch als
+`MODERATION_DIGEST_SECRET` in Render (Backend-Environment, danach deployen)
+und GitHub (Repository Actions Secret, nicht Variable) setzen. Den Wert
+nicht in Logs, Chat oder Versionskontrolle kopieren.
+
+Nur dieser exakte POST-Pfad passiert beide globalen Firebase-Auth-Guards:
+Die Route selbst verlangt weiterhin das dedizierte Secret als Bearer-Token
+oder `X-Digest-Secret`. Andere interne Pfade und Schreibmethoden erhalten
+keine Ausnahme. Ein Firebase-Nutzertoken ersetzt das Digest-Secret nicht;
+Rate-Limiting bleibt aktiv.
+
+Nach dem Deploy den Workflow manuell starten und den tatsaechlichen
+HTTP-Status im Log pruefen: `200` bedeutet erfolgreich verarbeitet (nicht
+zwingend E-Mail versendet; `sent: false` bei keiner relevanten offenen Meldung).
+`404` bedeutet fehlendes Render-Secret, `401` mit `Nicht autorisiert`
+fehlendes/falsches Digest-Secret, `502` fehlgeschlagenen Digest-Versand.
+Eine Firebase-Token-Fehlermeldung statt `Nicht autorisiert` deutet auf einen
+alten Backend-Stand ohne die genaue Auth-Ausnahme hin.
+Ein gruener Workflow mit `uebersprungen` bedeutet fehlendes GitHub-Secret,
+nicht erfolgreichen HTTP-Aufruf.
+
+`MODERATION_DIGEST_MIN_AGE_MIN` (Standard 30) begrenzt das Mindestalter offener
+Meldungen; normale Ziele benoetigen die bestehende Melder-Schwelle, kritische
+nur einen Melder. Der Digest aendert keinen Meldungsstatus und kann bis zur
+Bearbeitung wiederholt E-Mail senden. Er wird ueber Secret/Workflow separat
+gesteuert, nicht durch `MODERATION_NOTIFY_ENABLED`.
 
 Ziel-/Deduplizierungsschluessel:
 
