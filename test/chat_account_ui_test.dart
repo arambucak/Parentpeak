@@ -17,6 +17,8 @@ import 'package:parentpeak/logic/gemini_ai_service.dart';
 import 'package:parentpeak/logic/pedagogical_chat_backend.dart';
 import 'package:parentpeak/ui/ai_memory_settings_screen.dart';
 import 'package:parentpeak/ui/chat_screen.dart';
+import 'package:parentpeak/services/block_report_service.dart';
+import 'package:parentpeak/logic/crisis_support.dart';
 import 'quota_test_support.dart';
 import 'package:parentpeak/logic/chat_context_policy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -136,6 +138,54 @@ void main() {
     }
   }
 
+  testWidgets('unsafe AI feedback reports canonically and offers crisis help',
+      (tester) async {
+    final reports = <Map<String, dynamic>>[];
+    final reportClient = MockClient((request) async {
+      reports.add(jsonDecode(request.body) as Map<String, dynamic>);
+      return http.Response('{"ok":true}', 200);
+    });
+    addTearDown(reportClient.close);
+    await consent.grant(store.scope);
+    await mount(
+        tester,
+        ChatScreen(
+          chatBackend: backend,
+          memoryService: memory,
+          reportService: BlockReportService(
+            api: BackendApiClient(
+                baseUrl: 'https://test.example', httpClient: reportClient),
+            userIdProvider: () => uid,
+          ),
+        ));
+    await send(tester);
+    final unsafe = find.widgetWithText(ChoiceChip,
+        AppStringsManager.getString('en', 'chat_feedback_dangerous'));
+    await tester.ensureVisible(unsafe);
+    await tester.pumpAndSettle();
+    await tester.tap(unsafe);
+    await tester.pumpAndSettle();
+    final reason = find.byKey(const ValueKey('report-reason-self_harm'));
+    await tester.ensureVisible(reason);
+    await tester.pumpAndSettle();
+    await tester.tap(reason);
+    final submit = find.byKey(const ValueKey('report-submit'));
+    await tester.ensureVisible(submit);
+    await tester.pumpAndSettle();
+    await tester.tap(submit);
+    await tester.pumpAndSettle();
+    expect(reports, hasLength(1));
+    expect(reports.single['reason'], 'self_harm');
+    expect(reports.single['contentType'], 'ai_message');
+    expect(reports.single['content'], _answer);
+    expect(reports.single['reportedUserId'], startsWith('ai_chat:'));
+    expect(
+        find.text(CrisisSupport.crisisResponse(
+            languageCode: 'en', countryCode: 'DE')),
+        findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   for (final tip in [false, true]) {
     testWidgets(
         '${tip ? 'tip' : 'normal'} initial message respects the same daily limit',
@@ -151,8 +201,7 @@ void main() {
           ));
       expect(calls, isEmpty);
       expect(
-          find.text(
-              AppStringsManager.getString('en', 'quota_chat'),
+          find.text(AppStringsManager.getString('en', 'quota_chat'),
               findRichText: true),
           findsOneWidget);
       expect(find.byType(TextField), findsOneWidget);

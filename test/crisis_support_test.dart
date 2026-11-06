@@ -5,8 +5,7 @@ void main() {
   group('CrisisSupport.isAcuteCrisis — mehrsprachig', () {
     test('erkennt Deutsch', () {
       expect(CrisisSupport.isAcuteCrisis('Ich will nicht mehr leben.'), isTrue);
-      expect(
-          CrisisSupport.isAcuteCrisis('Ich könnte meinem Kind etwas antun'),
+      expect(CrisisSupport.isAcuteCrisis('Ich könnte meinem Kind etwas antun'),
           isTrue);
     });
     test('erkennt Englisch', () {
@@ -21,8 +20,8 @@ void main() {
       expect(CrisisSupport.isAcuteCrisis('ez dixwazim bimirim'), isTrue);
     });
     test('ignoriert harmlose Nachrichten', () {
-      expect(CrisisSupport.isAcuteCrisis('Mein Kind schläft schlecht.'),
-          isFalse);
+      expect(
+          CrisisSupport.isAcuteCrisis('Mein Kind schläft schlecht.'), isFalse);
       expect(CrisisSupport.isAcuteCrisis('How do I set a bedtime routine?'),
           isFalse);
     });
@@ -74,7 +73,7 @@ void main() {
     });
     test('nicht abgedeckte Sprache fällt auf Englisch zurück', () {
       final r =
-          CrisisSupport.crisisResponse(languageCode: 'fr', countryCode: 'GB');
+          CrisisSupport.crisisResponse(languageCode: 'zz', countryCode: 'GB');
       expect(r.toLowerCase(), contains('human help'));
       expect(r, contains('999'));
     });
@@ -85,5 +84,23 @@ void main() {
       expect(r, contains('112'));
       expect(r, contains('Telefonseelsorge'));
     });
+    for (final language in ['de', 'en', 'tr', 'ku', 'fr', 'es', 'it', 'ar']) {
+      test('$language has its own crisis response and local phone numbers', () {
+        final response = CrisisSupport.crisisResponse(
+            languageCode: language, countryCode: 'DE');
+        expect(response, contains('112'));
+        expect(response, contains('0800 111 0 111'));
+        expect(
+            response,
+            contains(
+                CrisisSupport.emergencyLine('DE', languageCode: language)));
+        if (language != 'en') {
+          expect(
+              response,
+              isNot(CrisisSupport.crisisResponse(
+                  languageCode: 'en', countryCode: 'DE')));
+        }
+      });
+    }
   });
 }
