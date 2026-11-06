@@ -584,162 +584,150 @@ class _PriorityCard extends StatelessWidget {
 // ─── Page 4: Ready / Summary ─────────────────────────────────────────────────
 
 class OnboardingReadyPage extends StatelessWidget {
-  final String? selectedRole;
-  final Set<String> selectedPriorities;
   final Animation<double> fadeAnimation;
   final Animation<Offset> slideAnimation;
 
   const OnboardingReadyPage({
     super.key,
-    required this.selectedRole,
-    required this.selectedPriorities,
     required this.fadeAnimation,
     required this.slideAnimation,
   });
 
-  String _getRoleLabel() {
-    switch (selectedRole) {
-      case 'neugeboren':
-        return 'Baby-Phase';
-      case 'kleinkind':
-        return 'Kleinkind-Phase';
-      case 'schulkind':
-        return 'Schulkind-Phase';
-      case 'teenager':
-        return 'Teenager-Phase';
-      default:
-        return '';
-    }
-  }
-
-  List<(IconData, String)> _getPersonalizedFeatures() {
-    final features = <(IconData, String)>[];
-
-    if (selectedPriorities.contains('tipps')) {
-      features.add((
-        Icons.auto_awesome_rounded,
-        'Wochenimpulse passend zur ${_getRoleLabel()}'
-      ));
-      features.add((Icons.chat_rounded, 'KI-Beratung für deine Fragen'));
-    }
-    if (selectedPriorities.contains('organisation')) {
-      features.add((Icons.calendar_month_rounded, 'Familienkalender'));
-      features.add((Icons.checklist_rounded, 'To-Do & Einkaufslisten'));
-    }
-    if (selectedPriorities.contains('community')) {
-      features.add((Icons.diversity_3_rounded, 'Eltern in deiner Nähe finden'));
-      features.add((Icons.celebration_rounded, 'Events & Aktivitäten'));
-    }
-    if (selectedPriorities.contains('sparen')) {
-      features.add((Icons.inventory_2_rounded, 'Verschenkmarkt'));
-      features.add((Icons.restaurant_rounded, 'Essen teilen & sparen'));
-    }
-
-    if (features.isEmpty) {
-      features.add((Icons.auto_awesome_rounded, 'Personalisierte Impulse'));
-      features.add((Icons.chat_rounded, 'KI-Beratung'));
-      features.add((Icons.calendar_month_rounded, 'Familienkalender'));
-    }
-
-    return features.take(4).toList();
-  }
+  // Drei kurze Orientierungs-Schritte: nicht WAS es gibt, sondern WIE man die
+  // App bedient und die Funktionen erreicht. Icons spiegeln die echte Home-/
+  // Navigations-Struktur (Startseite, "Alle"-Raster, KI-Beratung).
+  static const _steps = [
+    (
+      Icons.home_rounded,
+      'onboarding_step_home_title',
+      'onboarding_step_home_body'
+    ),
+    (
+      Icons.apps_rounded,
+      'onboarding_step_grid_title',
+      'onboarding_step_grid_body'
+    ),
+    (
+      Icons.chat_rounded,
+      'onboarding_step_chat_title',
+      'onboarding_step_chat_body'
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final features = _getPersonalizedFeatures();
 
     return FadeTransition(
       opacity: fadeAnimation,
       child: SlideTransition(
         position: slideAnimation,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Success Icon
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      const Color(0xFF0EA5A4),
-                      theme.colorScheme.primary,
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: theme.colorScheme.primary.withValues(alpha: 0.25),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.rocket_launch_rounded,
-                  color: Colors.white,
-                  size: 40,
-                ),
+        // Scrollbar, damit der Inhalt bei großer Systemschrift nicht überläuft;
+        // bei normalem Platz bleibt er dank minHeight vertikal zentriert.
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: constraints.maxHeight - 48,
               ),
-              const SizedBox(height: 32),
-              Text(
-                _t('onboarding_ready'),
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Deine App ist jetzt auf dich zugeschnitten.\nHier ist, was auf dich wartet:',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  height: 1.4,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 36),
-              // Personalisierte Feature-Liste
-              ...features.map((f) => Padding(
-                    padding: const EdgeInsets.only(bottom: 14),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            f.$1,
-                            color: theme.colorScheme.onPrimaryContainer,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Text(
-                            f.$2,
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        Icon(
-                          Icons.check_circle_rounded,
-                          color: theme.colorScheme.primary,
-                          size: 20,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Success Icon
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          const Color(0xFF0EA5A4),
+                          theme.colorScheme.primary,
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color:
+                              theme.colorScheme.primary.withValues(alpha: 0.25),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
                         ),
                       ],
                     ),
-                  )),
-            ],
+                    child: const Icon(
+                      Icons.rocket_launch_rounded,
+                      color: Colors.white,
+                      size: 40,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  Text(
+                    _t('onboarding_ready'),
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    _t('onboarding_ready_subtitle'),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      height: 1.4,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 36),
+                  // Drei Orientierungs-Schritte: wie man die App bedient/erreicht.
+                  ..._steps.map((step) => Padding(
+                        padding: const EdgeInsets.only(bottom: 18),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primaryContainer,
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: Icon(
+                                step.$1,
+                                color: theme.colorScheme.onPrimaryContainer,
+                                size: 22,
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _t(step.$2),
+                                    style: theme.textTheme.bodyLarge?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    _t(step.$3),
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                      height: 1.35,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      )),
+                ],
+              ),
+            ),
           ),
         ),
       ),

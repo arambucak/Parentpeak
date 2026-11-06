@@ -2096,6 +2096,13 @@ const appLocalizationsFrExtra = <String, String>{
   'onboarding_phase': 'À quelle étape êtes-vousu00a0?',
   'onboarding_priorities': 'Qu\'est-ce qui compte pour vousu00a0?',
   'onboarding_ready': 'C\'est partiu00a0!',
+  'onboarding_ready_subtitle': 'Ton espace pour le quotidien familial. Voici comment t’y retrouver :',
+  'onboarding_step_home_title': 'Ton écran d’accueil',
+  'onboarding_step_home_body': 'En haut, tu trouves des conseils et des rendez-vous adaptés au jour et à l’âge de ton enfant.',
+  'onboarding_step_grid_title': 'Toutes les fonctions en un coup d’œil',
+  'onboarding_step_grid_body': 'Appuie sur « Tout » pour ouvrir le calendrier, le coaching IA, la cuisine familiale, les événements et plus.',
+  'onboarding_step_chat_title': 'Toujours à une question près',
+  'onboarding_step_chat_body': 'Le coaching IA t’aide à tout moment – appuie et pose ta question.',
   'onboarding_subtitle':
       'Votre quotidien familial. Une appli.\nDécouvrons ensemble ce qui vous aide le plus.',
   'onboarding_where': 'Où vit votre familleu00a0?',
