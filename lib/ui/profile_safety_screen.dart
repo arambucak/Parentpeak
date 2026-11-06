@@ -7,7 +7,6 @@ import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/entitlement_service.dart';
 import 'package:parentpeak/main.dart';
 import 'package:parentpeak/models/trusted_device.dart';
-import 'package:parentpeak/ui/auth/paywall_screen.dart';
 import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/l10n/app_localizations_all.dart';
 import 'package:parentpeak/l10n/supported_languages.dart';
@@ -15,7 +14,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:parentpeak/widgets/ala_rengin_flag_painter.dart';
 import 'package:parentpeak/ui/widgets/beta_feedback_widget.dart';
 import 'package:parentpeak/services/block_report_service.dart';
-import 'package:parentpeak/config/access_config.dart';
 import 'package:parentpeak/ui/admin_moderation_screen.dart';
 import 'package:parentpeak/logic/error_reporting_service.dart';
 import 'package:parentpeak/logic/user_profile_service.dart';
@@ -394,8 +392,6 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
         : user?.friendlyName ?? 'Familien-Kontakt';
     final email = user?.email ?? '';
     final isPremium = EntitlementService.instance.isPremium;
-    final trialDays = user?.trialDaysRemaining ?? 0;
-    final hasAccess = user?.hasFullAccess ?? false;
     final initials = name.isNotEmpty ? name[0].toUpperCase() : '?';
     final avatarFallback = Center(
       child: Text(
@@ -533,54 +529,42 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                         ),
                       ),
                     ],
-                    const SizedBox(height: 10),
-                    // Abo Badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: isPremium
-                            ? const Color(0xFF16A34A).withValues(alpha: 0.1)
-                            : const Color(0xFFF59E0B).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: isPremium
-                              ? const Color(0xFF16A34A).withValues(alpha: 0.3)
-                              : const Color(0xFFF59E0B).withValues(alpha: 0.3),
+                    // Abo-Badge nur für Premium-Nutzer. Solange die App
+                    // komplett kostenlos ist (kein kaufbares Premium), zeigen
+                    // wir bewusst keinen Gratis-/Beta-Status an.
+                    if (isPremium) ...[
+                      const SizedBox(height: 10),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF16A34A).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color:
+                                const Color(0xFF16A34A).withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.workspace_premium_rounded,
+                              size: 16,
+                              color: Color(0xFF16A34A),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Premium',
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF16A34A),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            isPremium
-                                ? Icons.workspace_premium_rounded
-                                : Icons.card_giftcard_rounded,
-                            size: 16,
-                            color: isPremium
-                                ? const Color(0xFF16A34A)
-                                : const Color(0xFFF59E0B),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            isPremium
-                                ? 'Premium'
-                                : AccessConfig.isBetaFreeAccess
-                                    ? 'Beta · kostenlos'
-                                    : hasAccess
-                                        ? _t('trial_days_template')
-                                            .replaceAll('{days}', '$trialDays')
-                                        : 'Free',
-                            style: theme.textTheme.labelMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: isPremium
-                                  ? const Color(0xFF16A34A)
-                                  : const Color(0xFFF59E0B),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    ],
                   ],
                 ),
               ),
@@ -692,76 +676,51 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
                 ),
               const SizedBox(height: 28),
 
-              // ─── Upgrade (nur für Free-User) ───────────────────────
+              // ─── Preis-Transparenz ─────────────────────────────────
+              // Solange kein Premium kaufbar ist, zeigen wir keinen
+              // Upgrade-Button (der ins Leere führen würde), sondern einen
+              // ehrlichen Hinweis: aktuell kostenlos, Premium ist geplant.
               if (!isPremium) ...[
-                GestureDetector(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => PaywallScreen(
-                        onSubscribed: () {
-                          Navigator.pop(context);
-                          setState(() {});
-                        },
-                      ),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.12),
                     ),
                   ),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          theme.colorScheme.primary.withValues(alpha: 0.08),
-                          theme.colorScheme.tertiary.withValues(alpha: 0.05),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color:
-                            theme.colorScheme.primary.withValues(alpha: 0.15),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(colors: [
-                              theme.colorScheme.primary,
-                              theme.colorScheme.tertiary,
-                            ]),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(Icons.rocket_launch_rounded,
-                              color: Colors.white, size: 20),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.favorite_rounded,
+                          size: 20, color: theme.colorScheme.primary),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(_t('free_now_title'),
+                                style: theme.textTheme.bodyMedium
+                                    ?.copyWith(fontWeight: FontWeight.w700)),
+                            const SizedBox(height: 2),
+                            Text(_t('free_now_body'),
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  height: 1.35,
+                                )),
+                          ],
                         ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(_t('upgrade_premium'),
-                                  style: theme.textTheme.bodyMedium
-                                      ?.copyWith(fontWeight: FontWeight.w700)),
-                              Text(_t('unlock_all_features'),
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  )),
-                            ],
-                          ),
-                        ),
-                        Icon(Icons.arrow_forward_ios_rounded,
-                            size: 16, color: theme.colorScheme.primary),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 28),
               ],
 
               if (AuthService.instance.primaryProviderId() == 'password') ...[
-                _buildSectionHeader(theme, '\u{1F512}', _t('password_change_security')),
+                _buildSectionHeader(
+                    theme, '\u{1F512}', _t('password_change_security')),
                 const SizedBox(height: 10),
                 _buildTile(theme,
                     icon: Icons.password_rounded,

@@ -1648,7 +1648,7 @@ class AppStringsManager {
       'antrag_template': 'Vorlage',
       'antrag_regenerate': 'Neu generieren',
       'antrag_premium_soon':
-          'Premium kommt bald! Während der Beta ist alles kostenlos.',
+          'Premium-Funktionen kommen bald.',
       'antrag_unlock_premium': 'Premium freischalten',
       // Family Profile Screen
       'family_action_not_allowed':
@@ -3495,9 +3495,11 @@ class AppStringsManager {
       'register_subtitle': 'In 2 Minuten startklar für deinen Familienalltag.',
       'register_already_registered': 'Bereits registriert? ',
       'register_login_link': 'Jetzt einloggen',
-      'register_beta_title': 'Aktuell kostenlos in der Beta',
+      'register_beta_title': 'Jetzt kostenlos nutzen',
       'register_beta_description':
-          'Nach dem offiziellen Start: 1 Monat kostenlos testen.',
+          'ParentPeak ist aktuell komplett kostenlos. Premium-Funktionen sind in Planung — wir sagen dir rechtzeitig Bescheid, bevor sich etwas ändert.',
+      'free_now_title': 'Jetzt kostenlos nutzen',
+      'free_now_body': 'ParentPeak ist aktuell komplett kostenlos. Premium-Funktionen sind in Planung — wir sagen dir rechtzeitig Bescheid, bevor sich etwas ändert.',
       'register_display_name_label':
           'Dein Anzeigename (z. B. Anna oder Familie Schmidt)',
       'register_display_name_helper': 'So sehen dich andere Eltern.',
@@ -6399,9 +6401,11 @@ class AppStringsManager {
       'register_subtitle': 'Ready for family life in just 2 minutes.',
       'register_already_registered': 'Already registered? ',
       'register_login_link': 'Sign in now',
-      'register_beta_title': 'Currently free during beta',
+      'register_beta_title': 'Free to use right now',
       'register_beta_description':
-          'Try it free for 1 month after the official launch.',
+          'ParentPeak is completely free right now. Premium features are planned — we\'ll let you know in good time before anything changes.',
+      'free_now_title': 'Free to use right now',
+      'free_now_body': 'ParentPeak is completely free right now. Premium features are planned — we\'ll let you know in good time before anything changes.',
       'register_display_name_label':
           'Your display name (e.g. Anna or the Smith family)',
       'register_display_name_helper': 'This is how other parents see you.',
@@ -6957,7 +6961,7 @@ class AppStringsManager {
       'antrag_template': 'Template',
       'antrag_regenerate': 'Generate again',
       'antrag_premium_soon':
-          'Premium is coming soon! Everything is free during the beta.',
+          'Premium features are coming soon.',
       'antrag_unlock_premium': 'Unlock Premium',
       'family_action_not_allowed': 'This action is not allowed for this role.',
       'family_ok': 'OK',
@@ -14780,7 +14784,7 @@ class AppStringsManager {
       'antrag_template': 'Şablon',
       'antrag_regenerate': 'Ji nû ve çêke',
       'antrag_premium_soon':
-          'Premium di nêzîk de tê! Di dema betayê de her tişt belaş e.',
+          'Taybetmendiyên premium di nêzîk de tên.',
       'antrag_unlock_premium': 'Premium veke',
       'family_action_not_allowed': 'Ev çalakî di vê rola de destûr nayê dayîn.',
       'family_ok': 'Baş e',
@@ -16559,9 +16563,11 @@ class AppStringsManager {
       'register_subtitle': 'Di 2 deqeyan de ji bo jiyana malbatê amade bibî.',
       'register_already_registered': 'Tu berê qeydkirî yî? ',
       'register_login_link': 'Niha têkeve',
-      'register_beta_title': 'Niha di beta de belaş e',
+      'register_beta_title': 'Niha belaş',
       'register_beta_description':
-          'Piştî destpêka fermî 1 meh belaş biceribîne.',
+          'ParentPeak niha bi temamî belaş e. Taybetmendiyên premium tên plankirin — berî ku tiştek biguhere em ê di wextê xwe de ji te re bibêjin.',
+      'free_now_title': 'Niha belaş',
+      'free_now_body': 'ParentPeak niha bi temamî belaş e. Taybetmendiyên premium tên plankirin — berî ku tiştek biguhere em ê di wextê xwe de ji te re bibêjin.',
       'register_display_name_label':
           'Navê te yê xuyabûnê (mînak: Anna an Malbata Demir)',
       'register_display_name_helper': 'Dêûbavên din te bi vî navî dibînin.',
@@ -21436,7 +21442,7 @@ class AppStringsManager {
       'antrag_template': 'Şablon',
       'antrag_regenerate': 'Yeniden oluştur',
       'antrag_premium_soon':
-          'Premium yakında geliyor! Beta süresince her şey ücretsiz.',
+          'Premium özellikler yakında geliyor.',
       'antrag_unlock_premium': 'Premium aç',
       // Family Profile Screen
       'family_action_not_allowed': 'Bu rolde bu işleme izin verilmiyor.',
@@ -23212,8 +23218,10 @@ class AppStringsManager {
       'register_subtitle': 'Aile hayatın için sadece 2 dakikada hazır ol.',
       'register_already_registered': 'Zaten kayıtlı mısın? ',
       'register_login_link': 'Şimdi giriş yap',
-      'register_beta_title': 'Beta süresince ücretsiz',
-      'register_beta_description': 'Resmî lansmandan sonra 1 ay ücretsiz dene.',
+      'register_beta_title': 'Şu an ücretsiz',
+      'register_beta_description': 'ParentPeak şu anda tamamen ücretsiz. Premium özellikler planlanıyor — bir şey değişmeden önce sana zamanında haber vereceğiz.',
+      'free_now_title': 'Şu an ücretsiz',
+      'free_now_body': 'ParentPeak şu anda tamamen ücretsiz. Premium özellikler planlanıyor — bir şey değişmeden önce sana zamanında haber vereceğiz.',
       'register_display_name_label':
           'Görünen adın (ör. Anna veya Yılmaz ailesi)',
       'register_display_name_helper': 'Diğer ebeveynler seni bu adla görecek.',
