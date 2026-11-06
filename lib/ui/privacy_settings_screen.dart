@@ -39,15 +39,16 @@ class PrivacySettingsScreen extends StatelessWidget {
               children: [
                 const Row(
                   children: [
-                    Icon(Icons.lock_person_rounded, color: Colors.white, size: 28),
+                    Icon(Icons.lock_person_rounded,
+                        color: Colors.white, size: 28),
                     SizedBox(width: 10),
-                    Text(
-                      'Privatsphäre für euren Familienalltag',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                      ),
+                    Expanded(
+                      child: Text('Privatsphäre für euren Familienalltag',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                          )),
                     ),
                   ],
                 ),
@@ -191,12 +192,12 @@ class _InfoPill extends StatelessWidget {
         children: [
           Icon(icon, color: Colors.white, size: 16),
           const SizedBox(width: 6),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-            ),
+          Flexible(
+            child: Text(label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                )),
           ),
         ],
       ),

@@ -37,13 +37,13 @@ class LegalInfoScreen extends StatelessWidget {
                   children: [
                     Icon(Icons.gavel_rounded, color: Colors.white, size: 28),
                     SizedBox(width: 10),
-                    Text(
-                      'Klarheit für euren Familienraum',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                      ),
+                    Expanded(
+                      child: Text('Klarheit für euren Familienraum',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                          )),
                     ),
                   ],
                 ),
