@@ -1,1 +1,10 @@
-Parentpeak is now even more reliable for everyday family life. Login, weekly planning, and daily organization are more stable, even during brief connection issues. Meal planning is clearer and faster to use. We also improved safety and overall quality behind the scenes.
+Welcome to ParentPeak!
+
+New in this version:
+• Reworked onboarding: leaner, warmer, in several languages
+• Fully localized account deletion
+• Reporting and moderation with crisis support
+• Reliable calendar reminders
+• Many improvements to layout and translations
+
+All features are free. We'd love your feedback right in the app under "Profile".
