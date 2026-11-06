@@ -20,6 +20,8 @@ function fixture({ adminUids = ['admin-1'], groupRows = [], updateManyResult = {
   const routes = new Map();
   const updates = [];
   const context = {
+    ...require('../../moderation'),
+    loadAdditionalReports: async () => [],
     console: { error: () => {}, log: () => {}, warn: () => {} },
     Set, Map, Array, Number, Date,
     app: {
@@ -79,6 +81,7 @@ test('GET /admin/reports query exposes the matching profile fields (m1)', () => 
   }
   assert.ok(block.includes('COUNT(DISTINCT r."reporterUserId")'), 'distinctReporters must count distinct reporters');
   assert.ok(block.includes('"ParentMatchingProfile" pm'), 'Query must join the matching profile');
+  assert.ok(block.includes('ORDER BY BOOL_OR(LOWER(BTRIM(r."reason")) IN'), 'Critical groups must precede the database limit');
 });
 
 test('GET /admin/reports returns the enriched group rows to the client (m1)', async () => {
@@ -96,7 +99,7 @@ test('GET /admin/reports returns the enriched group rows to the client (m1)', as
   assert.equal(result.status, 200);
   const payload = JSON.parse(JSON.stringify(result.body));
   assert.equal(payload.groups.length, 1);
-  assert.deepEqual(payload.groups[0], group);
+  assert.deepEqual(payload.groups[0], { ...group, lastReason: 'other', severity: 'normal' });
 });
 
 test('GET /admin/reports requires an admin token (m1)', async () => {

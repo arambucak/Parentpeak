@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:parentpeak/ui/widgets/content_report_form.dart';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -62,8 +63,8 @@ class _TreasureHandoverScreenState
   TreasureHandoverMode _selectedMode = TreasureHandoverMode.coffeeChat;
   String? _selectedSlot;
   String? _selectedDropPoint;
-  late final TreasureListingService _listingService = widget.listingService
-      .forScope(widget.listingService.store.scope);
+  late final TreasureListingService _listingService =
+      widget.listingService.forScope(widget.listingService.store.scope);
   List<TreasureListing> _listings = const [];
   String _categoryFilter = 'all';
   String _conditionFilter = 'all';
@@ -131,8 +132,8 @@ class _TreasureHandoverScreenState
     final contentMaxWidth = viewportWidth >= 1200
         ? 980.0
         : viewportWidth >= 900
-        ? 860.0
-        : double.infinity;
+            ? 860.0
+            : double.infinity;
     final horizontalPadding = viewportWidth >= 900 ? 24.0 : 16.0;
     final reserveLabel = _selectedMode == TreasureHandoverMode.coffeeChat
         ? l10n.t(
@@ -296,9 +297,8 @@ class _TreasureHandoverScreenState
                           ),
                           backgroundColor: const Color(0xFF1E5CD7),
                         ),
-                        onPressed: _canConfirmSelection
-                            ? _confirmSelection
-                            : null,
+                        onPressed:
+                            _canConfirmSelection ? _confirmSelection : null,
                         icon: const Icon(Icons.check_circle_rounded),
                         label: Text(reserveLabel),
                       ),
@@ -567,8 +567,12 @@ class _TreasureHandoverScreenState
   int? _listingDistance(TreasureListing listing) {
     final loc = LocationService.instance;
     return TreasureGeometry.distanceMeters(
-      loc.latitude, loc.longitude, listing.latitude, listing.longitude,
-    ) ?? listing.distanceMeters;
+          loc.latitude,
+          loc.longitude,
+          listing.latitude,
+          listing.longitude,
+        ) ??
+        listing.distanceMeters;
   }
 
   String _distanceLabel(AppLocalizations l10n, TreasureListing listing) {
@@ -591,18 +595,19 @@ class _TreasureHandoverScreenState
       if (_isListingHidden(listing)) {
         return false;
       }
-      final matchesCategory =
-          _categoryFilter == 'all' ||
+      final matchesCategory = _categoryFilter == 'all' ||
           _normalizeCategoryKey(listing.category) == _categoryFilter;
       final matchesCondition =
           _conditionFilter == 'all' || listing.conditionKey == _conditionFilter;
       final distance = _listingDistance(listing);
       final matchesRadius = distance == null ||
           TreasureGeometry.withinRadius(distance, listing.shareRadiusKm);
-      final matchesDistance =
-          _maxDistanceMeters == null ||
+      final matchesDistance = _maxDistanceMeters == null ||
           (distance != null && distance <= _maxDistanceMeters!);
-      return matchesCategory && matchesCondition && matchesRadius && matchesDistance;
+      return matchesCategory &&
+          matchesCondition &&
+          matchesRadius &&
+          matchesDistance;
     }).toList();
   }
 
@@ -654,9 +659,8 @@ class _TreasureHandoverScreenState
               color: const Color(0xFF334961),
             ),
             maxLines: compactScreen ? 2 : null,
-            overflow: compactScreen
-                ? TextOverflow.ellipsis
-                : TextOverflow.visible,
+            overflow:
+                compactScreen ? TextOverflow.ellipsis : TextOverflow.visible,
           ),
         ],
       ),
@@ -715,9 +719,8 @@ class _TreasureHandoverScreenState
             fontSize: compactScreen ? 12.2 : null,
           ),
           maxLines: compactScreen ? 2 : null,
-          overflow: compactScreen
-              ? TextOverflow.ellipsis
-              : TextOverflow.visible,
+          overflow:
+              compactScreen ? TextOverflow.ellipsis : TextOverflow.visible,
         ),
         const SizedBox(height: 10),
         Container(
@@ -1049,9 +1052,8 @@ class _TreasureHandoverScreenState
                     ? l10n.t('treasureReserved')
                     : l10n.t(
                         'treasureReserveAndPickup',
-                        fallback: compactScreen
-                            ? 'Details'
-                            : 'Details & reservieren',
+                        fallback:
+                            compactScreen ? 'Details' : 'Details & reservieren',
                       ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -1232,9 +1234,8 @@ class _TreasureHandoverScreenState
       return;
     }
     final listings = discovery.listings;
-    final visibleListings = listings
-        .where((item) => !_isListingHidden(item))
-        .toList();
+    final visibleListings =
+        listings.where((item) => !_isListingHidden(item)).toList();
     if (!mounted) return;
     setState(() {
       _discoveryScope = discovery.scope;
@@ -1245,8 +1246,8 @@ class _TreasureHandoverScreenState
       _selectedListing = _selectedListing == null
           ? null
           : visibleListings
-                .where((item) => item.id == _selectedListing?.id)
-                .firstOrNull;
+              .where((item) => item.id == _selectedListing?.id)
+              .firstOrNull;
       _loadingListings = false;
     });
     if (_scrollController.hasClients) {
@@ -1283,7 +1284,8 @@ class _TreasureHandoverScreenState
             child: Text(
               _globalDigitalMode
                   ? l10n.t('treasureDiscoveryInvite')
-                  : l10n.tFormat('treasureDiscoveryScopeInvite', {'radius': _discoveryScope}),
+                  : l10n.tFormat('treasureDiscoveryScopeInvite',
+                      {'radius': _discoveryScope}),
               style: const TextStyle(
                 color: Color(0xFF74420D),
                 fontWeight: FontWeight.w700,
@@ -1307,13 +1309,11 @@ class _TreasureHandoverScreenState
     final listings = await _attempt(_listingService.loadListings);
     if (!mounted || listings == null) return;
     setState(() {
-      _listings = listings
-          .where((item) => !_isListingHidden(item))
-          .toList();
+      _listings = listings.where((item) => !_isListingHidden(item)).toList();
       _syncError = _listingService.lastSyncError;
       _selectedListing =
           _listings.where((item) => item.id == result.id).firstOrNull ??
-          (result.isAvailable ? result : null);
+              (result.isAvailable ? result : null);
     });
   }
 
@@ -1382,8 +1382,8 @@ class _TreasureHandoverScreenState
                 Text(
                   l10n.t('treasureReservations', fallback: 'Reservierungen'),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                        fontWeight: FontWeight.w800,
+                      ),
                 ),
                 const SizedBox(height: 8),
                 for (final reservation in overview.reservedByMe)
@@ -1395,7 +1395,8 @@ class _TreasureHandoverScreenState
                     subtitle: Text(
                       reservation.status == 'confirmed'
                           ? l10n.t('treasureReservationConfirmed')
-                          : treasureHandoverLocation(l10n, reservation.location)!,
+                          : treasureHandoverLocation(
+                              l10n, reservation.location)!,
                     ),
                     trailing: reservation.status == 'confirmed'
                         ? null
@@ -1545,9 +1546,7 @@ class _TreasureHandoverScreenState
       _reservedListingIds = Set<String>.from(
         data[TreasureAccountStore.reservedKey] as List? ?? [],
       );
-      _listings = _listings
-          .where((item) => !_isListingHidden(item))
-          .toList();
+      _listings = _listings.where((item) => !_isListingHidden(item)).toList();
     });
   }
 
@@ -1623,88 +1622,26 @@ class _TreasureHandoverScreenState
 
   Future<void> _reportListing(TreasureListing listing) async {
     final l10n = AppLocalizations.of(context);
-    const reasons = <String>['inappropriate', 'false_info', 'hostile', 'other'];
-
-    String selectedReason = reasons.first;
-    final noteController = TextEditingController();
-    final confirmed = await _accountDialog<bool>(
+    final selection = await _accountSheet<ReportSelection>(
       context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: Text(
-                l10n.t('treasureReportTitle', fallback: 'Angebot melden'),
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  DropdownButtonFormField<String>(
-                    initialValue: selectedReason,
-                    items: reasons
-                        .map(
-                          (reason) => DropdownMenuItem<String>(
-                            value: reason,
-                            child: Text(l10n.t('treasureReportReason_$reason')),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      if (value == null || value.isEmpty) return;
-                      setDialogState(() {
-                        selectedReason = value;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: noteController,
-                    minLines: 2,
-                    maxLines: 4,
-                    decoration: InputDecoration(
-                      hintText: l10n.t(
-                        'treasureReportNoteHint',
-                        fallback: 'Optional: kurze Notiz für die Moderation',
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(false),
-                  child: Text(l10n.cancel),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(true),
-                  child: Text(
-                    l10n.t('treasureReportSubmit', fallback: 'Melden'),
-                  ),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-
-    if (confirmed != true || !mounted) {
-      noteController.dispose();
-      return;
-    }
-
-    final sent = await _attempt(
-      () => _listingService.reportListing(
-        listingId: listing.id,
-        reason: selectedReason,
-        note: noteController.text.trim(),
+      isScrollControlled: true,
+      builder: (context) => ContentReportForm(
+        onSubmit: (selection) => Navigator.pop(context, selection),
       ),
     );
-    noteController.dispose();
+
+    if (selection == null || !mounted) return;
+    final sent = await _attempt(
+      () => deliverContentReport(
+        context,
+        reason: selection.reason,
+        send: () => _listingService.reportListing(
+          listingId: listing.id,
+          reason: selection.reason,
+          note: selection.note,
+        ),
+      ),
+    );
     if (!mounted || sent == null) return;
     if (!sent) {
       final messenger = ScaffoldMessenger.of(context);
@@ -1831,7 +1768,8 @@ class _TreasureHandoverScreenState
             TextButton(
               key: const Key('treasure-block-owner'),
               onPressed: () => Navigator.of(dialogContext).pop('owner'),
-              child: Text(l10n.t('block_profile', fallback: 'Profil blockieren')),
+              child:
+                  Text(l10n.t('block_profile', fallback: 'Profil blockieren')),
             ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop('listing'),
@@ -2283,9 +2221,12 @@ class _TreasureHandoverScreenState
                   if (listing.views > 0)
                     _DetailLine(
                       icon: Icons.visibility_outlined,
-                      text: l10n.tFormat('treasureViewsLine', {
-                        'count': '${listing.views}',
-                      }, fallback: '${listing.views} Aufrufe'),
+                      text: l10n.tFormat(
+                          'treasureViewsLine',
+                          {
+                            'count': '${listing.views}',
+                          },
+                          fallback: '${listing.views} Aufrufe'),
                     ),
                   if (listing.note.trim().isNotEmpty) ...[
                     const SizedBox(height: 14),
@@ -2511,14 +2452,20 @@ class _TreasureHandoverScreenState
     }
     if (age.inMinutes < 60) {
       final minutes = age.inMinutes.clamp(1, 59);
-      return l10n.tFormat('treasureMinutesAgoShort', {
-        'count': '$minutes',
-      }, fallback: 'vor $minutes Min.');
+      return l10n.tFormat(
+          'treasureMinutesAgoShort',
+          {
+            'count': '$minutes',
+          },
+          fallback: 'vor $minutes Min.');
     }
     final hours = age.inHours.clamp(1, 23);
-    return l10n.tFormat('treasureHoursAgoShort', {
-      'count': '$hours',
-    }, fallback: 'vor $hours Std.');
+    return l10n.tFormat(
+        'treasureHoursAgoShort',
+        {
+          'count': '$hours',
+        },
+        fallback: 'vor $hours Std.');
   }
 
   String _detailListedTimeLabel(
@@ -2711,12 +2658,10 @@ class _TreasureHandoverScreenState
             'treasureHandoverFlyingSwapText',
             fallback: 'Kontaktlos abholen, wenn es passt.',
           );
-    final background = isCoffee
-        ? const Color(0xFFFFF3EA)
-        : const Color(0xFFEFF9F2);
-    final foreground = isCoffee
-        ? const Color(0xFFD96C2F)
-        : const Color(0xFF1F9C5D);
+    final background =
+        isCoffee ? const Color(0xFFFFF3EA) : const Color(0xFFEFF9F2);
+    final foreground =
+        isCoffee ? const Color(0xFFD96C2F) : const Color(0xFF1F9C5D);
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -3085,9 +3030,8 @@ class _SelectableOptionTile extends StatelessWidget {
             const SizedBox(width: 8),
             Icon(
               selected ? Icons.radio_button_checked : Icons.radio_button_off,
-              color: selected
-                  ? const Color(0xFF1E5CD7)
-                  : const Color(0xFF8EA0B5),
+              color:
+                  selected ? const Color(0xFF1E5CD7) : const Color(0xFF8EA0B5),
               size: 18,
             ),
           ],

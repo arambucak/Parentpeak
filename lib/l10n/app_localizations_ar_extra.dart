@@ -2,6 +2,24 @@
 // bei RTL das Layout vor breiter Vermarktung von Muttersprachlern prüfen.
 // Platzhalter wie {count}, {name} bleiben exakt erhalten.
 const appLocalizationsArExtra = <String, String>{
+  "report_reason_child_safety": "طفل في خطر",
+  "report_reason_sexual_content": "محتوى جنسي / إساءة",
+  "report_reason_violence_threat": "عنف / تهديد",
+  "report_reason_self_harm": "إيذاء النفس / انتحار",
+  "report_reason_harassment": "تحرش / خطاب كراهية",
+  "report_reason_spam": "رسائل مزعجة / إعلانات",
+  "report_reason_fraud": "احتيال / ملف شخصي مزيف",
+  "report_reason_inappropriate": "محتوى غير لائق",
+  "report_reason_misinformation": "معلومات خاطئة",
+  "report_reason_other": "أخرى",
+  "report_content_title": "الإبلاغ عن محتوى",
+  "report_content_hint": "شكراً لاهتمامك بمجتمعنا. ما الذي يقلقك؟",
+  "report_optional_note": "اختياري: ملاحظة لفريق الإشراف",
+  "report_help_title": "لست وحدك",
+  "report_help_intro":
+      "إذا كنت أنت أو شخص آخر بحاجة إلى المساعدة الآن، فالدعم البشري متاح هنا. الإبلاغ لا يغني عن المساعدة الفورية.",
+  "report_severity_critical": "مراجعة عاجلة",
+  "report_severity_normal": "للمراجعة",
   'no_items': 'لا توجد عناصر',
   'retry': 'المحاولة مجددًا',
   'chat_ask_none': 'لا تطرح سؤال متابعة؛ فالمعطيات تكفي لاتخاذ خطوات ملموسة.',
@@ -33,14 +51,10 @@ const appLocalizationsArExtra = <String, String>{
       'تخفيف واقعي، وطقوس صغيرة، وخطوات توفّر الطاقة؛ Juul: مرافقة أصيلة ومحترمة.',
   'chat_new_context': 'ابقَ على الطلب الحالي، دون استرجاع مُختلَق.',
   'chat_no_context': 'لا شيء',
-  'chat_family_one_child':
-      'عمر طفل العائلة نحو {age} سنوات.',
-  'chat_family_children':
-      'لدى العائلة {count} أطفال (نحو {ages} سنوات).',
-  'chat_family_values':
-      'التوجّه التربوي للوالدين: {values}.',
-  'chat_family_topics':
-      'مواضيع متكررة مؤخرًا: {topics}.',
+  'chat_family_one_child': 'عمر طفل العائلة نحو {age} سنوات.',
+  'chat_family_children': 'لدى العائلة {count} أطفال (نحو {ages} سنوات).',
+  'chat_family_values': 'التوجّه التربوي للوالدين: {values}.',
+  'chat_family_topics': 'مواضيع متكررة مؤخرًا: {topics}.',
   'chat_no_family': 'لا شيء',
   'chat_threads_title': 'المحادثات',
   'chat_new_conversation': 'محادثة جديدة',
@@ -58,8 +72,7 @@ const appLocalizationsArExtra = <String, String>{
   'legal_sub_licenses': 'البرمجيات التي نستخدمها',
   'delete_reauth_provider_body':
       'لحذف حسابك نهائيًا، يرجى تسجيل الدخول مرة أخرى عبر {provider}.',
-  'delete_reauth_provider_confirm':
-      'التأكيد عبر {provider}',
+  'delete_reauth_provider_confirm': 'التأكيد عبر {provider}',
   'calendar_reminder_web_hint':
       'في المتصفح لا يمكننا تذكيرك عبر الإشعارات. للحصول على تذكيرات موثوقة، ثبّت تطبيق ParentPeak على هاتفك.',
   'date_this_week': 'هذا الأسبوع',
@@ -182,8 +195,7 @@ const appLocalizationsArExtra = <String, String>{
   'antrag_optional': 'اختياري',
   'antrag_premium_description':
       'مع الاشتراك المميّز تحصل على الدليل الكامل، وقوالب الذكاء الاصطناعي، والتذكيرات.',
-  'antrag_premium_soon':
-      'ميزات premium قادمة قريبًا.',
+  'antrag_premium_soon': 'ميزات premium قادمة قريبًا.',
   'antrag_processing_time': '⏱️ مدة المعالجة: {time}',
   'antrag_ready_next': 'جمعت كل المستندات. انتقل إلى الخطوة 2!',
   'antrag_regenerate': 'إنشاء من جديد',
@@ -200,11 +212,13 @@ const appLocalizationsArExtra = <String, String>{
       'اضغط على الرابط في البريد الإلكتروني. بعد ذلك يمكنك تسجيل الدخول.',
   'auth_email_confirm_title': 'أكِّد بريدك الإلكتروني 📬',
   'auth_verify_dialog_title': 'سعداء بوجودك معنا!',
-  'auth_verify_dialog_subtitle': 'خطوة صغيرة واحدة فقط ونبدأ. أرسلنا رسالة إلى:',
+  'auth_verify_dialog_subtitle':
+      'خطوة صغيرة واحدة فقط ونبدأ. أرسلنا رسالة إلى:',
   'auth_verify_step_1': 'افتح رسالة ParentPeak.',
   'auth_verify_step_2': 'اضغط على الزر في الرسالة.',
   'auth_verify_step_3': 'عُد إلى هنا وسجّل الدخول.',
-  'auth_verify_spam_hint': 'لم يصل شيء؟ ألقِ نظرة على مجلد الرسائل غير المرغوب فيها. يحدث ذلك أحياناً.',
+  'auth_verify_spam_hint':
+      'لم يصل شيء؟ ألقِ نظرة على مجلد الرسائل غير المرغوب فيها. يحدث ذلك أحياناً.',
   'auth_email_invalid': 'يرجى إدخال عنوان بريد إلكتروني صالح.',
   'auth_email_label': 'البريد الإلكتروني',
   'auth_email_required': 'البريد الإلكتروني مطلوب.',
@@ -398,7 +412,8 @@ const appLocalizationsArExtra = <String, String>{
   'chat_understood': 'فهمت',
   'chat_welcome_message':
       'أخبرني بما يشغل بالك الآن. أنا أستمع إليك — دون أي حكم.',
-  'chat_ai_disclaimer': 'يقدم لك هذا الذكاء الاصطناعي أفكارًا تربوية وتوجيهًا، وليس استشارة طبية أو علاجية. في حالات الطوارئ، يرجى التواصل مباشرة مع مساعدة مهنية.',
+  'chat_ai_disclaimer':
+      'يقدم لك هذا الذكاء الاصطناعي أفكارًا تربوية وتوجيهًا، وليس استشارة طبية أو علاجية. في حالات الطوارئ، يرجى التواصل مباشرة مع مساعدة مهنية.',
   'child_name_example': 'مثلًا إيما',
   'child_role': 'طفل',
   'choose_country_region': 'اختر بلدك ومنطقتك',
@@ -472,7 +487,8 @@ const appLocalizationsArExtra = <String, String>{
   'development_practice_today': 'تطبيق لليوم',
   'development_questions_remaining':
       'ما زال {count} أسئلة مفتوحة. أجِب عن جميع الأسئلة للحصول على تقريرك الشخصي من الذكاء الاصطناعي.',
-  'development_orientation_disclaimer': 'يمنحك هذا الفحص توجيهًا حول نمو طفلك، لكنه لا يحل محل الفحص الطبي. إذا كانت لديك أسئلة أو مخاوف، فإن طبيب الأطفال هو المرجع المناسب.',
+  'development_orientation_disclaimer':
+      'يمنحك هذا الفحص توجيهًا حول نمو طفلك، لكنه لا يحل محل الفحص الطبي. إذا كانت لديك أسئلة أو مخاوف، فإن طبيب الأطفال هو المرجع المناسب.',
   'development_report_error': 'تعذّر إنشاء التقرير: {error}',
   'development_report_language_instruction':
       'اكتب التقرير بأكمله باللغة العربية.',
@@ -2061,9 +2077,11 @@ const appLocalizationsArExtra = <String, String>{
   'register_accept_terms_required': 'يرجى قبول شروط الاستخدام.',
   'register_already_registered': 'هل لديك حساب بالفعل؟ ',
   'register_back_to_login': 'العودة إلى تسجيل الدخول',
-  'register_beta_description': 'ParentPeak مجاني تمامًا الآن. ميزات premium قيد التخطيط — سنخبرك في الوقت المناسب قبل أي تغيير.',
+  'register_beta_description':
+      'ParentPeak مجاني تمامًا الآن. ميزات premium قيد التخطيط — سنخبرك في الوقت المناسب قبل أي تغيير.',
   'free_now_title': 'مجاني الآن',
-  'free_now_body': 'ParentPeak مجاني تمامًا الآن. ميزات premium قيد التخطيط — سنخبرك في الوقت المناسب قبل أي تغيير.',
+  'free_now_body':
+      'ParentPeak مجاني تمامًا الآن. ميزات premium قيد التخطيط — سنخبرك في الوقت المناسب قبل أي تغيير.',
   'register_beta_title': 'مجاني الآن',
   'register_display_name_helper': 'هكذا يراك الآباء الآخرون.',
   'register_display_name_label': 'اسمك الظاهر (مثل: أنّا أو عائلة شميت)',

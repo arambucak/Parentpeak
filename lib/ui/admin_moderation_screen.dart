@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/logic/admin_moderation_service.dart';
+import 'package:parentpeak/logic/report_reasons.dart';
 
 /// Schlankes Moderations-Dashboard fuer Admins.
 /// Sichtbarkeit wird vom Aufrufer (Admin-UID) gesteuert; die echte
 /// Absicherung passiert serverseitig (ADMIN_USER_IDS auf Render).
 class AdminModerationScreen extends StatefulWidget {
-  const AdminModerationScreen({super.key});
+  const AdminModerationScreen({super.key, this.service});
+  final AdminModerationService? service;
 
   @override
   State<AdminModerationScreen> createState() => _AdminModerationScreenState();
 }
 
 class _AdminModerationScreenState extends State<AdminModerationScreen> {
-  final _service = AdminModerationService();
+  late final _service = widget.service ?? AdminModerationService();
   bool _loading = true;
   String? _error;
   AdminReportsResult _data = const AdminReportsResult(groups: [], reports: []);
@@ -35,7 +37,16 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
       final result = await _service.fetchReports(status: _status);
       if (!mounted) return;
       setState(() {
-        _data = result;
+        _data = AdminReportsResult(
+          groups: [
+            ...result.groups.where((g) => g.severity == 'critical'),
+            ...result.groups.where((g) => g.severity != 'critical'),
+          ],
+          reports: [
+            ...result.reports.where((r) => r.severity == 'critical'),
+            ...result.reports.where((r) => r.severity != 'critical'),
+          ],
+        );
         _loading = false;
       });
     } catch (e) {
@@ -288,7 +299,21 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
             color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
+        if (g.severity == 'critical')
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(children: [
+              Icon(Icons.warning_amber_rounded,
+                  color: theme.colorScheme.error, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                  child: Text(context.tr('report_severity_critical'),
+                      style: TextStyle(
+                          color: theme.colorScheme.error,
+                          fontWeight: FontWeight.w700))),
+            ]),
+          ),
+        Wrap(spacing: 8, runSpacing: 8, children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
@@ -337,7 +362,6 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
                   style: const TextStyle(
                       fontSize: 11, fontWeight: FontWeight.w700)),
             ),
-          const Spacer(),
           if (g.lastReportedAt != null)
             Text(_formatDate(g.lastReportedAt!),
                 style: theme.textTheme.labelSmall
@@ -385,7 +409,7 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
           ...details.take(3).map((d) => Padding(
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Text(
-                    '• ${_reasonLabel(d.reason)}'
+                    '${d.severity == 'critical' ? '⚠ ' : '• '}${_reasonLabel(d.reason)}'
                     '${d.content.isNotEmpty ? ' – "${d.content}"' : ''}',
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -435,18 +459,12 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
   }
 
   String _reasonLabel(String key) {
-    switch (key) {
-      case 'insult':
-        return context.tr('admin_reason_insult');
-      case 'spam':
-        return context.tr('admin_reason_spam');
-      case 'inappropriate':
-        return context.tr('admin_reason_inappropriate');
-      case 'fraud':
-        return context.tr('admin_reason_fraud');
-      default:
-        return key.isEmpty ? context.tr('admin_reason_other') : key;
-    }
+    final canonical = ReportReasons.canonical(key);
+    return ReportReasons.keys.contains(canonical)
+        ? context.tr('report_reason_$canonical')
+        : key.isEmpty
+            ? context.tr('report_reason_other')
+            : key;
   }
 
   String _formatDate(DateTime d) =>

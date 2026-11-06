@@ -89,6 +89,8 @@ function fixture({ uid = 'member', databaseFailure = false, memoryFallback = fal
     }
   }
   const context = vm.createContext({
+    ...require('../../moderation'),
+    notifyModeration: async () => {},
     console: { error() {} },
     Set, Date,
     prisma, familyRequests: requests, events: [event],

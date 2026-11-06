@@ -23,6 +23,8 @@ import 'package:parentpeak/ui/chat_threads_screen.dart';
 import 'package:parentpeak/models/ai_memory.dart';
 import 'package:parentpeak/ui/ai_memory_settings_screen.dart';
 import 'package:parentpeak/main.dart';
+import 'package:parentpeak/services/block_report_service.dart';
+import 'package:parentpeak/ui/widgets/content_report_form.dart';
 
 class ChatScreen extends StatefulWidget {
   final String? initialMessage;
@@ -30,6 +32,7 @@ class ChatScreen extends StatefulWidget {
   final ChatAccountStore? accountStore;
   final AiMemoryService? memoryService;
   final ChatThreadStore? threadStore;
+  final BlockReportService? reportService;
 
   const ChatScreen({
     super.key,
@@ -38,6 +41,7 @@ class ChatScreen extends StatefulWidget {
     this.accountStore,
     this.memoryService,
     this.threadStore,
+    this.reportService,
   });
 
   @override
@@ -948,6 +952,10 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _setFeedback(int messageIndex, String value) {
+    if (value == 'dangerous' || value == 'inappropriate') {
+      unawaited(_reportAssistantMessage(messageIndex, value));
+      return;
+    }
     setState(() {
       _assistantFeedbackByIndex[messageIndex] = value;
     });
@@ -961,6 +969,35 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _reportAssistantMessage(int index, String feedback) async {
+    final ticket = _ticket;
+    final content = _messages[index]['content']?.toString() ?? '';
+    _activeThreadId ??= _threadStore.newThreadId();
+    final target = 'ai_chat:$_activeThreadId:$index';
+    final selection = await selectReportReason(context, allowNote: false);
+    if (selection == null || !mounted || !_isCurrent(ticket)) return;
+    final delivered = await deliverContentReport(
+      context,
+      reason: selection.reason,
+      send: () =>
+          (widget.reportService ?? BlockReportService.instance).reportContent(
+        reporterUserId: AuthService.instance.currentUser?.uid ?? '',
+        reportedUserId: target,
+        contentType: 'ai_message',
+        content: content,
+        reason: selection.reason,
+      ),
+    );
+    if (!mounted || !_isCurrent(ticket)) return;
+    if (delivered) {
+      setState(() => _assistantFeedbackByIndex[index] = feedback);
+    }
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(context.tr(
+          delivered ? 'report_delivery_success' : 'report_delivery_failed')),
+    ));
   }
 
   bool _isProviderUnavailableMessage(String content) {

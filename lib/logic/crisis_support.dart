@@ -17,9 +17,21 @@ class CrisisSupport {
   static String normalize(String input) {
     var text = input.toLowerCase();
     const replacements = {
-      'ä': 'a', 'ö': 'o', 'ü': 'u', 'ß': 'ss',
-      'â': 'a', 'î': 'i', 'û': 'u', 'ê': 'e', 'ô': 'o',
-      'ç': 'c', 'ğ': 'g', 'ı': 'i', 'ş': 's', 'é': 'e', 'è': 'e',
+      'ä': 'a',
+      'ö': 'o',
+      'ü': 'u',
+      'ß': 'ss',
+      'â': 'a',
+      'î': 'i',
+      'û': 'u',
+      'ê': 'e',
+      'ô': 'o',
+      'ç': 'c',
+      'ğ': 'g',
+      'ı': 'i',
+      'ş': 's',
+      'é': 'e',
+      'è': 'e',
     };
     replacements.forEach((from, to) {
       text = text.replaceAll(from, to);
@@ -40,7 +52,8 @@ class CrisisSupport {
     'kindeswohlgefahrdung', 'selbstverletzung', 'fremdgefahrdung',
     'akute gefahr', 'bringe mich um', 'bring mich um',
     // Englisch
-    'suicide', 'kill myself', 'end my life', 'want to die', "don't want to live",
+    'suicide', 'kill myself', 'end my life', 'want to die',
+    "don't want to live",
     'do not want to live', 'hurt my child', 'harm my child', 'harm myself',
     'self harm', 'self-harm', 'losing control', 'lose control',
     'no way out', 'end it all',
@@ -87,7 +100,67 @@ class CrisisSupport {
 
   /// Länderabhängige Notrufzeile. [countryCode] z.B. 'DE','AT','CH','TR','GB'.
   /// Fällt auf die europäische 112 + lokalen Hinweis zurück.
-  static String emergencyLine(String? countryCode) {
+  static String emergencyLine(String? countryCode,
+      {String languageCode = 'de'}) {
+    if (languageCode != 'de') {
+      final labels = switch (languageCode) {
+        'tr' => [
+            'Acil yardım',
+            'Kriz desteği',
+            'Çocuklar için destek',
+            'Yerel bir kriz veya çocuk koruma hattından da hemen yardım iste.'
+          ],
+        'ku' || 'ckb' => [
+            'Alîkariya lezgîn',
+            'Piştgiriya krîzê',
+            'Piştgiriya zarokan',
+            'Ji xeta herêmî ya krîzê an parastina zarokan jî niha alîkariyê bixwaze.'
+          ],
+        'fr' => [
+            'Urgences',
+            'Soutien en cas de crise',
+            'Protection de l’enfant',
+            'Contactez aussi une ligne locale de crise ou de protection de l’enfance dès maintenant.'
+          ],
+        'es' => [
+            'Emergencias',
+            'Apoyo en crisis',
+            'Protección infantil',
+            'Contacta también ahora con una línea local de crisis o de protección infantil.'
+          ],
+        'it' => [
+            'Emergenze',
+            'Sostegno in caso di crisi',
+            'Tutela dei minori',
+            'Contatta subito anche un servizio locale di sostegno in caso di crisi o di tutela dei minori.'
+          ],
+        'ar' => [
+            'الطوارئ',
+            'الدعم في الأزمات',
+            'حماية الطفل',
+            'تواصل الآن أيضاً مع خط محلي لدعم الأزمات أو حماية الطفل.'
+          ],
+        _ => [
+            'Emergency',
+            'Crisis support',
+            'Child protection',
+            'Please also contact a local crisis or child-protection helpline right now.'
+          ],
+      };
+      return switch ((countryCode ?? '').toUpperCase()) {
+        'DE' =>
+          '${labels[0]} 112 · ${labels[1]}: Telefonseelsorge 0800 111 0 111 / 0800 111 0 222 (24/7) · 116 117 · ${labels[2]}: Jugendamt',
+        'AT' =>
+          '${labels[0]} 112/144 · ${labels[1]}: Telefonseelsorge 142 (24/7) · ${labels[2]}: Rat auf Draht 147',
+        'CH' =>
+          '${labels[0]} 112/144 · ${labels[1]}: Dargebotene Hand 143 (24/7) · Pro Juventute 058 261 61 61',
+        'TR' =>
+          '${labels[0]} 112 · 182 (Sağlık Bakanlığı) · ${labels[2]}: ALO 183',
+        'GB' =>
+          '${labels[0]} 999 / 112 · ${labels[1]}: Samaritans 116 123 (24/7) · ${labels[2]}: NSPCC 0808 800 5000',
+        _ => '${labels[0]}: EU 112. ${labels[3]}',
+      };
+    }
     switch ((countryCode ?? '').toUpperCase()) {
       case 'DE':
         return 'Notruf 112 · Telefonseelsorge 0800 111 0 111 oder 0800 111 0 222 (24/7) · '
@@ -111,7 +184,7 @@ class CrisisSupport {
     required String languageCode,
     String? countryCode,
   }) {
-    final line = emergencyLine(countryCode);
+    final line = emergencyLine(countryCode, languageCode: languageCode);
     switch (languageCode) {
       case 'de':
         return 'Das klingt nach einer akuten Belastung. Du musst damit nicht allein bleiben. '
@@ -126,6 +199,22 @@ class CrisisSupport {
         return 'Ev wekî barek giran a lezgîn xuya dike. Tu ne tenê yî. '
             'Ev rêberiyeke bi alîkariya AI ye û şûna şêwirmendiya pispor nagire. '
             'Ji kerema xwe niha alîkariya mirovî ya rasterast bistîne:\n$line';
+      case 'fr':
+        return 'Cela semble être une situation de grande détresse. Vous n’avez pas à y faire face seul. '
+            'Cette orientation assistée par IA ne remplace pas un accompagnement professionnel. '
+            'Demandez maintenant une aide humaine directe :\n$line';
+      case 'es':
+        return 'Esto parece una situación de gran angustia. No tienes que afrontarla a solas. '
+            'Esta orientación asistida por IA no sustituye el apoyo profesional. '
+            'Busca ahora ayuda humana directa:\n$line';
+      case 'it':
+        return 'Sembra una situazione di forte sofferenza. Non devi affrontarla da solo. '
+            'Questo orientamento assistito dall’IA non sostituisce un sostegno professionale. '
+            'Chiedi ora un aiuto umano diretto:\n$line';
+      case 'ar':
+        return 'يبدو أن هذا موقف شديد الصعوبة. لا يتعين عليك مواجهته وحدك. '
+            'هذا توجيه بمساعدة الذكاء الاصطناعي ولا يغني عن الدعم المتخصص. '
+            'اطلب الآن مساعدة بشرية مباشرة:\n$line';
       default:
         return 'This sounds like an acute crisis, and you don\'t have to face it alone. '
             'This is AI-assisted guidance and does not replace professional support. '

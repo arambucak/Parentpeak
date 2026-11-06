@@ -174,7 +174,14 @@ void main() {
         ));
         await tester.tap(find.text('open report'));
         await tester.pumpAndSettle();
-        await tester.tap(find.widgetWithText(ListTile, 'Spam / Werbung'));
+        final reason = find.byKey(const ValueKey('report-reason-spam'));
+        await tester.ensureVisible(reason);
+        await tester.pumpAndSettle();
+        await tester.tap(reason);
+        final submit = find.byKey(const ValueKey('report-submit'));
+        await tester.ensureVisible(submit);
+        await tester.pumpAndSettle();
+        await tester.tap(submit);
         await tester.pumpAndSettle();
         final strings = AppStringsManager.allStrings[language]!;
         expect(

@@ -10,15 +10,15 @@ import 'package:parentpeak/ui/widgets/event_safety_widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Widget _app(String code, Widget child) => MaterialApp(
-  locale: Locale(code),
-  supportedLocales: AppLanguages.supportedLocales,
-  localizationsDelegates: const [
-    AppLanguages.materialLocalizationsDelegate,
-    AppLanguages.widgetsLocalizationsDelegate,
-    AppLanguages.cupertinoLocalizationsDelegate,
-  ],
-  home: Scaffold(body: SingleChildScrollView(child: child)),
-);
+      locale: Locale(code),
+      supportedLocales: AppLanguages.supportedLocales,
+      localizationsDelegates: const [
+        AppLanguages.materialLocalizationsDelegate,
+        AppLanguages.widgetsLocalizationsDelegate,
+        AppLanguages.cupertinoLocalizationsDelegate,
+      ],
+      home: Scaffold(body: SingleChildScrollView(child: child)),
+    );
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
@@ -43,7 +43,8 @@ void main() {
       keys.add('event_creator_hint_${creator.name}');
     }
     for (final category in EventCategory.values.where((category) =>
-        category != EventCategory.sport && category != EventCategory.sonstiges)) {
+        category != EventCategory.sport &&
+        category != EventCategory.sonstiges)) {
       keys.add('event_community_category_${category.name}');
     }
     for (final tag in AccessibilityTag.values) {
@@ -63,22 +64,32 @@ void main() {
   for (final language in AppLanguages.supported) {
     testWidgets('${language.code}: safety is nonblank and reports selectable',
         (tester) async {
-      await tester.pumpWidget(_app(language.code, Column(children: [
-        EventDisclaimerBanner(onDismiss: () {}),
-        const PrivateAddressHint(),
-        const ReportEventSheet(eventId: 'test', eventTitle: 'Picnic'),
-      ])));
+      await tester.pumpWidget(_app(
+          language.code,
+          Column(children: [
+            EventDisclaimerBanner(onDismiss: () {}),
+            const PrivateAddressHint(),
+            const ReportEventSheet(eventId: 'test', eventTitle: 'Picnic'),
+          ])));
       await tester.pumpAndSettle();
       final strings = AppStringsManager.allStrings[language.code]!;
       expect(find.text(strings['event_safety_title']!), findsOneWidget);
-      expect(find.text(strings['event_report_title']!), findsOneWidget);
-      final button = find.widgetWithText(FilledButton, strings['event_report_send']!);
+      expect(
+          find.text(AppStringsManager.getString(
+              language.code, 'report_content_title')),
+          findsOneWidget);
+      final button =
+          find.widgetWithText(FilledButton, strings['event_report_send']!);
       expect(tester.widget<FilledButton>(button).onPressed, isNull);
-      final reason = find.widgetWithText(RadioListTile<String>, strings['event_report_fake']!);
+      final reason = find.byKey(const ValueKey('report-reason-fraud'));
       await tester.ensureVisible(reason);
       await tester.tap(reason);
       await tester.pump();
-      expect(tester.widget<RadioGroup<String>>(find.byType(RadioGroup<String>)).groupValue, 'fake');
+      expect(
+          tester
+              .widget<RadioGroup<String>>(find.byType(RadioGroup<String>))
+              .groupValue,
+          'fraud');
       expect(tester.widget<FilledButton>(button).onPressed, isNotNull);
       expect(tester.takeException(), isNull);
     });
@@ -114,16 +125,19 @@ void main() {
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
       final strings = AppStringsManager.allStrings['en']!;
-      final reason =
-          find.widgetWithText(RadioListTile<String>, strings['event_report_fake']!);
+      final reason = find.byKey(const ValueKey('report-reason-fraud'));
       await tester.ensureVisible(reason);
       await tester.tap(reason);
       await tester.pump();
-      await tester.tap(find.widgetWithText(FilledButton, strings['event_report_send']!));
+      await tester.ensureVisible(find.byKey(const ValueKey('report-submit')));
       await tester.pumpAndSettle();
-      expect(submittedReason, 'fake');
+      await tester.tap(
+          find.widgetWithText(FilledButton, strings['event_report_send']!));
+      await tester.pumpAndSettle();
+      expect(submittedReason, 'fraud');
       expect(
-        find.text(strings[delivered ? 'event_report_thanks' : 'report_delivery_failed']!),
+        find.text(strings[
+            delivered ? 'event_report_thanks' : 'report_delivery_failed']!),
         findsOneWidget,
       );
     });
@@ -131,30 +145,33 @@ void main() {
 
   testWidgets('report callback token error shows retry instead of thanks',
       (tester) async {
-    await tester.pumpWidget(_app('en', Builder(
-      builder: (context) => TextButton(
-        onPressed: () => showModalBottomSheet<void>(
-          context: context,
-          isScrollControlled: true,
-          builder: (_) => ReportEventSheet(
-            eventId: 'event',
-            eventTitle: 'Picnic',
-            onSubmit: (_) async => throw StateError('token unavailable'),
+    await tester.pumpWidget(_app(
+        'en',
+        Builder(
+          builder: (context) => TextButton(
+            onPressed: () => showModalBottomSheet<void>(
+              context: context,
+              isScrollControlled: true,
+              builder: (_) => ReportEventSheet(
+                eventId: 'event',
+                eventTitle: 'Picnic',
+                onSubmit: (_) async => throw StateError('token unavailable'),
+              ),
+            ),
+            child: const Text('open'),
           ),
-        ),
-        child: const Text('open'),
-      ),
-    )));
+        )));
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
     final strings = AppStringsManager.allStrings['en']!;
-    final reason =
-        find.widgetWithText(RadioListTile<String>, strings['event_report_fake']!);
+    final reason = find.byKey(const ValueKey('report-reason-fraud'));
     await tester.ensureVisible(reason);
     await tester.tap(reason);
     await tester.pump();
-    await tester.tap(
-        find.widgetWithText(FilledButton, strings['event_report_send']!));
+    await tester.ensureVisible(find.byKey(const ValueKey('report-submit')));
+    await tester.pumpAndSettle();
+    await tester
+        .tap(find.widgetWithText(FilledButton, strings['event_report_send']!));
     await tester.pumpAndSettle();
     expect(find.text(strings['report_delivery_failed']!), findsOneWidget);
     expect(find.text(strings['event_report_thanks']!), findsNothing);
@@ -167,11 +184,16 @@ void main() {
       home: CreateCommunityEventScreen(),
     ));
     await tester.pumpAndSettle();
-    final company = find.widgetWithText(RadioListTile<CreatorType>, 'Business / provider');
+    final company =
+        find.widgetWithText(RadioListTile<CreatorType>, 'Business / provider');
     await tester.ensureVisible(company);
     await tester.tap(company);
     await tester.pumpAndSettle();
-    expect(tester.widget<RadioGroup<CreatorType>>(find.byType(RadioGroup<CreatorType>)).groupValue,
+    expect(
+        tester
+            .widget<RadioGroup<CreatorType>>(
+                find.byType(RadioGroup<CreatorType>))
+            .groupValue,
         CreatorType.unternehmen);
     expect(find.text('e.g. Sunshine Daycare'), findsOneWidget);
     expect(tester.takeException(), isNull);

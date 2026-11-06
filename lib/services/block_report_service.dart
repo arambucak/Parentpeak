@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/logic/backend_api_client.dart';
 import 'package:parentpeak/logic/backend_service_factory.dart';
+import 'package:parentpeak/ui/widgets/content_report_form.dart';
 
 /// Manages blocked users and content reports across the entire app.
 /// Used in: Chat, Verschenkmarkt, Events, Netzwerk.
@@ -14,9 +15,9 @@ class BlockReportService {
   BlockReportService({
     BackendApiClient? api,
     String? Function()? userIdProvider,
-  }) : _api = api ?? BackendServiceFactory.createVerifiedApiClient(),
-       _userIdProvider = userIdProvider ??
-           (() => FirebaseAuth.instance.currentUser?.uid);
+  })  : _api = api ?? BackendServiceFactory.createVerifiedApiClient(),
+        _userIdProvider =
+            userIdProvider ?? (() => FirebaseAuth.instance.currentUser?.uid);
 
   static const String _blockedKey = 'safety.blocked_users';
   static const String _reportsKey = 'safety.reports';
@@ -141,8 +142,7 @@ class BlockReportService {
     required String reportedUserId,
     required String contentType, // 'message', 'listing', 'event', 'profile'
     required String content,
-    required String
-        reason, // 'insult', 'spam', 'inappropriate', 'fraud', 'other'
+    required String reason,
   }) async {
     final delivered = await _postReport(
       reporterUserId: reporterUserId,
@@ -323,79 +323,40 @@ Future<void> showReportSheet(
   BlockReportService? reportService,
 }) async {
   final service = reportService ?? BlockReportService.instance;
-  final reasons = [
-    {'label': 'Beleidigung / Hassrede', 'key': 'insult'},
-    {'label': 'Spam / Werbung', 'key': 'spam'},
-    {'label': 'Unangemessene Inhalte', 'key': 'inappropriate'},
-    {'label': 'Betrug / Fake', 'key': 'fraud'},
-    {'label': 'Sonstiges', 'key': 'other'},
-  ];
-
-  await showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    builder: (ctx) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Container(
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2)),
-          ),
-          const SizedBox(height: 16),
-          const Text('Inhalt melden',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-          const SizedBox(height: 8),
-          Text('Warum möchtest du "$userName" melden?',
-              style: TextStyle(fontSize: 13, color: Colors.grey[600])),
-          const SizedBox(height: 16),
-          ...reasons.map((r) => ListTile(
-                title: Text(r['label']!, style: const TextStyle(fontSize: 14)),
-                leading: const Icon(Icons.flag_outlined, size: 20),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-                onTap: () async {
-                  Navigator.pop(ctx);
-                  final delivered = await service.reportContent(
-                    reporterUserId: service._currentUserId,
-                    reportedUserId: userId,
-                    contentType: contentType,
-                    content: content.isNotEmpty ? content : userName,
-                    reason: r['key']!,
-                  );
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Row(children: [
-                        Icon(
-                            delivered
-                                ? Icons.check_circle_rounded
-                                : Icons.info_outline_rounded,
-                            color: Colors.white, size: 18),
-                        const SizedBox(width: 8),
-                        Expanded(
-                            child: Text(context.tr(delivered
-                                ? 'report_delivery_success'
-                                : 'report_delivery_failed'),
-                                style: const TextStyle(fontSize: 13))),
-                      ]),
-                      behavior: SnackBarBehavior.floating,
-                      backgroundColor: delivered
-                          ? const Color(0xFF16A34A)
-                          : null,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ));
-                  }
-                },
-              )),
-        ]),
-      ),
+  final reporterUserId = service._currentUserId;
+  final selection = await selectReportReason(context, allowNote: false);
+  if (selection == null || !context.mounted) return;
+  if (service._currentUserId != reporterUserId) {
+    debugPrint('Report cancelled: account changed during reason selection');
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(context.tr('report_delivery_failed')),
+    ));
+    return;
+  }
+  final delivered = await deliverContentReport(
+    context,
+    reason: selection.reason,
+    send: () => service.reportContent(
+      reporterUserId: reporterUserId,
+      reportedUserId: userId,
+      contentType: contentType,
+      content: content.isNotEmpty ? content : userName,
+      reason: selection.reason,
     ),
   );
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+    content: Row(children: [
+      Icon(
+        delivered ? Icons.check_circle_rounded : Icons.info_outline_rounded,
+        color: Colors.white,
+        size: 18,
+      ),
+      const SizedBox(width: 8),
+      Expanded(
+        child: Text(context.tr(
+            delivered ? 'report_delivery_success' : 'report_delivery_failed')),
+      ),
+    ]),
+  ));
 }

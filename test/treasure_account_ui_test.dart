@@ -184,18 +184,18 @@ void main() {
         createdAt: DateTime(2026),
       );
       await tester.runAsync(() => store.update(
-        (data) => data.addAll({
-          TreasureAccountStore.feedKey: [listing.toMap()],
-          TreasureAccountStore.reservedKey: ['private'],
-          TreasureAccountStore.blockedKey: ['blocked'],
-          TreasureAccountStore.reportedKey: ['reported'],
-        }),
-        expectedScope: store.scope,
-      ));
+            (data) => data.addAll({
+              TreasureAccountStore.feedKey: [listing.toMap()],
+              TreasureAccountStore.reservedKey: ['private'],
+              TreasureAccountStore.blockedKey: ['blocked'],
+              TreasureAccountStore.reportedKey: ['reported'],
+            }),
+            expectedScope: store.scope,
+          ));
       await open(tester, TreasureHandoverScreen(listingService: service));
       final title = find.textContaining('Account A private offer');
       await tester.scrollUntilVisible(title, 350,
-        scrollable: find.byType(Scrollable).first);
+          scrollable: find.byType(Scrollable).first);
       await tester.tap(title.first);
       await tester.pumpAndSettle();
       expect(find.text('Account A private offer'), findsWidgets);
@@ -281,26 +281,36 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(report);
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(
-        FilledButton, l10n.t('treasureReportSubmit', fallback: 'Melden')));
+    final reason = find.byKey(const ValueKey('report-reason-spam'));
+    await tester.ensureVisible(reason);
+    await tester.pumpAndSettle();
+    await tester.tap(reason);
+    final submit = find.byKey(const ValueKey('report-submit'));
+    await tester.ensureVisible(submit);
+    await tester.pumpAndSettle();
+    await tester.tap(submit);
     await tester.pumpAndSettle();
     expect(find.text(l10n.t('report_delivery_failed')), findsOneWidget);
-    expect(find.text(l10n.t('treasureReportSuccess',
-        fallback: 'Danke, wir prüfen diese Meldung.')), findsNothing);
+    expect(
+        find.text(l10n.t('treasureReportSuccess',
+            fallback: 'Danke, wir prüfen diese Meldung.')),
+        findsNothing);
     expect(find.text(l10n.t('treasureReportLocalOnly')), findsNothing);
     final data = await store.read(expectedScope: store.scope);
     expect(data[TreasureAccountStore.reportedKey] ?? [], isEmpty);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('logout cancels pending draft autosave instead of writing into guest', (tester) async {
+  testWidgets(
+      'logout cancels pending draft autosave instead of writing into guest',
+      (tester) async {
     await signIn(tester);
     final owner = store.scope;
     await open(tester, TreasureUploadScreen(listingService: service));
     final title = find.byWidgetPredicate((widget) =>
         widget is TextField && widget.controller?.text == 'Red balance bike');
     await tester.scrollUntilVisible(title, 250,
-      scrollable: find.byType(Scrollable).first);
+        scrollable: find.byType(Scrollable).first);
     await tester.enterText(title, 'Pending account-only edit');
     await tester.pump(const Duration(milliseconds: 100));
     await tester.runAsync(() => AuthService.instance.logout());

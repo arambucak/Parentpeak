@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/logic/community_event_service.dart';
 import 'package:parentpeak/models/community_event.dart';
+import 'package:parentpeak/ui/widgets/content_report_form.dart';
 
 /// Disclaimer-Banner das einmalig beim ersten Event-Besuch angezeigt wird.
 class EventDisclaimerBanner extends StatelessWidget {
@@ -30,7 +31,8 @@ class EventDisclaimerBanner extends StatelessWidget {
                   style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF92400E)))),
-          GestureDetector(behavior: HitTestBehavior.opaque, 
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onTap: onDismiss,
             child: Icon(Icons.close_rounded,
                 size: 18,
@@ -49,7 +51,7 @@ class EventDisclaimerBanner extends StatelessWidget {
 }
 
 /// "Melden" Bottom-Sheet mit Gruenden.
-class ReportEventSheet extends StatefulWidget {
+class ReportEventSheet extends StatelessWidget {
   final String eventId;
   final String eventTitle;
 
@@ -65,136 +67,39 @@ class ReportEventSheet extends StatefulWidget {
   });
 
   @override
-  State<ReportEventSheet> createState() => _ReportEventSheetState();
-}
-
-class _ReportEventSheetState extends State<ReportEventSheet> {
-  String? _selectedReason;
-  bool _sending = false;
-
-  static const _reasons = [
-    {
-      'id': 'spam',
-      'label': 'event_report_spam',
-      'desc': 'event_report_spam_hint'
-    },
-    {
-      'id': 'fake',
-      'label': 'event_report_fake',
-      'desc': 'event_report_fake_hint'
-    },
-    {
-      'id': 'unsafe',
-      'label': 'event_report_unsafe',
-      'desc': 'event_report_unsafe_hint'
-    },
-    {
-      'id': 'inappropriate',
-      'label': 'event_report_inappropriate',
-      'desc': 'event_report_inappropriate_hint'
-    },
-    {
-      'id': 'expired',
-      'label': 'event_report_expired',
-      'desc': 'event_report_expired_hint'
-    },
-  ];
-
-  @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Material(
-      color: theme.colorScheme.surface,
+      color: Theme.of(context).colorScheme.surface,
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Container(
-            width: 36,
-            height: 4,
-            decoration: BoxDecoration(
-                color: theme.colorScheme.outlineVariant,
-                borderRadius: BorderRadius.circular(2))),
-        const SizedBox(height: 16),
-        Text(context.tr('event_report_title'),
-            style: theme.textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.w800)),
-        const SizedBox(height: 4),
-        Text('"${widget.eventTitle}"',
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.outline),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis),
-        const SizedBox(height: 16),
-        RadioGroup<String>(
-          groupValue: _selectedReason,
-          onChanged: (value) => setState(() => _selectedReason = value),
-          child: Column(children: _reasons.map((r) => Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: RadioListTile<String>(
-                value: r['id']!,
-                title: Text(context.tr(r['label']!),
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(fontWeight: FontWeight.w600)),
-                subtitle: Text(context.tr(r['desc']!),
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: theme.colorScheme.outline)),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                tileColor: _selectedReason == r['id']
-                    ? theme.colorScheme.error.withValues(alpha: 0.05)
-                    : null,
-                activeColor: theme.colorScheme.error,
-                dense: true,
-              ),
-            )).toList()),
-          ),
-        const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton(
-            onPressed: _selectedReason == null || _sending ? null : _submit,
-            style: FilledButton.styleFrom(
-              backgroundColor: theme.colorScheme.error,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14)),
-            ),
-            child: _sending
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white))
-                : Text(context.tr('event_report_send')),
-          ),
-        ),
-      ])),
+      child: ContentReportForm(
+        allowNote: false,
+        onSubmit: (selection) => _submit(context, selection.reason),
+      ),
     );
   }
 
-  Future<void> _submit() async {
-    setState(() => _sending = true);
-    final reason = _selectedReason!;
-    final submit = widget.onSubmit;
+  Future<void> _submit(BuildContext context, String reason) async {
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final successText = context.tr('event_report_thanks');
+    final failedText = context.tr('report_delivery_failed');
+    navigator.pop();
     bool success;
     try {
-      success = submit != null
-          ? await submit(reason)
-          : await CommunityEventService.instance
-              .flagEvent(widget.eventId, reason);
+      success = await deliverContentReport(
+        navigator.context,
+        reason: reason,
+        send: () => onSubmit != null
+            ? onSubmit!(reason)
+            : CommunityEventService.instance.flagEvent(eventId, reason),
+      );
     } catch (error) {
       debugPrint('Event report delivery failed: $error');
       success = false;
     }
-    if (mounted) {
-      final messenger = ScaffoldMessenger.of(context);
-      final message = context.tr(success
-          ? 'event_report_thanks'
-          : 'report_delivery_failed');
-      Navigator.pop(context);
+    if (messenger.mounted) {
       messenger.showSnackBar(SnackBar(
-        content: Text(message),
+        content: Text(success ? successText : failedText),
       ));
     }
   }
@@ -230,7 +135,8 @@ class _EventInterestButtonState extends State<EventInterestButton> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(behavior: HitTestBehavior.opaque, 
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: _tapped || _loading ? null : _onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -259,8 +165,9 @@ class _EventInterestButtonState extends State<EventInterestButton> {
           const SizedBox(width: 4),
           Text(
             _count > 0
-              ? context.tr('event_interested_families', values: {'count': _count})
-              : context.tr('event_show_interest'),
+                ? context
+                    .tr('event_interested_families', values: {'count': _count})
+                : context.tr('event_show_interest'),
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
@@ -316,7 +223,9 @@ class EventSourceBadge extends StatelessWidget {
         color = event.isVerified
             ? const Color(0xFF16A34A)
             : const Color(0xFF2563EB);
-        label = context.tr(event.isVerified ? 'event_source_verified' : 'event_source_partner');
+        label = context.tr(event.isVerified
+            ? 'event_source_verified'
+            : 'event_source_partner');
         icon =
             event.isVerified ? Icons.verified_rounded : Icons.business_rounded;
         break;
@@ -361,9 +270,11 @@ class PrivateAddressHint extends StatelessWidget {
         const Icon(Icons.lock_outline_rounded,
             size: 12, color: Color(0xFF92400E)),
         const SizedBox(width: 4),
-        Flexible(child: Text(context.tr('event_private_address_hint'),
-            style: theme.textTheme.labelSmall?.copyWith(
-          color: const Color(0xFF92400E), fontWeight: FontWeight.w500))),
+        Flexible(
+            child: Text(context.tr('event_private_address_hint'),
+                style: theme.textTheme.labelSmall?.copyWith(
+                    color: const Color(0xFF92400E),
+                    fontWeight: FontWeight.w500))),
       ]),
     );
   }

@@ -18,6 +18,8 @@ function fixture() {
   const inserts = [];
   const flags = [];
   const context = {
+    ...require('../../moderation'),
+    notifyModeration: async () => {},
     console: { error: () => {}, log: () => {} },
     app: {
       post: (url, ...chain) => routes.set(`POST ${url}`, chain),
@@ -37,7 +39,7 @@ function fixture() {
         update: async () => ({}),
       },
       communityEventFlag: {
-        upsert: async args => { flags.push(args.create.userId); },
+        upsert: async args => { flags.push(args.create.userId); return { id: 'flag-1' }; },
         count: async () => 1,
       },
     },

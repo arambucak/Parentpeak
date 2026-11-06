@@ -50,6 +50,10 @@ function fixture({ firebaseAvailable = true, verificationError } = {}) {
     expert: { uid: 'expert', email: 'expert@example.org', email_verified: true },
   };
   const context = vm.createContext({
+    ...require('../../moderation'),
+    persistModerationReport: async () => {},
+    notifyModeration: async () => {},
+    resolveAdditionalReport: async () => {},
     crypto,
     console: { error() {} },
     internalModeratorEmails: ['reviewer@example.org'],

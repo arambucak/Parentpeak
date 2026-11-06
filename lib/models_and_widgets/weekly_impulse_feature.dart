@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'package:parentpeak/ui/widgets/content_report_form.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -1157,105 +1159,18 @@ class _WeeklyImpulseCardState extends State<WeeklyImpulseCard> {
   }
 
   Future<void> _showReportSheet(_CommunityPost post) async {
-    final noteController = TextEditingController();
-    String selectedReason = 'Unpassender Ton';
-
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                left: 20,
-                right: 20,
-                top: 20,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Beitrag melden',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Wir blenden den Beitrag für dich aus und markieren ihn für eine spätere Prüfung.',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: [
-                      'Unpassender Ton',
-                      'Nicht hilfreich',
-                      'Nicht elternfreundlich',
-                      'Fachlich fragwuerdig',
-                    ].map((reason) {
-                      return ChoiceChip(
-                        label: Text(reason),
-                        selected: selectedReason == reason,
-                        onSelected: (_) {
-                          setModalState(() => selectedReason = reason);
-                        },
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 14),
-                  TextField(
-                    controller: noteController,
-                    minLines: 2,
-                    maxLines: 4,
-                    decoration: const InputDecoration(
-                      labelText: 'Optionaler Hinweis',
-                      hintText:
-                          'Kurz erklären, was für dich problematisch war.',
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: () async {
-                        final note = noteController.text.trim();
-                        final reason = note.isEmpty
-                            ? selectedReason
-                            : '$selectedReason: $note';
-                        final reported = await _reportPost(post.id, reason);
-                        if (!reported || !context.mounted) {
-                          return;
-                        }
-                        Navigator.of(context).pop();
-                        if (!mounted) {
-                          return;
-                        }
-                        ScaffoldMessenger.of(this.context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Beitrag gemeldet und ausgeblendet.'),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.flag_rounded),
-                      label: const Text('Melden und ausblenden'),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
+    final selection = await selectReportReason(context, allowNote: false);
+    if (selection == null || !mounted) return;
+    final reported = await deliverContentReport(
+      context,
+      reason: selection.reason,
+      send: () => _reportPost(post.id, selection.reason),
     );
-
-    noteController.dispose();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(context
+          .tr(reported ? 'report_delivery_success' : 'report_delivery_failed')),
+    ));
   }
 
   Future<void> _showModerationSheet(List<_CommunityPost> posts) async {
