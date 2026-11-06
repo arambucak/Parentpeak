@@ -183,7 +183,7 @@ const appLocalizationsArExtra = <String, String>{
   'antrag_premium_description':
       'مع الاشتراك المميّز تحصل على الدليل الكامل، وقوالب الذكاء الاصطناعي، والتذكيرات.',
   'antrag_premium_soon':
-      'الاشتراك المميّز قريبًا! وخلال الإصدار التجريبي كل شيء مجاني.',
+      'ميزات premium قادمة قريبًا.',
   'antrag_processing_time': '⏱️ مدة المعالجة: {time}',
   'antrag_ready_next': 'جمعت كل المستندات. انتقل إلى الخطوة 2!',
   'antrag_regenerate': 'إنشاء من جديد',
@@ -2059,8 +2059,10 @@ const appLocalizationsArExtra = <String, String>{
   'register_accept_terms_required': 'يرجى قبول شروط الاستخدام.',
   'register_already_registered': 'هل لديك حساب بالفعل؟ ',
   'register_back_to_login': 'العودة إلى تسجيل الدخول',
-  'register_beta_description': 'بعد الإطلاق الرسمي: شهر تجريبي مجاني.',
-  'register_beta_title': 'مجاني حاليًا في النسخة التجريبية',
+  'register_beta_description': 'ParentPeak مجاني تمامًا الآن. ميزات premium قيد التخطيط — سنخبرك في الوقت المناسب قبل أي تغيير.',
+  'free_now_title': 'مجاني الآن',
+  'free_now_body': 'ParentPeak مجاني تمامًا الآن. ميزات premium قيد التخطيط — سنخبرك في الوقت المناسب قبل أي تغيير.',
+  'register_beta_title': 'مجاني الآن',
   'register_display_name_helper': 'هكذا يراك الآباء الآخرون.',
   'register_display_name_label': 'اسمك الظاهر (مثل: أنّا أو عائلة شميت)',
   'register_display_name_required': 'الاسم مطلوب.',

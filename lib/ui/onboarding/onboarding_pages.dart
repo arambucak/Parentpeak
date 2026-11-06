@@ -739,35 +739,6 @@ class OnboardingReadyPage extends StatelessWidget {
                       ],
                     ),
                   )),
-              const SizedBox(height: 24),
-              // Beta- und Trial-Hinweis
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.tertiaryContainer
-                      .withValues(alpha: 0.4),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.card_giftcard_rounded,
-                      color: theme.colorScheme.tertiary,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Beta kostenlos · nach dem Start 1 Monat testen',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: theme.colorScheme.onTertiaryContainer,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ],
           ),
         ),

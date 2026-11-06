@@ -193,7 +193,7 @@ const appLocalizationsEsExtra = <String, String>{
   'antrag_premium_description':
       'Con Premium obtienes las instrucciones completas, plantillas de texto con IA y recordatorios.',
   'antrag_premium_soon':
-      '¡Premium llega muy pronto! Durante la beta todo es gratis.',
+      'Las funciones premium llegan pronto.',
   'antrag_processing_time': '⏱️ Tiempo de tramitación: {time}',
   'antrag_ready_next': 'Ya tienes todos los documentos. ¡Continúa al paso 2!',
   'antrag_regenerate': 'Generar de nuevo',
@@ -2152,8 +2152,10 @@ const appLocalizationsEsExtra = <String, String>{
   'register_already_registered': '¿Ya tienes cuenta? ',
   'register_back_to_login': 'Volver al inicio de sesión',
   'register_beta_description':
-      'Tras el lanzamiento oficial: 1 mes de prueba gratis.',
-  'register_beta_title': 'Actualmente gratis en la beta',
+      'ParentPeak es completamente gratis por ahora. Las funciones premium están planeadas: te avisaremos con tiempo antes de que algo cambie.',
+  'free_now_title': 'Gratis por ahora',
+  'free_now_body': 'ParentPeak es completamente gratis por ahora. Las funciones premium están planeadas: te avisaremos con tiempo antes de que algo cambie.',
+  'register_beta_title': 'Gratis por ahora',
   'register_display_name_helper': 'Así te ven los demás padres.',
   'register_display_name_label':
       'Tu nombre visible (p. ej. Ana o Familia García)',
