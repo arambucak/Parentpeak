@@ -1981,15 +1981,19 @@ const appLocalizationsArExtra = <String, String>{
   'onboarding_phase': 'في أي مرحلة أنتم؟',
   'onboarding_priorities': 'ما المهم بالنسبة لك؟',
   'onboarding_ready': 'لننطلق!',
-  'onboarding_ready_subtitle': 'مساحتك لحياة العائلة اليومية. وإليك كيف تجد طريقك:',
+  'onboarding_ready_subtitle':
+      'مساحتك لحياة العائلة اليومية. وإليك كيف تجد طريقك:',
   'onboarding_step_home_title': 'شاشتك الرئيسية',
-  'onboarding_step_home_body': 'في الأعلى تجد نصائح ومواعيد تناسب اليوم وعمر طفلك.',
+  'onboarding_step_home_body':
+      'في الأعلى تجد نصائح ومواعيد تناسب اليوم وعمر طفلك.',
   'onboarding_step_grid_title': 'كل الميزات في لمحة',
-  'onboarding_step_grid_body': 'اضغط على «الكل» لفتح التقويم وإرشاد الذكاء الاصطناعي ومطبخ العائلة والفعاليات والمزيد.',
+  'onboarding_step_grid_body':
+      'اضغط على «الكل» لفتح التقويم وإرشاد الذكاء الاصطناعي ومطبخ العائلة والفعاليات والمزيد.',
   'onboarding_step_chat_title': 'دائمًا على بُعد سؤال',
-  'onboarding_step_chat_body': 'إرشاد الذكاء الاصطناعي يساعدك في أي وقت – فقط اضغط واسأل.',
+  'onboarding_step_chat_body':
+      'إرشاد الذكاء الاصطناعي يساعدك في أي وقت – فقط اضغط واسأل.',
   'onboarding_subtitle':
-      'حياتكم العائلية اليومية. تطبيق واحد.\nلنكتشف معًا ما يساعدكم أكثر.',
+      'كل ما تحتاجه حياتكم العائلية – في مكان واحد.\nسعيدون بوجودك معنا. ❤️',
   'onboarding_where': 'أين تعيش عائلتكم؟',
   'open_room': 'فتح الغرفة',
   'open_source_licenses': 'تراخيص المصادر المفتوحة',

@@ -59,7 +59,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   final PageController _pageController = PageController();
   int _currentPage = 0;
   final Set<String> _selectedRoles = {};
-  final Set<String> _selectedPriorities = {};
   final List<String> _selectedChildAges = [];
   String _selectedCountry = 'DE';
   String _selectedRegion = 'NRW';
@@ -151,10 +150,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         _selectedChildAges
           ..clear()
           ..addAll(List<String>.from(data[ProfileAccountStore.agesKey] ?? []));
-        _selectedPriorities
-          ..clear()
-          ..addAll(
-              List<String>.from(data[ProfileAccountStore.prioritiesKey] ?? []));
         _selectedCountry =
             data[ProfileAccountStore.countryKey] as String? ?? 'DE';
         _selectedRegion =
@@ -172,7 +167,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   void _goToPage(int page) {
-    if (page < 0 || page > 6) return;
+    if (page < 0 || page > 5) return;
     HapticFeedback.lightImpact();
     _pageController.animateToPage(
       page,
@@ -182,7 +177,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   void _nextPage() {
-    if (_currentPage < 6) {
+    if (_currentPage < 5) {
       _goToPage(_currentPage + 1);
     }
   }
@@ -200,8 +195,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       case 4:
         return _selectedRegion.isNotEmpty;
       case 5:
-        return _selectedPriorities.isNotEmpty;
-      case 6:
         return true; // Summary page
       default:
         return false;
@@ -218,10 +211,11 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       ProfileAccountStore.familyNameKey: familyName,
       ProfileAccountStore.rolesKey: _selectedRoles.toList(),
       ProfileAccountStore.agesKey: List<String>.from(_selectedChildAges),
-      ProfileAccountStore.prioritiesKey: _selectedPriorities.toList(),
       ProfileAccountStore.countryKey: _selectedCountry,
       ProfileAccountStore.regionKey: _selectedRegion,
-      ProfileAccountStore.tileOrderKey: _buildTileOrder(),
+      // Keine vordefinierte Kachelreihenfolge mehr: Die Home-Startseite nutzt
+      // ihre bewaehrte Default-Sortierung. Eltern koennen die Kacheln dort
+      // jederzeit selbst per Drag-and-drop anordnen.
       if (_selectedRoles.isNotEmpty)
         ProfileAccountStore.roleKey: _selectedRoles.first,
     };
@@ -266,49 +260,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         setState(() => _saving = false);
       }
     }
-  }
-
-  List<String> _buildTileOrder() {
-    final order = <String>[];
-
-    // Basierend auf Prioritäten die wichtigsten Features nach oben
-    if (_selectedPriorities.contains('tipps')) {
-      order.add('Impulse & Entwicklung');
-      order.add('KI Elternberatung');
-    }
-    if (_selectedPriorities.contains('organisation')) {
-      order.add('Kalender');
-      order.add('Organisation');
-    }
-    if (_selectedPriorities.contains('community')) {
-      order.add('Eltern Match');
-      order.add('Events & Aktivitäten');
-    }
-    if (_selectedPriorities.contains('sparen')) {
-      order.add('Verschenkmarkt');
-      order.add('GemeinsamSatt');
-      order.add('Finanzen & Budget');
-    }
-
-    // Rest auffüllen
-    final allTiles = [
-      'Impulse & Entwicklung',
-      'KI Elternberatung',
-      'Kalender',
-      'Organisation',
-      'Eltern Match',
-      'Events & Aktivitäten',
-      'Verschenkmarkt',
-      'GemeinsamSatt',
-      'Finanzen & Budget',
-    ];
-    for (final tile in allTiles) {
-      if (!order.contains(tile)) {
-        order.add(tile);
-      }
-    }
-
-    return order;
   }
 
   @override
@@ -379,21 +330,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     onRegionSelected: (region) {
                       HapticFeedback.selectionClick();
                       setState(() => _selectedRegion = region);
-                    },
-                  ),
-                  OnboardingPrioritiesPage(
-                    selectedPriorities: _selectedPriorities,
-                    fadeAnimation: _fadeAnimation,
-                    slideAnimation: _slideAnimation,
-                    onPriorityToggled: (priority) {
-                      HapticFeedback.selectionClick();
-                      setState(() {
-                        if (_selectedPriorities.contains(priority)) {
-                          _selectedPriorities.remove(priority);
-                        } else {
-                          _selectedPriorities.add(priority);
-                        }
-                      });
                     },
                   ),
                   OnboardingReadyPage(
@@ -802,7 +738,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   Widget _buildProgressBar(ThemeData theme) {
     return Row(
-      children: List.generate(7, (index) {
+      children: List.generate(6, (index) {
         final isActive = index <= _currentPage;
         final isCurrent = index == _currentPage;
         return Expanded(
@@ -824,7 +760,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   Widget _buildBottomNav(ThemeData theme) {
-    final isLastPage = _currentPage == 6;
+    final isLastPage = _currentPage == 5;
 
     return Row(
       children: [

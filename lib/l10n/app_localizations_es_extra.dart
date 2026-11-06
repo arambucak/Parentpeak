@@ -2076,15 +2076,19 @@ const appLocalizationsEsExtra = <String, String>{
   'onboarding_phase': '¿En qué etapa estáis?',
   'onboarding_priorities': '¿Qué es importante para ti?',
   'onboarding_ready': '¡Vamos allá!',
-  'onboarding_ready_subtitle': 'Tu espacio para el día a día en familia. Así te orientas:',
+  'onboarding_ready_subtitle':
+      'Tu espacio para el día a día en familia. Así te orientas:',
   'onboarding_step_home_title': 'Tu pantalla de inicio',
-  'onboarding_step_home_body': 'Arriba encuentras consejos y citas que se ajustan al día y a la edad de tu hijo/a.',
+  'onboarding_step_home_body':
+      'Arriba encuentras consejos y citas que se ajustan al día y a la edad de tu hijo/a.',
   'onboarding_step_grid_title': 'Todas las funciones de un vistazo',
-  'onboarding_step_grid_body': 'Toca «Todo» para abrir el calendario, la orientación con IA, la cocina familiar, los eventos y más.',
+  'onboarding_step_grid_body':
+      'Toca «Todo» para abrir el calendario, la orientación con IA, la cocina familiar, los eventos y más.',
   'onboarding_step_chat_title': 'Siempre a una pregunta de distancia',
-  'onboarding_step_chat_body': 'La orientación con IA te ayuda en cualquier momento: toca y pregunta.',
+  'onboarding_step_chat_body':
+      'La orientación con IA te ayuda en cualquier momento: toca y pregunta.',
   'onboarding_subtitle':
-      'Vuestro día a día familiar. Una app.\nDescubramos juntos qué os ayuda más.',
+      'Todo para vuestro día a día familiar – en un solo lugar.\nQué bien tenerte aquí. ❤️',
   'onboarding_where': '¿Dónde vive vuestra familia?',
   'open_room': 'Abrir sala',
   'open_source_licenses': 'Licencias de código abierto',

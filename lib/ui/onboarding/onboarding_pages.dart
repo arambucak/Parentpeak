@@ -114,33 +114,38 @@ class OnboardingWelcomePage extends StatelessWidget {
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: hints.map((hint) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Column(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(14),
+        // Expanded: die drei Hinweise teilen sich die Breite, damit lange
+        // Labels (z.B. arabisch) umbrechen statt die Row zu sprengen.
+        return Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: Column(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(
+                    hint.$1,
+                    color: theme.colorScheme.onPrimaryContainer,
+                    size: 24,
+                  ),
                 ),
-                child: Icon(
-                  hint.$1,
-                  color: theme.colorScheme.onPrimaryContainer,
-                  size: 24,
+                const SizedBox(height: 8),
+                Text(
+                  hint.$2,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                hint.$2,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
+              ],
+            ),
           ),
         );
       }).toList(),
@@ -378,210 +383,7 @@ class _RoleCard extends StatelessWidget {
   }
 }
 
-// ─── Page 3: Priorities ──────────────────────────────────────────────────────
-
-class OnboardingPrioritiesPage extends StatelessWidget {
-  final Set<String> selectedPriorities;
-  final Animation<double> fadeAnimation;
-  final Animation<Offset> slideAnimation;
-  final ValueChanged<String> onPriorityToggled;
-
-  const OnboardingPrioritiesPage({
-    super.key,
-    required this.selectedPriorities,
-    required this.fadeAnimation,
-    required this.slideAnimation,
-    required this.onPriorityToggled,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return FadeTransition(
-      opacity: fadeAnimation,
-      child: SlideTransition(
-        position: slideAnimation,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 48),
-              Text(
-                _t('onboarding_priorities'),
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  height: 1.2,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Wähle alles was auf dich zutrifft. Wir ordnen\ndeine App danach.',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 32),
-              Expanded(
-                child: ListView(
-                  children: [
-                    _PriorityCard(
-                      id: 'tipps',
-                      icon: Icons.lightbulb_rounded,
-                      title: 'Tipps & Wissen',
-                      subtitle:
-                          'Entwicklungsimpulse, KI-Beratung, Erziehungstipps',
-                      color: const Color(0xFF0EA5A4),
-                      isSelected: selectedPriorities.contains('tipps'),
-                      onTap: () => onPriorityToggled('tipps'),
-                    ),
-                    const SizedBox(height: 12),
-                    _PriorityCard(
-                      id: 'organisation',
-                      icon: Icons.event_note_rounded,
-                      title: 'Organisation',
-                      subtitle: 'Kalender, To-Do-Listen, Einkaufslisten',
-                      color: const Color(0xFF2563EB),
-                      isSelected: selectedPriorities.contains('organisation'),
-                      onTap: () => onPriorityToggled('organisation'),
-                    ),
-                    const SizedBox(height: 12),
-                    _PriorityCard(
-                      id: 'community',
-                      icon: Icons.people_rounded,
-                      title: 'Andere Eltern finden',
-                      subtitle: 'Matching, Events, Playdates',
-                      color: const Color(0xFF8B5CF6),
-                      isSelected: selectedPriorities.contains('community'),
-                      onTap: () => onPriorityToggled('community'),
-                    ),
-                    const SizedBox(height: 12),
-                    _PriorityCard(
-                      id: 'sparen',
-                      icon: Icons.savings_rounded,
-                      title: 'Sparen & Teilen',
-                      subtitle: 'Verschenkmarkt, Essen teilen, Budget',
-                      color: const Color(0xFFE8543A),
-                      isSelected: selectedPriorities.contains('sparen'),
-                      onTap: () => onPriorityToggled('sparen'),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _PriorityCard extends StatelessWidget {
-  final String id;
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final Color color;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _PriorityCard({
-    required this.id,
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.color,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeOut,
-      decoration: BoxDecoration(
-        color: isSelected
-            ? color.withValues(alpha: 0.08)
-            : theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isSelected ? color : theme.colorScheme.outlineVariant,
-          width: isSelected ? 2 : 1,
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? color.withValues(alpha: 0.15)
-                        : color.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(icon, color: color, size: 24),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isSelected ? color : Colors.transparent,
-                    border: Border.all(
-                      color:
-                          isSelected ? color : theme.colorScheme.outlineVariant,
-                      width: 2,
-                    ),
-                  ),
-                  child: isSelected
-                      ? const Icon(Icons.check_rounded,
-                          color: Colors.white, size: 16)
-                      : null,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Page 4: Ready / Summary ─────────────────────────────────────────────────
+// ─── Page: Ready / Summary ───────────────────────────────────────────────────
 
 class OnboardingReadyPage extends StatelessWidget {
   final Animation<double> fadeAnimation;
