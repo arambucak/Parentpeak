@@ -2,6 +2,24 @@
 // bei RTL das Layout vor breiter Vermarktung von Muttersprachlern prüfen.
 // Platzhalter wie {count}, {name} bleiben exakt erhalten.
 const appLocalizationsArExtra = <String, String>{
+  'delete_confirmation_word': 'حذف',
+  'delete_confirmation_prompt': 'اكتب «{word}» للتأكيد:',
+  'delete_account_permanent_warning':
+      'ستُحذف جميع بياناتك نهائيًا.\nلا يمكن التراجع عن هذا الإجراء.',
+  'delete_reauth_password_body': 'يرجى إدخال كلمة مرورك لحذف حسابك نهائيًا.',
+  'delete_error_server': 'تعذّر حذف بياناتك من الخادم. يرجى المحاولة مجددًا.',
+  'delete_error_password': 'كلمة المرور غير صحيحة. يرجى المحاولة مجددًا.',
+  'delete_error_network':
+      'الاتصال غير متاح حاليًا. يرجى التحقق من اتصالك بالإنترنت والمحاولة مجددًا.',
+  'delete_error_throttled':
+      'محاولات كثيرة جدًا. يرجى الانتظار قليلًا والمحاولة مجددًا.',
+  'delete_error_session': 'يرجى تسجيل الدخول مجددًا قبل حذف حسابك.',
+  'delete_error_failed': 'تعذّر حذف حسابك. يرجى المحاولة مجددًا.',
+  'delete_account_data_list': 'سيُحذف ما يلي:',
+  'delete_account_family_data': 'جميع أفراد العائلة وملفاتهم الشخصية',
+  'delete_account_emergency_data': 'جهات اتصال الطوارئ والأجهزة',
+  'delete_account_settings_data': 'النسخ الاحتياطية والإعدادات',
+  'delete_account_area_data': 'مساحة عائلتك بالكامل في ParentPeak',
   "report_reason_child_safety": "طفل في خطر",
   "report_reason_sexual_content": "محتوى جنسي / إساءة",
   "report_reason_violence_threat": "عنف / تهديد",

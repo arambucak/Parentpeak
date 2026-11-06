@@ -2,6 +2,29 @@
 // bei RTL das Layout vor breiter Vermarktung von Muttersprachlern prüfen.
 // Platzhalter wie {count}, {name} bleiben exakt erhalten.
 const appLocalizationsEsExtra = <String, String>{
+  'delete_confirmation_word': 'ELIMINAR',
+  'delete_confirmation_prompt': 'Escribe «{word}» para confirmar:',
+  'delete_account_permanent_warning':
+      'Todos tus datos se eliminarán de forma permanente.\nEsta acción no se puede deshacer.',
+  'delete_reauth_password_body':
+      'Introduce tu contraseña para eliminar tu cuenta de forma permanente.',
+  'delete_error_server':
+      'No se pudieron eliminar tus datos del servidor. Inténtalo de nuevo.',
+  'delete_error_password': 'La contraseña es incorrecta. Inténtalo de nuevo.',
+  'delete_error_network':
+      'La conexión no está disponible en este momento. Comprueba tu conexión a Internet e inténtalo de nuevo.',
+  'delete_error_throttled':
+      'Demasiados intentos. Espera un momento e inténtalo de nuevo.',
+  'delete_error_session':
+      'Vuelve a iniciar sesión antes de eliminar tu cuenta.',
+  'delete_error_failed': 'No se pudo eliminar tu cuenta. Inténtalo de nuevo.',
+  'delete_account_data_list': 'Se eliminará lo siguiente:',
+  'delete_account_family_data':
+      'Todos los miembros de la familia y sus perfiles',
+  'delete_account_emergency_data':
+      'Los contactos de emergencia y los dispositivos',
+  'delete_account_settings_data': 'Las copias de seguridad y los ajustes',
+  'delete_account_area_data': 'Todo vuestro espacio de ParentPeak',
   "report_reason_child_safety": "Menor en peligro",
   "report_reason_sexual_content": "Contenido sexual / abuso",
   "report_reason_violence_threat": "Violencia / amenaza",

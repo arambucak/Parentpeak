@@ -25,6 +25,8 @@ import 'package:parentpeak/logic/profile_account_store.dart';
 import 'package:parentpeak/logic/profile_data_export_service.dart';
 import 'package:parentpeak/ui/widgets/profile_legacy_claim.dart';
 import 'package:parentpeak/ui/widgets/change_password_dialog.dart';
+import 'package:parentpeak/ui/widgets/account_deletion_dialogs.dart';
+import 'package:parentpeak/l10n/localization_extension.dart';
 import 'package:parentpeak/ui/ads_consent_screen.dart';
 
 String _t(String key) =>
@@ -1044,7 +1046,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (ctx) => _DeleteAccountSheet(theme: theme),
+      builder: (ctx) => DeleteAccountSheet(theme: theme),
     );
     if (confirmed != true) return;
 
@@ -1071,7 +1073,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
         final proceed = await showDialog<bool>(
           context: context,
           barrierDismissible: false,
-          builder: (ctx) => _ReauthProviderDialog(
+          builder: (ctx) => DeleteAccountProviderDialog(
             theme: theme,
             providerId: provider!,
           ),
@@ -1092,7 +1094,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
         final password = await showDialog<String>(
           context: context,
           barrierDismissible: false,
-          builder: (ctx) => _ReauthDialog(theme: theme),
+          builder: (ctx) => DeleteAccountPasswordDialog(theme: theme),
         );
         if (password == null || !mounted) return;
         showDialog(
@@ -1110,7 +1112,7 @@ class _ProfileSafetyScreenState extends State<ProfileSafetyScreen> {
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(error),
+          content: Text(context.tr(error)),
           backgroundColor: theme.colorScheme.error,
           behavior: SnackBarBehavior.floating,
         ),
@@ -1717,244 +1719,4 @@ class _ChildInfo {
   final String name;
   final String age;
   const _ChildInfo({required this.name, required this.age});
-}
-
-/// Bottom sheet with typed confirmation for account deletion.
-class _DeleteAccountSheet extends StatefulWidget {
-  final ThemeData theme;
-  const _DeleteAccountSheet({required this.theme});
-
-  @override
-  State<_DeleteAccountSheet> createState() => _DeleteAccountSheetState();
-}
-
-class _DeleteAccountSheetState extends State<_DeleteAccountSheet> {
-  final _ctrl = TextEditingController();
-  bool get _confirmed => _ctrl.text.trim().toUpperCase() == 'LÖSCHEN';
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = widget.theme;
-    final insets = MediaQuery.of(context).viewInsets;
-    return Container(
-      padding: EdgeInsets.fromLTRB(24, 20, 24, 36 + insets.bottom),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.outlineVariant,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          Center(
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.errorContainer,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.delete_forever_rounded,
-                  size: 28, color: theme.colorScheme.onErrorContainer),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Center(
-            child: Text(_t('delete_account'),
-                style: theme.textTheme.titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w800)),
-          ),
-          const SizedBox(height: 8),
-          Center(
-            child: Text(
-              'Alle deine Daten werden unwiderruflich gelöscht.\nDiese Aktion kann nicht rückgängig gemacht werden.',
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(_t('profile_confirm_delete'),
-              style: theme.textTheme.labelMedium
-                  ?.copyWith(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _ctrl,
-            autofocus: true,
-            textCapitalization: TextCapitalization.characters,
-            onChanged: (_) => setState(() {}),
-            decoration: InputDecoration(
-              hintText: 'LÖSCHEN',
-              filled: true,
-              fillColor: theme.colorScheme.surfaceContainerHighest,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Row(children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () => Navigator.pop(context, false),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                ),
-                child: Text(_t('cancel')),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: FilledButton(
-                onPressed:
-                    _confirmed ? () => Navigator.pop(context, true) : null,
-                style: FilledButton.styleFrom(
-                  backgroundColor: theme.colorScheme.error,
-                  disabledBackgroundColor:
-                      theme.colorScheme.error.withValues(alpha: 0.3),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                ),
-                child: Text(_t('profile_delete_final'),
-                    style: const TextStyle(color: Colors.white)),
-              ),
-            ),
-          ]),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Re-authentication dialog ─────────────────────────────────────────────────
-
-class _ReauthDialog extends StatefulWidget {
-  final ThemeData theme;
-  const _ReauthDialog({required this.theme});
-
-  @override
-  State<_ReauthDialog> createState() => _ReauthDialogState();
-}
-
-class _ReauthDialogState extends State<_ReauthDialog> {
-  final _ctrl = TextEditingController();
-  bool _obscure = true;
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = widget.theme;
-    return AlertDialog(
-      title: Text(_t('profile_confirm_login')),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Bitte gib dein Passwort ein, um das Konto endgültig zu löschen.',
-            style: theme.textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _ctrl,
-            obscureText: _obscure,
-            autofocus: true,
-            decoration: InputDecoration(
-              labelText: 'Passwort',
-              border: const OutlineInputBorder(),
-              suffixIcon: IconButton(
-                icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
-                onPressed: () => setState(() => _obscure = !_obscure),
-              ),
-            ),
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, null),
-          child: Text(_t('cancel')),
-        ),
-        FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: theme.colorScheme.error,
-          ),
-          onPressed: () {
-            final pw = _ctrl.text;
-            if (pw.isNotEmpty) Navigator.pop(context, pw);
-          },
-          child: Text(_t('profile_confirm'),
-              style: const TextStyle(color: Colors.white)),
-        ),
-      ],
-    );
-  }
-}
-
-/// Bestätigungsschritt für Google-/Apple-Konten, die kein Passwort haben:
-/// Statt eines Passwort-Felds muss sich der Nutzer erneut über seinen Anbieter
-/// anmelden, bevor das Konto gelöscht wird. Gibt true zurück, wenn der Nutzer
-/// fortfahren möchte.
-class _ReauthProviderDialog extends StatelessWidget {
-  final ThemeData theme;
-  final String providerId;
-  const _ReauthProviderDialog({required this.theme, required this.providerId});
-
-  @override
-  Widget build(BuildContext context) {
-    final isGoogle = providerId == 'google.com';
-    final providerName = isGoogle ? 'Google' : 'Apple';
-    return AlertDialog(
-      title: Text(_t('profile_confirm_login')),
-      content: Text(
-        _t('delete_reauth_provider_body')
-            .replaceAll('{provider}', providerName),
-        style: theme.textTheme.bodyMedium,
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: Text(_t('cancel')),
-        ),
-        FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: theme.colorScheme.error,
-          ),
-          onPressed: () => Navigator.pop(context, true),
-          child: Text(
-            _t('delete_reauth_provider_confirm')
-                .replaceAll('{provider}', providerName),
-            style: const TextStyle(color: Colors.white),
-          ),
-        ),
-      ],
-    );
-  }
 }

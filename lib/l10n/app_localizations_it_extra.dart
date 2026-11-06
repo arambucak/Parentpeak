@@ -2,6 +2,27 @@
 // bei RTL das Layout vor breiter Vermarktung von Muttersprachlern prüfen.
 // Platzhalter wie {count}, {name} bleiben exakt erhalten.
 const appLocalizationsItExtra = <String, String>{
+  'delete_confirmation_word': 'ELIMINA',
+  'delete_confirmation_prompt': 'Scrivi «{word}» per confermare:',
+  'delete_account_permanent_warning':
+      'Tutti i tuoi dati saranno eliminati definitivamente.\nQuesta azione non può essere annullata.',
+  'delete_reauth_password_body':
+      'Inserisci la tua password per eliminare definitivamente il tuo account.',
+  'delete_error_server':
+      'Non è stato possibile eliminare i tuoi dati dal server. Riprova.',
+  'delete_error_password': 'La password non è corretta. Riprova.',
+  'delete_error_network':
+      'La connessione non è al momento disponibile. Controlla la tua connessione Internet e riprova.',
+  'delete_error_throttled': 'Troppi tentativi. Attendi un momento e riprova.',
+  'delete_error_session': 'Accedi di nuovo prima di eliminare il tuo account.',
+  'delete_error_failed':
+      'Non è stato possibile eliminare il tuo account. Riprova.',
+  'delete_account_data_list': 'Verranno eliminati:',
+  'delete_account_family_data':
+      'Tutti i membri della famiglia e i loro profili',
+  'delete_account_emergency_data': 'I contatti di emergenza e i dispositivi',
+  'delete_account_settings_data': 'Le copie di sicurezza e le impostazioni',
+  'delete_account_area_data': 'Tutto il vostro spazio ParentPeak',
   "report_reason_child_safety": "Minore in pericolo",
   "report_reason_sexual_content": "Contenuto sessuale / abuso",
   "report_reason_violence_threat": "Violenza / minaccia",
