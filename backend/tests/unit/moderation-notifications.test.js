@@ -4,7 +4,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const test = require('node:test');
 const {
-  normalizeReportReason, reasonSeverity, withReportSeverity, criticalFirst,
+  normalizeReportReason, reasonSeverity, reasonLabelDe, withReportSeverity, criticalFirst,
   createModerationService, buildModerationOverview,
 } = require('../../moderation');
 
@@ -128,7 +128,8 @@ test('legacy German reason labels reach admin groups and email as canonical norm
   const legacy = 'Fachlich fragwürdig: private note';
   const f = fixture({ env: { PARENT_MATCHING_REPORT_HIDE_THRESHOLD: '1' } });
   await f.notifyModeration(report({ reason: legacy }));
-  assert.match(f.emails[0].text, /Grund: misinformation/);
+  assert.match(f.emails[0].text, /Grund: Falsche Information/);
+  assert.doesNotMatch(JSON.stringify(f.emails), /misinformation/);
   assert.doesNotMatch(f.emails[0].text, /private note/);
   const overview = buildModerationOverview([
     { reportedUserId: 'target', lastReason: legacy },
@@ -265,7 +266,7 @@ test('re-enabling notifications leaves unsent thresholds eligible and legacy rea
   const enabled = fixture({ db, env: { PARENT_MATCHING_REPORT_HIDE_THRESHOLD: '1' } });
   await enabled.notifyModeration(report({ id: 'retry', reason: 'unsupported-old-value' }));
   assert.equal(enabled.emails.length, 1);
-  assert.match(enabled.emails[0].text, /Grund: other/);
+  assert.match(enabled.emails[0].text, /Grund: Sonstiges/);
 });
 
 test('disabled notifications leave durable persistence available', async () => {
@@ -530,7 +531,9 @@ test('existing sendPushToUser tolerates missing tokens and fans out actual admin
   const calls = [];
   const context = {
     console: { error() {} },
-    deviceTokens: new Map([['a', new Set(['token1', 'token2'])]]),
+    ensureDeviceTokenSchemaReady: async () => {},
+    prisma: { $queryRawUnsafe: async (_sql, userId) => userId === 'a'
+      ? [{ token: 'token1' }, { token: 'token2' }] : [] },
     firebaseAdmin: { messaging: () => ({
       sendEachForMulticast: async data => { calls.push(data); return { responses: [{ success: true }, { success: true }] }; },
     }) },
@@ -546,4 +549,43 @@ test('existing sendPushToUser tolerates missing tokens and fans out actual admin
   assert.deepEqual([...calls[0].tokens], ['token1', 'token2']);
   assert.equal(calls[0].data.type, 'moderation_report');
   assert.equal(calls[0].data.accountUserId, 'a');
+});
+
+test('German reason labels cover all canonical reasons, expired and unknown fallback', () => {
+  const labels = {
+    child_safety: 'Gefährdung eines Kindes',
+    sexual_content: 'Sexueller Inhalt / Missbrauch',
+    violence_threat: 'Gewalt / Bedrohung',
+    self_harm: 'Selbstgefährdung / Suizid',
+    harassment: 'Belästigung / Hassrede',
+    spam: 'Spam / Werbung',
+    fraud: 'Betrug / Fake-Profil',
+    inappropriate: 'Unangemessener Inhalt',
+    misinformation: 'Falsche Information',
+    other: 'Sonstiges',
+    expired: 'Abgelaufen',
+  };
+  for (const [reason, label] of Object.entries(labels)) {
+    assert.equal(reasonLabelDe(reason), label);
+  }
+  assert.equal(reasonLabelDe('future_reason'), 'future_reason');
+  assert.equal(reasonLabelDe('__proto__'), '__proto__');
+});
+
+test('notification email uses only German display labels while storage and dedup keep keys', async () => {
+  for (const reason of [
+    'child_safety', 'sexual_content', 'violence_threat', 'self_harm',
+    'harassment', 'spam', 'fraud', 'inappropriate', 'misinformation', 'other', 'expired',
+  ]) {
+    const f = fixture({ env: { PARENT_MATCHING_REPORT_HIDE_THRESHOLD: '1' } });
+    await f.notifyModeration(report({ reason, contentType: 'event' }));
+    assert.equal(f.emails.length, 1);
+    assert.ok(f.emails[0].text.includes(`Grund: ${reasonLabelDe(reason)}`));
+    assert.ok(f.emails[0].html.includes(`Grund: ${reasonLabelDe(reason)}`));
+    assert.ok(!f.emails[0].text.includes(`Grund: ${reason}\n`));
+    assert.equal([...f.db.reports.values()][0].reason, reason);
+    if (reasonSeverity(reason) === 'critical') {
+      assert.ok(f.db.claims.has(JSON.stringify(['critical', 'safety', 'target', reason])));
+    }
+  }
 });
