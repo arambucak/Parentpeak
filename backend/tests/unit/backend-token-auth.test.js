@@ -275,3 +275,106 @@ test('Stripe and social write exceptions remain route-local', async () => {
     assert.equal(social.req.firebaseUid, undefined);
   }
 });
+
+test('both global guards leave only the exact POST digest to its secret check', async () => {
+  for (const guard of createWriteGuards()) {
+    for (const token of [null, 'digest-secret']) {
+      const result = await callGuard(guard, {
+        token, path: '/internal/moderation/digest',
+      });
+      assert.equal(result.continued, true);
+      assert.equal(result.req.firebaseUid, undefined);
+    }
+    for (const [method, requestPath] of [
+      ['POST', '/internal/moderation/digest/extra'],
+      ['POST', '/internal/moderation/other'],
+      ['PUT', '/internal/moderation/digest'],
+      ['DELETE', '/internal/moderation/digest'],
+    ]) {
+      const result = await callGuard(guard, { token: null, method, path: requestPath });
+      assert.equal(result.continued, false, `${method} ${requestPath}`);
+      assert.equal(result.status, 401);
+    }
+  }
+});
+
+function createDigestRoute({ secret = 'digest-secret', failDelivery = false } = {}) {
+  let handler;
+  let deliveries = 0;
+  const context = vm.createContext({
+    app: { post: (route, fn) => {
+      assert.equal(route, '/internal/moderation/digest');
+      handler = fn;
+    } },
+    crypto: require('node:crypto'),
+    Buffer,
+    process: { env: secret === null ? {} : { MODERATION_DIGEST_SECRET: secret } },
+    sendPendingDigest: async () => {
+      deliveries += 1;
+      if (failDelivery) throw new Error('mail unavailable');
+      return { sent: true, pendingCount: 1 };
+    },
+    console: { error() {} },
+  });
+  vm.runInContext(
+    block('function timingSafeSecretMatch(', '\n// Liste aller Meldungen'),
+    context,
+  );
+  const guards = createWriteGuards();
+  async function request(headers = {}) {
+    let status = 200;
+    let body;
+    const req = { method: 'POST', path: '/internal/moderation/digest', headers };
+    const res = {
+      status(code) { status = code; return res; },
+      json(value) { body = value; return res; },
+    };
+    const chain = [...guards, handler];
+    async function run(index) {
+      if (chain[index]) await chain[index](req, res, () => run(index + 1));
+    }
+    await run(0);
+    return { status, body };
+  }
+  return { request, deliveries: () => deliveries };
+}
+
+test('digest without configured secret stays disabled through both global guards', async () => {
+  const fixture = createDigestRoute({ secret: null });
+  assert.equal((await fixture.request()).status, 404);
+  assert.equal(fixture.deliveries(), 0);
+});
+
+test('digest rejects missing, wrong and Firebase tokens before sending mail', async () => {
+  const fixture = createDigestRoute();
+  for (const headers of [
+    {},
+    { authorization: 'Bearer incorrect' },
+    { authorization: 'Bearer user-token' },
+    { 'x-digest-secret': 'incorrect' },
+  ]) {
+    assert.equal((await fixture.request(headers)).status, 401);
+  }
+  assert.equal(fixture.deliveries(), 0);
+});
+
+test('digest accepts its dedicated bearer or header with both auth flags enabled', async () => {
+  for (const headers of [
+    { authorization: 'Bearer digest-secret' },
+    { 'x-digest-secret': 'digest-secret' },
+  ]) {
+    const fixture = createDigestRoute();
+    const result = await fixture.request(headers);
+    assert.equal(result.status, 200);
+    assert.equal(result.body.ok, true);
+    assert.equal(fixture.deliveries(), 1);
+  }
+});
+
+test('authorized digest delivery failures remain explicit through global guards', async () => {
+  const fixture = createDigestRoute({ failDelivery: true });
+  const result = await fixture.request({ authorization: 'Bearer digest-secret' });
+  assert.equal(result.status, 502);
+  assert.equal(result.body.ok, false);
+  assert.equal(fixture.deliveries(), 1);
+});
