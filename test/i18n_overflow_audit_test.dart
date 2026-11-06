@@ -414,6 +414,11 @@ void main() {
               }
             }
 
+            // Der Firebase-Session-Restore (_awaitRestoredUser) startet einen
+            // 6-Sekunden-Timeout-Timer. Ohne Auth-Mock bleibt er sonst beim
+            // Dispose pending ("A Timer is still pending") und lässt den Test
+            // umgebungsabhängig fehlschlagen. Vor dem Dispose ablaufen lassen.
+            await tester.pump(const Duration(seconds: 7));
             await tester.pumpWidget(const SizedBox.shrink());
             await tester.pump();
           },
