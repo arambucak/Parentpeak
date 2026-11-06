@@ -1,5 +1,126 @@
 # Parentpeak Marktplatz Backend
 
+## Moderationsmeldungen und Benachrichtigungen
+
+Alle sechs Meldewege (Safety, Weekly-Community, Event-Chat, Community-Event-Flag,
+Food-Feed und Treasures) speichern kanonische Gruende. `child_safety`,
+`sexual_content`, `violence_threat`, `self_harm` sind **critical**; `harassment`,
+`spam`, `fraud`, `inappropriate`, `misinformation`, `other` sind **normal**.
+Die Serverfunktion `reasonSeverity` entscheidet ausschliesslich anhand des
+Grundes, niemals anhand einer Client-Severity oder eines Freitextes.
+Legacy: `insult`/`hostile` → `harassment`, `fake` → `fraud`,
+`false_info` → `misinformation`, das mehrdeutige `unsafe` → `inappropriate`.
+Unbekannte Gruende werden `other`; `expired` bleibt fuer Event-Flags normal
+kompatibel, ebenso fuer Safety mit `contentType=event`.
+Alte deutsche Labels: `Unpassender Ton` → `harassment`, `Nicht hilfreich`/
+`Andere Sorge` → `other`, `Nicht elternfreundlich`/`Unpassender Inhalt` →
+`inappropriate`, `Fachlich fragwuerdig`/`Fachlich fragwürdig` →
+`misinformation`, `Spam oder Irrefuehrung`/`Spam oder Irreführung` → `spam`,
+`Betrug oder Unsicherheit` → `fraud`. Alte `Label: Notiz`-Werte werden nur
+bei exakt bekanntem Legacy-Label vor dem ersten Doppelpunkt normalisiert;
+kanonische kritische Keys mit beliebigem Suffix werden nicht erkannt.
+Bestehende Zeilen werden beim Lesen normalisiert, nicht geloescht.
+Die bisherige automatische Angebotsmoderation bleibt erhalten.
+Safety akzeptiert auch `contentType=ai_message` mit einem Ziel wie
+`ai_chat:<lokale-thread-id>:<nachrichten-index>`: verschiedene Antworten
+bleiben getrennte Ziele fuer Melderzaehlung und E-Mail-Deduplizierung.
+Der gemeldete Antworttext bleibt im bestehenden, auf 1000 Zeichen begrenzten
+Safety-Datensatz; er wird weder in Push noch E-Mail uebernommen.
+
+Umgebung:
+
+* `MODERATION_NOTIFY_ENABLED=true` (Standard; `false` oder `0` deaktiviert
+  Push und E-Mail, nicht die Speicherung oder das Dashboard).
+* `ADMIN_USER_IDS`: kommagetrennte Firebase-UIDs. Jede gespeicherte Meldung
+  wird per bestehendem FCM-Kanal an **alle** Admins gesendet; fehlende Tokens
+  sind unproblematisch. Push-Daten: `type=moderation_report`, `reportId`,
+  `source`, `severity`. Keine Personen- oder Inhaltsdaten im Push.
+* `MODERATION_EMAIL=support@parentpeak.com` (Standard). Zustellung ueber
+  vorhandenes `sendEmail`: Resend oder SMTP, siehe Konto-E-Mails unten.
+* `MODERATION_SEND_TIMEOUT_MS=10000` (Standard, maximal 30000):
+  unabhaengige Zeitgrenze je Push-/E-Mail-Versuch.
+* `PARENT_MATCHING_REPORT_HIDE_THRESHOLD=3` (Standard, positive Ganzzahl):
+  E-Mail beim Erreichen der Zahl verschiedener meldender Konten pro Ziel,
+  unabhaengig vom Grund; bestehende Meldungen werden mitgezaehlt.
+  Kritische Gruende loesen schon bei der ersten Meldung E-Mail aus.
+
+`moderation.js` legt wie das bestehende Social-Schema PostgreSQL-Tabellen
+idempotent an (`ModerationReport`, `ModerationNotificationClaim`); der
+DB-Benutzer benoetigt CREATE-/INDEX-Rechte. Weekly-Meldungen werden vor
+Erfolgsantwort dauerhaft in `ModerationReport` gespeichert. Andere Bereiche
+behalten ihre bisherigen Berichtstabellen. E-Mail-Claims sind atomare
+`INSERT ... ON CONFLICT ... RETURNING`-Operationen: kritische Meldungen
+hoechstens einmal je Bereich + Ziel + Grund in **15 Minuten**, Schwellenmeldung
+**einmal pro Bereich + Ziel**, auch ueber Instanzen und Neustarts hinweg.
+Eine E-Mail kann beide Anlaesse abdecken. Push wird nicht dedupliziert.
+Claims erhalten vor dem Versand eine atomare 60-Sekunden-Lease mit zufaelligem
+Besitzertoken. Erst `sendEmail === true` bestaetigt die Zustellung an den
+Provider und setzt die 15-Minuten-Cooldown (ab Erfolg) bzw. dauerhafte
+Schwellen-Deduplizierung. `false`, Exceptions und Timeouts geben beide
+beanspruchten Claims frei; der naechste Bericht/Benachrichtigungsversuch fuer
+dasselbe Ziel kann erneut senden. Besitzertokens verhindern, dass ein alter
+Worker fremde Claims freigibt. Bei Prozessabbruch oder DB-Freigabefehler laeuft
+die Lease nach 60 Sekunden ab. Bestehende erfolgreiche Claims bleiben gueltig.
+Deaktivierte Benachrichtigungen erzeugen keine Claims; nach Reaktivierung
+bleiben Schwellen beim naechsten Bericht berechtigt (`>=`, nicht nur `==`).
+Push-`false` wird ebenfalls protokolliert; `undefined` ist beim bestehenden
+tokenlosen Push-Helper erwarteter No-op. Push und E-Mail laufen unabhaengig.
+
+Die HTTP-Handler starten Benachrichtigungen nach durablem Speichern ohne
+darauf zu warten, mit abschliessendem Fehler-Handler. Provider-Timeouts
+blockieren die Antwort nicht. Es gibt keinen garantierten Outbox-/Retry-Dienst:
+ohne naechste Meldung erfolgt kein automatischer Wiederholungsversuch.
+Ein Timeout kann einen noch laufenden Provideraufruf nicht abbrechen; eine
+spaetere Zustellung plus Wiederholung kann daher doppelte E-Mail erzeugen.
+Fehler werden protokolliert, gespeicherte Meldungen bleiben
+erfolgreich (`ok: true`). E-Mails enthalten nur Grund, Bereich, Anzahl und
+Berlin-Zeit, keine Melderidentitaet, Inhalte oder Freitexte.
+
+Ziel-/Deduplizierungsschluessel:
+
+| POST-Endpunkt | `source` | `targetId` | Erfolgsstatus |
+| --- | --- | --- | --- |
+| `/api/safety/report` | `safety` | `reportedUserId` (auch volle AI-Nachrichten-ID) | 200 |
+| `/api/weekly-impulse/community/posts/:postId/report` | `weekly` | `<impulseId>:<postId>` | 201 |
+| `/events/:id/chat/reports` | `event_chat` | `reportedMessageId` | 201 |
+| `/api/food-feed/recipes/:id/report` | `food_feed` | Rezept-ID | 201 |
+| `/api/treasures/:id/report` | `treasure` | Treasure-ID | 201 |
+| `/api/community-events/:id/flag` | `community_event` | Event-ID | 200 |
+
+Alle Erfolgsantworten enthalten `ok: true` neben bisherigen Feldern.
+Benachrichtigungsfehler aendern keinen HTTP-Status. Vorhandene Fehler bleiben:
+401/403 bei fehlendem Token/falscher Identitaet, 400 bei ungueltigen
+Pflichtfeldern, 404 bei fehlendem Inhalt; Food/Treasure behalten 409 bei
+bereits gemeldeten Angeboten (kein neuer Bericht, kein neuer Push).
+Persistenzfehler bleiben bereichsspezifische 5xx, Weekly verwendet 503.
+Claims verwenden exakt JSON-Arrays als DB-Primärschluessel:
+`["critical",source,targetId,kanonischerGrund]` und
+`["threshold",source,targetId]`. Ein erfolgreicher Versuch kann beide Claims
+abschliessen; unterschiedliche Bereiche/Ziele/Gruende kollidieren nicht.
+
+`GET /admin/reports?status=pending|all` behaelt `{ groups, reports }` und den
+Admin-Token-/Allowlist-Schutz. Beide Listen enthalten `severity` und sind
+critical-first, danach neueste zuerst.
+`groups[].severity` ist `critical`, sobald irgendeine Meldung dieser Gruppe
+im angefragten Status kritisch ist, sonst `normal`; nicht nur der letzte Grund.
+`reports[].severity` wird fuer jede einzelne Meldung serverseitig berechnet.
+Alle sechs Datenquellen einschliesslich
+alter Zeilen sind enthalten; zusaetzliche Gruppen haben `source`, `targetId`
+und `reportedUserId="<source>:<targetId>"`. Details behalten `id`, `reason`,
+`reporterUserId`, `contentType`, `content`, `status`, `createdAt`.
+`POST /admin/reports/resolve` akzeptiert weiterhin `reportId` oder
+`reportedUserId`, auch fuer diese zusaetzlichen Gruppen. Die bisherigen
+bereichsspezifischen Listen/Antwortfelder bleiben verfuegbar und ergaenzen
+`severity`. Weekly-Posts und deren sonstiger Community-Zustand bleiben wie
+bisher prozesslokal; die zentrale Meldungshistorie ist davon unabhaengig.
+
+Isolierte Tests (Mock-DB, Mock-Push und Mock-E-Mail; kein Produktionszugriff):
+
+```bash
+cd backend
+API_BASE=http://127.0.0.1:9 node --test tests/unit/*.test.js
+```
+
 ## Free-/Premium-Kontingente
 
 Serverkontingente sind vorbereitet und standardmaessig deaktiviert
