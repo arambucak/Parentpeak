@@ -76,6 +76,56 @@ spaetere Zustellung plus Wiederholung kann daher doppelte E-Mail erzeugen.
 Fehler werden protokolliert, gespeicherte Meldungen bleiben
 erfolgreich (`ok: true`). E-Mails enthalten nur Grund, Bereich, Anzahl und
 Berlin-Zeit, keine Melderidentitaet, Inhalte oder Freitexte.
+`reasonLabelDe` zeigt Gruende in Sofort- und Digest-Mails als deutschen
+Klartext, z. B. `violence_threat` als `Gewalt / Bedrohung`. Der Digest zeigt
+alle unterschiedlichen Gruende eines Ziels. `expired` erscheint als
+`Abgelaufen`; unbekannte Keys bleiben als Text sichtbar und werden im HTML
+escaped. Speicherung, Severity und Dedup-Schluessel bleiben unveraendert.
+
+### Dauerhafte FCM-Device-Tokens
+
+`POST /devices/register-token` und `DELETE /devices/register-token` behalten
+ihre Firebase-Owner-Pruefung. Die PostgreSQL-Tabelle `DeviceToken` ist die
+einzige Quelle der Wahrheit; es gibt keinen RAM-Cache mehr.
+Sie wird bei der ersten Registrierung/Abmeldung/Push-Verwendung ueber
+`CREATE TABLE IF NOT EXISTS` samt User-Index idempotent angelegt, passend
+zum bestehenden Social-/Moderationsschema. Kein separater Prisma-Migrations-
+Deploy ist erforderlich; die Render-DB-Rolle benoetigt CREATE-/INDEX-Rechte.
+
+Spalten: `token` (Primaerschluessel), `userId` (Firebase-UID), `platform`,
+`createdAt` und `updatedAt` (Serverzeit, TIMESTAMPTZ).
+Atomarer `INSERT ... ON CONFLICT` aktualisiert nur ein bereits demselben
+Konto gehoerendes Token. Andere Konten erhalten weiterhin 409, auch nach
+Neustarts oder bei parallelen Backend-Instanzen. Erst eine erfolgreiche
+Owner-Abmeldung gibt das Token fuer ein anderes Konto frei.
+Wiederholte Registrierung/Abmeldung ist idempotent; `tokenCount` kommt aus
+der DB. Beide Konto-Loeschwege entfernen ebenfalls die Tokens ihrer UID;
+`dryRun` entfernt nichts.
+
+Registrierung/Abmeldung versuchen transiente DB-Fehler genau einmal nach
+100 ms erneut (bestehende DB-Verbindungs-/Query-Timeouts gelten weiter).
+Bleibt die Speicherung/Loeschung unbestaetigt, folgt geloggtes
+HTTP 503 mit `ok: false`, niemals RAM-Fallback oder falsches `ok: true`.
+Permanente DB-Fehler werden nicht erneut versucht. Der Client bleibt
+unveraendert; erneute Registrierung erfolgt ueber seinen bestehenden
+Token-/Kontobindungsfluss, kein neuer dauerhafter Retry-Dienst.
+
+`sendPushToUser` liest pro Versand nur die Tokens der Empfaenger-UID aus
+der DB und sendet in FCM-Batches von maximal 500. Ein Backend-Neustart
+verliert keine bereits persistierten Tokens. Unregistrierte/ungueltige
+Tokens werden UID-gebunden aus der DB entfernt; temporaere FCM-Fehler
+loeschen keine Tokens. Keine Tokens ist ein erwarteter No-op; DB-/FCM-
+Fehler werden ohne Tokenwerte geloggt und liefern `false`. Bereits
+gespeicherte Meldungen bleiben von Benachrichtigungsfehlern unabhaengig.
+
+Nach dem ersten Deploy muessen Admin-Geraete einmal die App oeffnen und
+erfolgreich registrieren: bisher ausschliesslich im RAM vorhandene Tokens
+koennen nicht aus alten Neustarts wiederhergestellt werden. Anschliessend
+einen echten iOS-/Android-Multi-Device-Test durchfuehren: beide Geraete
+registrieren, Backend neu starten, ohne erneutes App-Oeffnen eine Meldung
+ausloesen und Admin-Push pruefen. Danach Abmeldung/Kontowechsel sowie
+Invalid-Token-Aufraeumen pruefen. Lokale Tests mocken DB und FCM; sie
+bestaetigen keinen echten Provider-/Geraeteempfang.
 
 ### Pending-Digest einrichten und pruefen
 
