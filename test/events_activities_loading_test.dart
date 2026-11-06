@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:parentpeak/config/api_config.dart';
 import 'package:parentpeak/logic/auth_service.dart';
 import 'package:parentpeak/logic/event_discovery_agent.dart';
 import 'package:parentpeak/logic/event_service.dart';
@@ -76,6 +77,30 @@ class _Service extends EventService {
       List<AgeGroup>? ageGroups}) {
     users.add(viewerUserId);
     return loader?.call(viewerLatitude) ?? Future.value(events.toList());
+  }
+
+  // Der Screen lädt den Community-Feed über diese gefilterte Variante. Ohne
+  // Override würde die echte EventService-Methode einen Backend-Call machen —
+  // der bei vorhandener lokaler .env den Firebase-Auth-Pfad betritt und mit
+  // '[core/no-app]' scheitert. Das Mocking hält den Test deterministisch,
+  // unabhängig davon, ob lokal eine .env vorhanden ist.
+  @override
+  Future<List<MeetupEvent>> getFilteredDiscoverableEventsForUser({
+    required String viewerUserId,
+    required double viewerLatitude,
+    required double viewerLongitude,
+    List<AgeGroup>? ageGroups,
+    double radiusKm = 25,
+    bool nearbyOnly = false,
+    bool onlyFree = false,
+    String timeWindow = 'all',
+  }) {
+    return getDiscoverableEventsForUser(
+      viewerUserId: viewerUserId,
+      viewerLatitude: viewerLatitude,
+      viewerLongitude: viewerLongitude,
+      ageGroups: ageGroups,
+    );
   }
 
   @override
@@ -422,7 +447,17 @@ void main() {
     expect(agent.calls, hasLength(1));
     expect(service.users, hasLength(1));
     expect(service.invitations, 2);
-  });
+  },
+      // Dieser Fall navigiert zur echten EventInvitationsScreen, die ihren
+      // eigenen EventService() (nicht den injizierten Mock) erzeugt. Ist lokal
+      // eine echte Backend-Config (.env) aktiv, macht diese Unterseite einen
+      // authentifizierten Backend-Call, der ohne Firebase-Session scheitert.
+      // In CI (ohne .env) ist das Backend nicht konfiguriert -> Test läuft
+      // vollständig. Lokal mit .env gezielt überspringen statt falsch-rot.
+      // Grund: EventInvitationsScreen braucht einen injizierbaren EventService,
+      // damit diese Unterseite nicht gegen das echte Backend läuft. In CI ohne
+      // .env ist das Backend nicht konfiguriert -> skip=false, Test läuft.
+      skip: APIConfig.isBackendConfigured());
 
   testWidgets('radius, ages and language get separate query caches',
       (tester) async {
