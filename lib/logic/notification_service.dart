@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -24,6 +25,7 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
   bool _initialized = false;
   bool _fcmListenersRegistered = false;
+  bool _handledLocalLaunch = false;
   NotificationTapHandler? _onNotificationTap;
   int _sessionGeneration = 0;
   String? _sessionOwner;
@@ -89,7 +91,12 @@ class NotificationService {
       iOS: iosInit,
       macOS: iosInit,
     );
-    await _plugin.initialize(settings: settings);
+    await _plugin.initialize(
+      settings: settings,
+      onDidReceiveNotificationResponse: (response) {
+        _handleLocalNotificationPayload(response.payload);
+      },
+    );
 
     if (_isRunningOnIOSSimulator) {
       _initialized = true;
@@ -224,6 +231,7 @@ class NotificationService {
             showLocalNotification(
               title: notification.title ?? 'Parentpeak',
               body: notification.body ?? '',
+              data: message.data,
             );
           }
         });
@@ -241,6 +249,15 @@ class NotificationService {
           _binding.acceptsMessage(
               initialMessage.data['accountUserId'] as String?)) {
         _onNotificationTap?.call(initialMessage.data);
+      }
+      if (!_handledLocalLaunch) {
+        _handledLocalLaunch = true;
+        final localLaunch = await _plugin.getNotificationAppLaunchDetails();
+        requireSession();
+        if (localLaunch?.didNotificationLaunchApp == true) {
+          _handleLocalNotificationPayload(
+              localLaunch?.notificationResponse?.payload);
+        }
       }
     }
   }
@@ -285,12 +302,16 @@ class NotificationService {
   Future<void> showLocalNotification({
     required String title,
     required String body,
+    Map<String, dynamic>? data,
   }) async {
     if (kIsWeb) return;
     final generation = _sessionGeneration;
     final prefs = await SharedPreferences.getInstance();
     if (generation != _sessionGeneration) return;
-    if (prefs.getBool('ritual_ruhe.quiet_mode') == true) return;
+    if (prefs.getBool('ritual_ruhe.quiet_mode') == true &&
+        data?['type'] != 'moderation_report') {
+      return;
+    }
     const androidDetails = AndroidNotificationDetails(
       'parentpeak_events',
       'Terminerinnerungen',
@@ -304,8 +325,25 @@ class NotificationService {
       body: body,
       notificationDetails:
           const NotificationDetails(android: androidDetails, iOS: iosDetails),
+      payload: data == null ? null : jsonEncode(data),
     );
     if (generation != _sessionGeneration) await _plugin.cancelAll();
+  }
+
+  void _handleLocalNotificationPayload(String? payload) {
+    if (payload == null) return;
+    try {
+      final data = jsonDecode(payload);
+      if (data is! Map<String, dynamic> || data['accountUserId'] is! String) {
+        debugPrint('Notification payload missing account owner');
+        return;
+      }
+      if (_binding.acceptsMessage(data['accountUserId'] as String)) {
+        _onNotificationTap?.call(data);
+      }
+    } on FormatException catch (error) {
+      _logIgnoredError('Notification payload invalid', error);
+    }
   }
 
   Future<void> scheduleReminder(

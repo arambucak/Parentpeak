@@ -21,6 +21,7 @@ class ReportGroup {
 
   /// Ob das gemeldete Matching-Profil aktuell sichtbar (aktiv) ist.
   final bool profileActive;
+  final String severity;
 
   const ReportGroup({
     required this.reportedUserId,
@@ -33,6 +34,7 @@ class ReportGroup {
     required this.profileCity,
     required this.profileBio,
     required this.profileActive,
+    this.severity = 'normal',
   });
 
   /// Ob ein Matching-Profil zu dieser Meldung existiert (Name vorhanden).
@@ -58,6 +60,7 @@ class ReportGroup {
             ? null
             : (j['profileBio'] as String).trim(),
         profileActive: j['profileActive'] != false,
+        severity: j['severity'] == 'critical' ? 'critical' : 'normal',
       );
 }
 
@@ -71,6 +74,7 @@ class ReportDetail {
   final String reason;
   final String status;
   final DateTime? createdAt;
+  final String severity;
 
   const ReportDetail({
     required this.id,
@@ -81,6 +85,7 @@ class ReportDetail {
     required this.reason,
     required this.status,
     required this.createdAt,
+    this.severity = 'normal',
   });
 
   factory ReportDetail.fromJson(Map<String, dynamic> j) => ReportDetail(
@@ -92,6 +97,7 @@ class ReportDetail {
         reason: j['reason'] as String? ?? '',
         status: j['status'] as String? ?? 'pending',
         createdAt: DateTime.tryParse(j['createdAt']?.toString() ?? ''),
+        severity: j['severity'] == 'critical' ? 'critical' : 'normal',
       );
 }
 

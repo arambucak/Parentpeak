@@ -14,6 +14,7 @@ import 'package:parentpeak/logic/notification_service.dart';
 import 'package:parentpeak/logic/error_reporting_service.dart';
 import 'package:parentpeak/models/trusted_device.dart';
 import 'package:parentpeak/ui/home_screen.dart';
+import 'package:parentpeak/ui/admin_moderation_screen.dart';
 import 'package:parentpeak/ui/profile_safety_screen.dart';
 import 'package:parentpeak/ui/treasure_handover_screen.dart';
 import 'package:parentpeak/ui/treasure_upload_screen.dart';
@@ -46,6 +47,20 @@ final GlobalKey<DemoAppState> demoAppKey = GlobalKey<DemoAppState>();
 final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 
 void _handleNotificationTap(Map<String, dynamic> data) {
+  if (data['type'] == 'moderation_report') {
+    final uid = AuthService.instance.currentUser?.uid;
+    if (!APIConfig.isAdminUser(uid)) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (AuthService.instance.currentUser?.uid != uid ||
+          !APIConfig.isAdminUser(uid)) {
+        return;
+      }
+      appNavigatorKey.currentState?.push(
+        MaterialPageRoute(builder: (_) => const AdminModerationScreen()),
+      );
+    });
+    return;
+  }
   const treasureNotificationTypes = {
     'treasure_reservation',
     'treasure_handover_update',
