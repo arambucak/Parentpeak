@@ -45,6 +45,9 @@ lib/ui/oracleJdk-25/
 
 # Local test artifacts
 screenshots/
+# Aber: versionierte Fastlane-Store-Screenshots (iOS) nicht ignorieren
+!fastlane/metadata/**/screenshots/
+!fastlane/metadata/**/screenshots/**
 certs_temp/
 *.p12
 *.cer
