@@ -1,1 +1,10 @@
-Parentpeak ist jetzt noch verlaesslicher im Familienalltag. Login, Wochenplanung und Alltagsorganisation laufen stabiler, auch bei kurzen Verbindungsproblemen. Die Essensplanung ist klarer und schneller nutzbar. Zusaetzlich haben wir Sicherheit und Gesamtqualitaet im Hintergrund weiter verbessert.
+Willkommen bei ParentPeak!
+
+Neu in dieser Version:
+• Überarbeitetes Onboarding: schlanker, wärmer, in mehreren Sprachen
+• Kontolöschung vollständig lokalisiert
+• Melde- und Moderationsfunktion mit Krisenhilfe
+• Zuverlässige Kalender-Erinnerungen
+• Viele Verbesserungen bei Darstellung und Übersetzungen
+
+Alle Funktionen sind kostenlos. Wir freuen uns über euer Feedback direkt in der App unter „Profil".
