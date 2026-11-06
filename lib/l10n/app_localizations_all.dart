@@ -2071,6 +2071,7 @@ class AppStringsManager {
       'pdf_default_child_name': 'Kind',
       'development_questions_remaining':
           'Noch {count} Fragen offen. Beantworte alle Fragen, um deinen persönlichen KI-Bericht zu erhalten.',
+      'development_orientation_disclaimer': 'Dieser Check gibt dir eine Orientierung zur Entwicklung deines Kindes – er ersetzt keine ärztliche Untersuchung. Bei Fragen oder Sorgen ist euer Kinderarzt die richtige Anlaufstelle.',
       'age_months': '{count} Monate',
       'age_years': '{count} Jahre',
       'age_years_months': '{years} Jahre, {months} Monate',
@@ -2998,6 +2999,7 @@ class AppStringsManager {
           'Mein Kind hat Stress mit der Schule. Wie kann ich helfen?',
       'chat_welcome_message':
           'Erzähl mir, was dich gerade beschäftigt. Ich höre zu — ohne zu urteilen.',
+      'chat_ai_disclaimer': 'Diese KI gibt dir pädagogische Impulse und Orientierung – keine medizinische oder therapeutische Beratung. In akuten Notlagen wende dich bitte direkt an professionelle Hilfe.',
       'chat_how_can_help': 'Womit kann ich helfen?',
       'chat_terms_intro': 'Bevor du startest, lies bitte kurz durch:',
       'chat_terms_no_diagnosis_title': 'Keine Diagnosen',
@@ -4990,6 +4992,7 @@ class AppStringsManager {
       'pdf_default_child_name': 'Child',
       'development_questions_remaining':
           '{count} questions remaining. Answer every question to receive your personal AI report.',
+      'development_orientation_disclaimer': 'This check offers guidance on your child’s development – it does not replace a medical examination. If you have questions or concerns, your pediatrician is the right place to turn.',
       'age_months': '{count} months',
       'age_years': '{count} years',
       'age_years_months': '{years} years, {months} months',
@@ -5919,6 +5922,7 @@ class AppStringsManager {
           'My child is stressed about school. How can I help?',
       'chat_welcome_message':
           'Tell me what is on your mind. I am listening without judgment.',
+      'chat_ai_disclaimer': 'This AI offers parenting impulses and guidance – not medical or therapeutic advice. In an acute emergency, please reach out to professional help directly.',
       'chat_how_can_help': 'How can I help?',
       'chat_terms_intro': 'Before you start, please read this briefly:',
       'chat_terms_no_diagnosis_title': 'No diagnoses',
@@ -15196,6 +15200,7 @@ class AppStringsManager {
       'pdf_default_child_name': 'Zarok',
       'development_questions_remaining':
           '{count} pirs mane. Ji bo rapora xwe ya AI hemû pirsan bibersivîne.',
+      'development_orientation_disclaimer': 'Ev kontrol ji te re derbarê pêşveçûna zarokê te rêberiyê dide – ew li şûna muayeneya bijîjkî nagire. Bo pirs û xemên xwe, bijîjkê zarokan cîhê rast e.',
       'age_months': '{count} meh',
       'age_years': '{count} sal',
       'age_years_months': '{years} sal, {months} meh',
@@ -16122,6 +16127,7 @@ class AppStringsManager {
           'Zaroka min ji dibistanê stres dibe. Ez çawa alîkar bibim?',
       'chat_welcome_message':
           'Ji min re bibêje çi te mijûl dike. Ez bê darazê guhdarî dikim.',
+      'chat_ai_disclaimer': 'Ev AI ji te re rêbazên perwerdehiyê û rêberiyê dide – ne şêwirmendiya bijîjkî an terapîk. Di rewşên awarte de, ji kerema xwe rasterast bi alîkariya pispor re têkilî dayne.',
       'chat_how_can_help': 'Ez çawa dikarim alîkar bibim?',
       'chat_terms_intro':
           'Berî destpêkirinê, ji kerema xwe vê bi kurtî bixwîne:',
@@ -21862,6 +21868,7 @@ class AppStringsManager {
       'pdf_default_child_name': 'Çocuk',
       'development_questions_remaining':
           '{count} soru kaldı. Kişisel YZ raporunu almak için tüm soruları yanıtla.',
+      'development_orientation_disclaimer': 'Bu kontrol, çocuğunun gelişimi hakkında sana yön gösterir – tıbbi bir muayenenin yerini tutmaz. Soru ya da endişelerinde doğru adres çocuk doktorunuzdur.',
       'age_months': '{count} ay',
       'age_years': '{count} yaş',
       'age_years_months': '{years} yaş, {months} ay',
@@ -22783,6 +22790,7 @@ class AppStringsManager {
           'Çocuğum okul konusunda stresli. Nasıl yardımcı olabilirim?',
       'chat_welcome_message':
           'Şu anda seni düşündüren şeyi anlat. Yargılamadan dinliyorum.',
+      'chat_ai_disclaimer': 'Bu yapay zekâ sana pedagojik fikirler ve yönlendirme sunar – tıbbi ya da terapötik bir danışmanlık değil. Acil durumlarda lütfen doğrudan profesyonel yardıma başvur.',
       'chat_how_can_help': 'Nasıl yardımcı olabilirim?',
       'chat_terms_intro': 'Başlamadan önce lütfen kısaca oku:',
       'chat_terms_no_diagnosis_title': 'Tanı koymaz',

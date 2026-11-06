@@ -1276,6 +1276,28 @@ class _ChatScreenState extends State<ChatScreen> {
                     color: Colors.grey[700],
                   ),
                 ),
+                const SizedBox(height: 12),
+                // Dezenter Hinweis: Die KI gibt pädagogische Orientierung, keine
+                // medizinische/therapeutische Diagnose; bei akuter Not an echte
+                // Hilfe verweisen.
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.info_outline_rounded,
+                        size: 15, color: Colors.grey[500]),
+                    const SizedBox(width: 7),
+                    Expanded(
+                      child: Text(
+                        context.tr('chat_ai_disclaimer'),
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          height: 1.4,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
