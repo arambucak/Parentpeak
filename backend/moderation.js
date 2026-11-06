@@ -28,6 +28,30 @@ function reasonSeverity(reason) {
   return CRITICAL_REASONS.has(normalizeReportReason(reason)) ? 'critical' : 'normal';
 }
 
+const REASON_LABELS_DE = {
+  child_safety: 'Gefährdung eines Kindes',
+  sexual_content: 'Sexueller Inhalt / Missbrauch',
+  violence_threat: 'Gewalt / Bedrohung',
+  self_harm: 'Selbstgefährdung / Suizid',
+  harassment: 'Belästigung / Hassrede',
+  spam: 'Spam / Werbung',
+  fraud: 'Betrug / Fake-Profil',
+  inappropriate: 'Unangemessener Inhalt',
+  misinformation: 'Falsche Information',
+  other: 'Sonstiges',
+  expired: 'Abgelaufen',
+};
+
+function reasonLabelDe(reason) {
+  return Object.hasOwn(REASON_LABELS_DE, reason) ? REASON_LABELS_DE[reason] : reason;
+}
+
+function escapeEmailHtml(value) {
+  return String(value).replace(/[&<>"']/g, char => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[char]);
+}
+
 function withReportSeverity(report) {
   const reason = normalizeReportReason(report.reason, {
     event: report.source === 'community_event' || ['community_event', 'event'].includes(report.contentType),
@@ -162,10 +186,10 @@ function createModerationService({ prisma, sendEmail, sendPushToUser, adminUserI
         timeZone: 'Europe/Berlin', dateStyle: 'medium', timeStyle: 'long',
       }).format(new Date());
       const text = `ParentPeak – Moderation\n\n${severity === 'critical' ? 'Kritische Meldung' : 'Meldeschwelle erreicht'}`
-        + `\nGrund: ${reason}\nBereich: ${report.source}\nVerschiedene meldende Konten: ${count}`
+        + `\nGrund: ${reasonLabelDe(reason)}\nBereich: ${report.source}\nVerschiedene meldende Konten: ${count}`
         + `\nZeit (Europe/Berlin): ${timestamp}\n\nBitte im geschützten Moderations-Dashboard prüfen.`;
       const html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#203b35">`
-        + `<h1 style="color:#287568">ParentPeak</h1><p>${text.replace(/\n/g, '<br>')}</p></div>`;
+        + `<h1 style="color:#287568">ParentPeak</h1><p>${escapeEmailHtml(text).replace(/\n/g, '<br>')}</p></div>`;
       const sent = await bounded(() => sendEmail({
         to: env.MODERATION_EMAIL || 'support@parentpeak.com',
         subject: `ParentPeak · ${severity === 'critical' ? 'Kritische Meldung' : 'Meldeschwelle erreicht'}`,
@@ -258,6 +282,7 @@ function createModerationService({ prisma, sendEmail, sendPushToUser, adminUserI
       SELECT "source", "targetId",
              COUNT(*)::int AS "reportCount",
              COUNT(DISTINCT "reporterUserId")::int AS "distinctReporters",
+             ARRAY_AGG(DISTINCT "reason" ORDER BY "reason") AS "reasons",
              BOOL_OR(LOWER(BTRIM("reason")) IN ('child_safety','sexual_content','violence_threat','self_harm')) AS "critical",
              MIN("createdAt") AS "oldestAt",
              MAX("createdAt") AS "newestAt"
@@ -280,7 +305,8 @@ function createModerationService({ prisma, sendEmail, sendPushToUser, adminUserI
     });
     const lines = pending.map(r => {
       const tag = r.critical === true ? '[KRITISCH] ' : '';
-      return `${tag}${r.source} · Ziel ${r.targetId} · ${r.distinctReporters} Melder · offen seit ${fmt.format(new Date(r.oldestAt))}`;
+      const reasons = r.reasons.map(reasonLabelDe).join(', ');
+      return `${tag}${r.source} · Ziel ${r.targetId} · Grund: ${reasons} · ${r.distinctReporters} Melder · offen seit ${fmt.format(new Date(r.oldestAt))}`;
     });
     const header = `ParentPeak – Offene Meldungen (Sicherheitsnetz)\n\n`
       + `${pending.length} offene Meldung(en), davon ${criticalCount} kritisch.`
@@ -289,8 +315,7 @@ function createModerationService({ prisma, sendEmail, sendPushToUser, adminUserI
     const html = `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#203b35">`
       + `<h1 style="color:#287568">ParentPeak</h1>`
       + `<p><strong>${pending.length} offene Meldung(en)</strong>, davon ${criticalCount} kritisch.</p>`
-      + `<ul>${pending.map(r => `<li>${r.critical === true ? '<strong>[KRITISCH]</strong> ' : ''}`
-        + `${r.source} · Ziel ${r.targetId} · ${r.distinctReporters} Melder · offen seit ${fmt.format(new Date(r.oldestAt))}</li>`).join('')}</ul>`
+      + `<ul>${lines.map(line => `<li>${escapeEmailHtml(line).replace(/^\[KRITISCH\]/, '<strong>[KRITISCH]</strong>')}</li>`).join('')}</ul>`
       + `<p>Bitte im geschützten Moderations-Dashboard bearbeiten.</p></div>`;
 
     const sent = await bounded(() => sendEmail({
@@ -343,7 +368,7 @@ function buildModerationOverview(groups, safetyReports, additionalReports) {
 }
 
 module.exports = {
-  normalizeReportReason, reasonSeverity, withReportSeverity, criticalFirst,
+  normalizeReportReason, reasonSeverity, reasonLabelDe, withReportSeverity, criticalFirst,
   createModerationService, buildModerationOverview,
 };
 const { randomUUID } = require('node:crypto');
