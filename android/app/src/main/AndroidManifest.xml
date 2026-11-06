@@ -1,12 +1,16 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Benachrichtigungen (Kalender-Erinnerungen). POST_NOTIFICATIONS ist ab
          Android 13 Pflicht, sonst werden Benachrichtigungen nie angezeigt.
-         Exact-Alarm-Permissions sorgen dafür, dass Erinnerungen pünktlich und
-         nicht gedrosselt feuern. RECEIVE_BOOT_COMPLETED + der Boot-Receiver
-         unten stellen geplante Erinnerungen nach einem Neustart wieder her. -->
+         SCHEDULE_EXACT_ALARM lässt Erinnerungen pünktlich und ungedrosselt
+         feuern; der Nutzer gewährt exakte Alarme über die Systemabfrage (mit
+         Fallback auf ungefähre Alarme, falls abgelehnt). USE_EXACT_ALARM wird
+         bewusst NICHT verwendet: diese privilegierte Variante ist laut Google
+         Play nur für Apps erlaubt, deren Hauptfunktion Wecker oder Kalender
+         ist — ParentPeak ist eine Familien-App mit vielen Funktionen.
+         RECEIVE_BOOT_COMPLETED + der Boot-Receiver unten stellen geplante
+         Erinnerungen nach einem Neustart wieder her. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
-    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.VIBRATE" />
 
