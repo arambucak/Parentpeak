@@ -58,7 +58,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   final PageController _pageController = PageController();
   int _currentPage = 0;
-  String? _selectedRole;
   final Set<String> _selectedRoles = {};
   final Set<String> _selectedPriorities = {};
   final List<String> _selectedChildAges = [];
@@ -398,8 +397,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     },
                   ),
                   OnboardingReadyPage(
-                    selectedRole: _selectedRole,
-                    selectedPriorities: _selectedPriorities,
                     fadeAnimation: _fadeAnimation,
                     slideAnimation: _slideAnimation,
                   ),
@@ -735,68 +732,68 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         // geöffnete) Tastatur Platz braucht.
         child: KeyboardAwareBuilder(
           builder: (context, compact) => SingleChildScrollView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: compact ? 16 : 48),
-              if (!compact) ...[
-                const Center(
-                  child: Text('\u{1F46A}', style: TextStyle(fontSize: 48)),
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: compact ? 16 : 48),
+                if (!compact) ...[
+                  const Center(
+                    child: Text('\u{1F46A}', style: TextStyle(fontSize: 48)),
+                  ),
+                  const SizedBox(height: 28),
+                ],
+                Text(
+                  AppStringsManager.getString(languageService.currentLanguage,
+                      'onboarding_family_name'),
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 8),
+                Text(
+                  _t('family_name_desc'),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                SizedBox(height: compact ? 16 : 32),
+                TextField(
+                  controller: _familyNameController,
+                  autofocus: true,
+                  scrollPadding: kFormFieldScrollPadding,
+                  textCapitalization: TextCapitalization.words,
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.w600),
+                  decoration: InputDecoration(
+                    hintText: AppStringsManager.getString(
+                        languageService.currentLanguage, 'family_name_hint'),
+                    hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
+                    filled: true,
+                    fillColor: theme.colorScheme.surfaceContainerLow,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide(
+                          color: theme.colorScheme.primary, width: 1.5),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 18, vertical: 16),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  AppStringsManager.getString(
+                      languageService.currentLanguage, 'used_for_greeting'),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                ),
               ],
-              Text(
-                AppStringsManager.getString(
-                    languageService.currentLanguage, 'onboarding_family_name'),
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _t('family_name_desc'),
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              SizedBox(height: compact ? 16 : 32),
-              TextField(
-                controller: _familyNameController,
-                autofocus: true,
-                scrollPadding: kFormFieldScrollPadding,
-                textCapitalization: TextCapitalization.words,
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                decoration: InputDecoration(
-                  hintText: AppStringsManager.getString(
-                      languageService.currentLanguage, 'family_name_hint'),
-                  hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16),
-                  filled: true,
-                  fillColor: theme.colorScheme.surfaceContainerLow,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide(
-                        color: theme.colorScheme.primary, width: 1.5),
-                  ),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-                ),
-                onChanged: (_) => setState(() {}),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                AppStringsManager.getString(
-                    languageService.currentLanguage, 'used_for_greeting'),
-                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-              ),
-            ],
-          ),
+            ),
           ),
         ),
       ),
