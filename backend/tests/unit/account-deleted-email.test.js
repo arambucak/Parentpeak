@@ -140,7 +140,7 @@ test('a slow mail provider cannot hold up the deletion', async () => {
 
 // ── Die komplette Loeschroute mit Mocks ─────────────────────────────────────
 
-function routeFixture({ user, getUserError, provider } = {}) {
+function routeFixture({ user, getUserError, provider, failTokenDeletion = false } = {}) {
   const mail = mailFixture({ user, getUserError, provider });
   const handlers = new Map();
   const executed = [];
@@ -170,7 +170,13 @@ function routeFixture({ user, getUserError, provider } = {}) {
     respondWithStrictPersistenceError: () => false,
     prisma: {
       $queryRawUnsafe: async () => [],
-      $executeRawUnsafe: async sql => { executed.push(sql); return 1; },
+      $executeRawUnsafe: async sql => {
+        if (failTokenDeletion && sql.includes('DELETE FROM "DeviceToken"')) {
+          throw Object.assign(new Error('database unavailable'), { code: '42501' });
+        }
+        executed.push(sql);
+        return 1;
+      },
     },
     onboardingProfiles: new Map(), userProfiles: new Map(), friendInvites: new Map(),
     friendships: new Map(), friendRegistry: new Map(), friendEdges: new Map(),
@@ -184,6 +190,7 @@ function routeFixture({ user, getUserError, provider } = {}) {
       block('const EMAIL_STYLE =', '\n/**\n * POST /auth/send-password-reset'),
       block('async function verifyFirebaseIdToken(', '\nasync function requireVerifiedUser('),
       block('async function authorizeAccountOwner(', '\nasync function authorizeProfileOwner('),
+      block('let deviceTokenSchemaReady;', "app.post('/devices/register-token',"),
       routeBlock("app.delete('/api/account/:userId',"),
     ].join('\n'),
     context,
@@ -213,6 +220,8 @@ test('deleting an account deletes the data and then sends the confirmation mail'
   assert.equal(result.status, 200);
   assert.equal(result.body.ok, true);
   assert.equal(result.body.deleted.confirmationEmail, 'sent');
+  assert.equal(result.body.deleted.deviceTokens, 1);
+  assert.ok(f.executed.includes('DELETE FROM "DeviceToken" WHERE "userId" = $1'));
   assert.ok(f.executed.length > 10, 'data deletion statements ran');
   assert.equal(f.sent.length, 1);
   assert.equal(f.sent[0].to, 'mama@example.com');
@@ -241,4 +250,10 @@ test('only the owner can delete: other accounts and missing tokens get no mail',
   assert.equal((await f.request({ token: null })).status, 401);
   assert.equal(f.sent.length, 0);
   assert.equal(f.executed.length, 0);
+});
+
+test('failed durable token cleanup cannot claim successful account deletion', async () => {
+  const f = routeFixture({ failTokenDeletion: true });
+  assert.equal((await f.request()).status, 500);
+  assert.equal(f.sent.length, 0);
 });

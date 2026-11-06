@@ -32,6 +32,7 @@ function fixture({ pending = [], env = {}, emailResult = true, failEmail = false
 
 const row = (over = {}) => ({
   source: 'safety', targetId: 't1', reportCount: 1, distinctReporters: 1,
+  reasons: ['spam'],
   critical: false, oldestAt: '2026-11-06T08:00:00.000Z',
   newestAt: '2026-11-06T08:00:00.000Z', ...over,
 });
@@ -105,4 +106,44 @@ test('digest treats a false email result as failure', async () => {
     pending: [row({ critical: true })],
   });
   await assert.rejects(() => service.sendPendingDigest(), /nicht versendet/);
+});
+
+test('digest includes all distinct reasons as German labels in text and HTML', async () => {
+  const { service, emails } = fixture({
+    pending: [row({
+      critical: true, reasons: ['child_safety', 'violence_threat', 'misinformation', 'expired'],
+    })],
+  });
+  assert.equal((await service.sendPendingDigest()).sent, true);
+  for (const content of [emails[0].text, emails[0].html]) {
+    assert.match(content, /Grund: Gefährdung eines Kindes, Gewalt \/ Bedrohung, Falsche Information, Abgelaufen/);
+    assert.doesNotMatch(content, /child_safety|violence_threat|misinformation|expired/);
+  }
+});
+
+test('digest preserves unknown reason as text but escapes it in HTML', async () => {
+  const { service, emails } = fixture({
+    pending: [row({ critical: true, reasons: ['future_<reason>'] })],
+  });
+  await service.sendPendingDigest();
+  assert.match(emails[0].text, /Grund: future_<reason>/);
+  assert.match(emails[0].html, /Grund: future_&lt;reason&gt;/);
+  assert.doesNotMatch(emails[0].html, /<reason>/);
+});
+
+test('digest obtains distinct reasons without changing target grouping or severity calculation', async () => {
+  let query;
+  const service = createModerationService({
+    prisma: {
+      $executeRawUnsafe: async () => 1,
+      $queryRawUnsafe: async sql => { query = sql; return []; },
+    },
+    env: {}, adminUserIds: new Set(),
+    sendEmail: async () => { throw new Error('No email expected'); },
+    sendPushToUser: async () => {},
+  });
+  await service.sendPendingDigest();
+  assert.match(query, /ARRAY_AGG\(DISTINCT "reason" ORDER BY "reason"\) AS "reasons"/);
+  assert.match(query, /GROUP BY "source", "targetId"/);
+  assert.match(query, /BOOL_OR\(LOWER\(BTRIM\("reason"\)\) IN \('child_safety','sexual_content','violence_threat','self_harm'\)\)/);
 });
