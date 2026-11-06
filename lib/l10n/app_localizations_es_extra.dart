@@ -2,6 +2,25 @@
 // bei RTL das Layout vor breiter Vermarktung von Muttersprachlern prüfen.
 // Platzhalter wie {count}, {name} bleiben exakt erhalten.
 const appLocalizationsEsExtra = <String, String>{
+  "report_reason_child_safety": "Menor en peligro",
+  "report_reason_sexual_content": "Contenido sexual / abuso",
+  "report_reason_violence_threat": "Violencia / amenaza",
+  "report_reason_self_harm": "Autolesión / suicidio",
+  "report_reason_harassment": "Acoso / discurso de odio",
+  "report_reason_spam": "Mensajes no deseados / publicidad",
+  "report_reason_fraud": "Fraude / perfil falso",
+  "report_reason_inappropriate": "Contenido inapropiado",
+  "report_reason_misinformation": "Información falsa",
+  "report_reason_other": "Otro",
+  "report_content_title": "Denunciar contenido",
+  "report_content_hint":
+      "Gracias por cuidar de nuestra comunidad. ¿Qué te preocupa?",
+  "report_optional_note": "Opcional: nota para el equipo de moderación",
+  "report_help_title": "No estás solo",
+  "report_help_intro":
+      "Si tú u otra persona necesitáis ayuda ahora, aquí hay apoyo humano. Una denuncia no sustituye la ayuda inmediata.",
+  "report_severity_critical": "Revisión urgente",
+  "report_severity_normal": "Para revisar",
   'no_items': 'No hay artículos',
   'retry': 'Reintentar',
   'chat_ask_none':
@@ -35,20 +54,18 @@ const appLocalizationsEsExtra = <String, String>{
   'chat_new_context':
       'Céntrate en la consulta actual, sin un repaso inventado.',
   'chat_no_context': 'ninguno',
-  'chat_family_one_child':
-      'El hijo de la familia tiene unos {age} años.',
-  'chat_family_children':
-      'La familia tiene {count} hijos (unos {ages} años).',
-  'chat_family_values':
-      'Postura educativa de las familias: {values}.',
-  'chat_family_topics':
-      'Temas recurrentes últimamente: {topics}.',
+  'chat_family_one_child': 'El hijo de la familia tiene unos {age} años.',
+  'chat_family_children': 'La familia tiene {count} hijos (unos {ages} años).',
+  'chat_family_values': 'Postura educativa de las familias: {values}.',
+  'chat_family_topics': 'Temas recurrentes últimamente: {topics}.',
   'chat_no_family': 'ninguno',
   'chat_threads_title': 'Conversaciones',
   'chat_new_conversation': 'Nueva conversación',
-  'chat_threads_empty': 'Aún no hay conversaciones. Empieza una cuando algo te preocupe.',
+  'chat_threads_empty':
+      'Aún no hay conversaciones. Empieza una cuando algo te preocupe.',
   'chat_thread_delete_title': '¿Eliminar la conversación?',
-  'chat_thread_delete_body': 'Esta conversación se eliminará de forma permanente.',
+  'chat_thread_delete_body':
+      'Esta conversación se eliminará de forma permanente.',
   'chat_thread_rename_title': 'Renombrar la conversación',
   'chat_thread_rename_hint': 'Título de la conversación',
   'more_options': 'Más opciones',
@@ -60,8 +77,7 @@ const appLocalizationsEsExtra = <String, String>{
   'legal_sub_licenses': 'Software que usamos',
   'delete_reauth_provider_body':
       'Para eliminar tu cuenta de forma permanente, vuelve a iniciar sesión con {provider}.',
-  'delete_reauth_provider_confirm':
-      'Confirmar con {provider}',
+  'delete_reauth_provider_confirm': 'Confirmar con {provider}',
   'calendar_reminder_web_hint':
       'En el navegador no podemos avisarte por push. Para recordatorios fiables, instala la app de ParentPeak en tu teléfono.',
   'date_this_week': 'Esta semana',
@@ -192,8 +208,7 @@ const appLocalizationsEsExtra = <String, String>{
   'antrag_optional': 'Opcional',
   'antrag_premium_description':
       'Con Premium obtienes las instrucciones completas, plantillas de texto con IA y recordatorios.',
-  'antrag_premium_soon':
-      'Las funciones premium llegan pronto.',
+  'antrag_premium_soon': 'Las funciones premium llegan pronto.',
   'antrag_processing_time': '⏱️ Tiempo de tramitación: {time}',
   'antrag_ready_next': 'Ya tienes todos los documentos. ¡Continúa al paso 2!',
   'antrag_regenerate': 'Generar de nuevo',
@@ -210,11 +225,13 @@ const appLocalizationsEsExtra = <String, String>{
       'Pulsa el enlace del correo. Después podrás iniciar sesión.',
   'auth_email_confirm_title': 'Confirma tu correo 📬',
   'auth_verify_dialog_title': '¡Qué alegría tenerte aquí!',
-  'auth_verify_dialog_subtitle': 'Solo un pequeño paso más y listo. Hemos enviado un correo a:',
+  'auth_verify_dialog_subtitle':
+      'Solo un pequeño paso más y listo. Hemos enviado un correo a:',
   'auth_verify_step_1': 'Abre el correo de ParentPeak.',
   'auth_verify_step_2': 'Pulsa el botón del correo.',
   'auth_verify_step_3': 'Vuelve aquí e inicia sesión.',
-  'auth_verify_spam_hint': '¿No ha llegado nada? Echa un vistazo a la carpeta de spam. A veces ocurre.',
+  'auth_verify_spam_hint':
+      '¿No ha llegado nada? Echa un vistazo a la carpeta de spam. A veces ocurre.',
   'auth_email_invalid': 'Introduce una dirección de correo válida.',
   'auth_email_label': 'Correo electrónico',
   'auth_email_required': 'El correo es obligatorio.',
@@ -2156,7 +2173,8 @@ const appLocalizationsEsExtra = <String, String>{
   'register_beta_description':
       'ParentPeak es completamente gratis por ahora. Las funciones premium están planeadas: te avisaremos con tiempo antes de que algo cambie.',
   'free_now_title': 'Gratis por ahora',
-  'free_now_body': 'ParentPeak es completamente gratis por ahora. Las funciones premium están planeadas: te avisaremos con tiempo antes de que algo cambie.',
+  'free_now_body':
+      'ParentPeak es completamente gratis por ahora. Las funciones premium están planeadas: te avisaremos con tiempo antes de que algo cambie.',
   'register_beta_title': 'Gratis por ahora',
   'register_display_name_helper': 'Así te ven los demás padres.',
   'register_display_name_label':
