@@ -686,15 +686,15 @@ class _CalendarScreenState extends State<CalendarScreen>
                   children: [
                     Row(
                       children: [
-                        Text(
+                        Expanded(
+                            child: Text(
                           isEditing
                               ? _t('calendar_edit_event')
                               : AppStringsManager.getString(
                                   languageService.currentLanguage, 'new_event'),
                           style: const TextStyle(
                               fontSize: 18, fontWeight: FontWeight.w700),
-                        ),
-                        const Spacer(),
+                        )),
                         IconButton(
                           icon: const Icon(Icons.close_rounded),
                           onPressed: () => Navigator.pop(ctx),
@@ -716,7 +716,7 @@ class _CalendarScreenState extends State<CalendarScreen>
                     ),
                     const SizedBox(height: 6),
                     SizedBox(
-                      height: 40,
+                      height: 24 + MediaQuery.textScalerOf(ctx).scale(14) * 1.4,
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         separatorBuilder: (_, __) => const SizedBox(width: 8),
@@ -1429,7 +1429,10 @@ class _CalendarScreenState extends State<CalendarScreen>
               ),
             ),
             const SizedBox(height: 20),
-            Row(
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              spacing: 12,
+              runSpacing: 4,
               children: [
                 Text(
                   DateFormat.EEEE(_localeTag).add_d().format(_selectedDay),
@@ -1439,7 +1442,6 @@ class _CalendarScreenState extends State<CalendarScreen>
                     color: Color(0xFF2D3748),
                   ),
                 ),
-                const Spacer(),
                 Text(
                   _eventsForSelectedDay.isEmpty
                       ? _t('calendar_no_events_count')
@@ -2037,57 +2039,27 @@ class _MonthGrid extends StatelessWidget {
       child: Column(
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                  AppStringsManager.getString(
-                      languageService.currentLanguage, 'day_mo'),
-                  style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF718096))),
-              Text(
-                  AppStringsManager.getString(
-                      languageService.currentLanguage, 'day_di'),
-                  style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF718096))),
-              Text(
-                  AppStringsManager.getString(
-                      languageService.currentLanguage, 'day_mi'),
-                  style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF718096))),
-              Text(
-                  AppStringsManager.getString(
-                      languageService.currentLanguage, 'day_do'),
-                  style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF718096))),
-              Text(
-                  AppStringsManager.getString(
-                      languageService.currentLanguage, 'day_fr'),
-                  style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF718096))),
-              Text(
-                  AppStringsManager.getString(
-                      languageService.currentLanguage, 'day_sa'),
-                  style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF718096))),
-              Text(
-                  AppStringsManager.getString(
-                      languageService.currentLanguage, 'day_so'),
-                  style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF718096))),
+              for (final key in [
+                'day_mo',
+                'day_di',
+                'day_mi',
+                'day_do',
+                'day_fr',
+                'day_sa',
+                'day_so',
+              ])
+                Expanded(
+                  child: Text(
+                    AppStringsManager.getString(
+                        languageService.currentLanguage, key),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF718096)),
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 10),
@@ -2095,10 +2067,11 @@ class _MonthGrid extends StatelessWidget {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: days.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 7,
               mainAxisSpacing: 6,
               crossAxisSpacing: 6,
+              mainAxisExtent: 32 + MediaQuery.textScalerOf(context).scale(13),
             ),
             itemBuilder: (_, i) {
               final day = days[i];
@@ -2139,14 +2112,17 @@ class _MonthGrid extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        '${day.day}',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: isToday || isSelected
-                              ? FontWeight.w800
-                              : FontWeight.w600,
-                          color: textColor,
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          '${day.day}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: isToday || isSelected
+                                ? FontWeight.w800
+                                : FontWeight.w600,
+                            color: textColor,
+                          ),
                         ),
                       ),
                       if (eventCount > 0 || isHoliday) ...[
@@ -2769,8 +2745,10 @@ class _TimeButtonState extends State<_TimeButton> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 4,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           Text(
             widget.label,

@@ -1799,21 +1799,23 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                   child: Icon(Icons.shield_rounded, color: primary, size: 20),
                 ),
                 const SizedBox(width: 12),
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Schutzstatus',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 16,
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Schutzstatus',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 16,
+                        ),
                       ),
-                    ),
-                    Text(
-                      'Euer Profil auf einen Blick',
-                      style: TextStyle(color: Colors.black54, fontSize: 13),
-                    ),
-                  ],
+                      Text(
+                        'Euer Profil auf einen Blick',
+                        style: TextStyle(color: Colors.black54, fontSize: 13),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -2098,7 +2100,8 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                 ),
               ),
               const SizedBox(width: 10),
-              Container(
+              Flexible(
+                  child: Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                 decoration: BoxDecoration(
@@ -2112,17 +2115,21 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                     Text(activeMember.avatar,
                         style: const TextStyle(fontSize: 16)),
                     const SizedBox(width: 6),
-                    Text(
-                      activeMember.name,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: primary,
-                        fontSize: 13,
+                    Flexible(
+                      child: Text(
+                        activeMember.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: primary,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ),
+              )),
             ],
           ),
           const SizedBox(height: 14),
@@ -2130,11 +2137,13 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: _familyMembers.length + 1,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
-              childAspectRatio: 1.25,
+              mainAxisExtent: 100 +
+                  MediaQuery.textScalerOf(context).scale(16) * 3 +
+                  MediaQuery.textScalerOf(context).scale(14) * 4.5,
             ),
             itemBuilder: (context, index) {
               if (index == _familyMembers.length) {
@@ -2253,6 +2262,8 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                         const Spacer(),
                         Text(
                           member.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style:
                               Theme.of(context).textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.w800,
@@ -2261,6 +2272,8 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                         const SizedBox(height: 2),
                         Text(
                           member.role,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: Colors.black54,

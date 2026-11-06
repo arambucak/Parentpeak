@@ -1930,16 +1930,18 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             // Dezenter Sicherheitshinweis
             Padding(
-              padding: const EdgeInsets.only(bottom: 2),
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 2),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.lock_rounded, size: 11, color: Colors.grey[400]),
                   const SizedBox(width: 5),
-                  Text(
+                  Flexible(
+                      child: Text(
                     context.tr('chat_privacy_footer'),
+                    textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 10.5, color: Colors.grey[500]),
-                  ),
+                  )),
                 ],
               ),
             ),

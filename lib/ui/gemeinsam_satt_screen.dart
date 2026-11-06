@@ -765,11 +765,14 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
               child: const Text('🤝', style: TextStyle(fontSize: 18)),
             ),
             const SizedBox(width: 10),
-            const Column(
+            const Flexible(
+                child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'GemeinsamSatt',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontWeight: FontWeight.w800,
                     fontSize: 18,
@@ -778,6 +781,8 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
                 ),
                 Text(
                   'Essen teilen · Zusammen satt werden',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 11,
                     color: Color(0xFF8A9AB0),
@@ -785,7 +790,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
                   ),
                 ),
               ],
-            ),
+            )),
           ],
         ),
         bottom: TabBar(
@@ -1116,13 +1121,16 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
   // -------------------------------------------------------
 
   Widget _buildMealPlanTab() {
-    return Column(
+    return ListView(
+      padding: const EdgeInsets.only(bottom: 100),
       children: [
         Container(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
           color: _cardBg,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            spacing: 12,
+            runSpacing: 4,
             children: [
               const Text(
                 'Diese Woche',
@@ -1169,42 +1177,37 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
                       ),
                     ),
                   ),
-                  TextButton(
+                  Flexible(
+                      child: TextButton(
                     onPressed: _loadWeekMealPlan,
                     child: Text(AppStringsManager.getString(
                         languageService.currentLanguage, 'reload')),
-                  ),
+                  )),
                 ],
               ),
             ),
           ),
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.fromLTRB(0, 8, 0, 100),
-            itemCount: 7,
-            itemBuilder: (context, i) {
-              final dayPlan = _weekPlan.getDay(i) ??
-                  DayPlan(date: _weekPlan.weekStart.add(Duration(days: i)));
-              final card = _DayPlanCard(
-                dayPlan: dayPlan,
-                onAddMeal: () => _openAddMealForDay(context, dayPlan.date),
-                onRemoveMeal: (type) {
-                  setState(() {
-                    _weekPlan = _weekPlan.updateDay(dayPlan.removeMeal(type));
-                  });
-                  _showSnack('Mahlzeit entfernt');
-                },
-                onTapMeal: (meal) => _showMealDetail(meal),
-              );
-
-              return EntranceAnimation(
-                delayMs: i * 60,
-                duration: const Duration(milliseconds: 400),
-                child: card,
-              );
+        ...List.generate(7, (i) {
+          final dayPlan = _weekPlan.getDay(i) ??
+              DayPlan(date: _weekPlan.weekStart.add(Duration(days: i)));
+          final card = _DayPlanCard(
+            dayPlan: dayPlan,
+            onAddMeal: () => _openAddMealForDay(context, dayPlan.date),
+            onRemoveMeal: (type) {
+              setState(() {
+                _weekPlan = _weekPlan.updateDay(dayPlan.removeMeal(type));
+              });
+              _showSnack('Mahlzeit entfernt');
             },
-          ),
-        ),
+            onTapMeal: (meal) => _showMealDetail(meal),
+          );
+
+          return EntranceAnimation(
+            delayMs: i * 60,
+            duration: const Duration(milliseconds: 400),
+            child: card,
+          );
+        }),
       ],
     );
   }
@@ -1548,7 +1551,7 @@ class _GemeinsamSattScreenState extends State<GemeinsamSattScreen>
     required String subtitle,
   }) {
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -3692,40 +3695,35 @@ class _RecipeDetailSheet extends StatelessWidget {
                           fontWeight: FontWeight.w800,
                           color: Color(0xFF1A2A3A))),
                   const SizedBox(height: 10),
-                  ...recipe.ingredients
-                      .asMap()
-                      .entries
-                      .map((e) => Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  width: 24,
-                                  height: 24,
-                                  decoration: BoxDecoration(
-                                    color: _brandLight,
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Center(
-                                    child: Text('${e.key + 1}',
-                                        style: const TextStyle(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w700,
-                                            color: _brand)),
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(e.value,
-                                      style: const TextStyle(
-                                          fontSize: 14,
-                                          color: Color(0xFF1A2A3A))),
-                                ),
-                              ],
+                  ...recipe.ingredients.asMap().entries.map((e) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                color: _brandLight,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Center(
+                                child: Text('${e.key + 1}',
+                                    style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        color: _brand)),
+                              ),
                             ),
-                          ))
-                      ,
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(e.value,
+                                  style: const TextStyle(
+                                      fontSize: 14, color: Color(0xFF1A2A3A))),
+                            ),
+                          ],
+                        ),
+                      )),
 
                   const SizedBox(height: 20),
 
@@ -3736,44 +3734,40 @@ class _RecipeDetailSheet extends StatelessWidget {
                           fontWeight: FontWeight.w800,
                           color: Color(0xFF1A2A3A))),
                   const SizedBox(height: 10),
-                  ...recipe.steps
-                      .asMap()
-                      .entries
-                      .map((e) => Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  width: 28,
-                                  height: 28,
-                                  decoration: BoxDecoration(
-                                    color: _brand,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Center(
-                                    child: Text('${e.key + 1}',
-                                        style: const TextStyle(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w800,
-                                            color: Colors.white)),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(top: 4),
-                                    child: Text(e.value,
-                                        style: const TextStyle(
-                                            fontSize: 14,
-                                            color: Color(0xFF516072),
-                                            height: 1.5)),
-                                  ),
-                                ),
-                              ],
+                  ...recipe.steps.asMap().entries.map((e) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 28,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                color: _brand,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Center(
+                                child: Text('${e.key + 1}',
+                                    style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w800,
+                                        color: Colors.white)),
+                              ),
                             ),
-                          ))
-                      ,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: Text(e.value,
+                                    style: const TextStyle(
+                                        fontSize: 14,
+                                        color: Color(0xFF516072),
+                                        height: 1.5)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )),
 
                   const SizedBox(height: 16),
                 ],

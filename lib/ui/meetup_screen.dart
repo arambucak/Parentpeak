@@ -125,224 +125,258 @@ class _MeetupScreenState extends State<MeetupScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                Container(
-                  margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.92),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .outlineVariant
-                          .withValues(alpha: 0.5),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        context.tr('meetup_nearby'),
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
+          : CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                    child: Column(
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.92),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .outlineVariant
+                              .withValues(alpha: 0.5),
+                        ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        context.tr('meetup_filter_description'),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                            ),
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: Text(
-                                context.tr('meetup_activity_count',
-                                  values: {'count': _filteredEvents.length}),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(fontWeight: FontWeight.w700),
-                            ),
-                          ),
-                          TextButton.icon(
-                            onPressed: () =>
-                                setState(() => _showAgeFilters = !_showAgeFilters),
-                            icon: Icon(_showAgeFilters
-                                ? Icons.tune_rounded
-                                : Icons.tune_outlined),
-                            label:
-                                Text(context.tr(_showAgeFilters
-                                  ? 'meetup_less_filters'
-                                  : 'meetup_more_filters')),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        _buildVisibilityChip(
-                          label: context.tr('filter_all'),
-                          selected: _visibilityFilter == FeedVisibilityFilter.all,
-                          onTap: () =>
-                              setState(() => _visibilityFilter = FeedVisibilityFilter.all),
-                        ),
-                        const SizedBox(width: 8),
-                        _buildVisibilityChip(
-                          label: context.tr('filter_public'),
-                          selected:
-                              _visibilityFilter == FeedVisibilityFilter.publicOnly,
-                          onTap: () => setState(
-                              () => _visibilityFilter = FeedVisibilityFilter.publicOnly),
-                        ),
-                        if (FeatureFlags.enableFamilyCircle) ...[
-                          const SizedBox(width: 8),
-                          _buildVisibilityChip(
-                            label: context.tr('filter_family_circle'),
-                            selected:
-                                _visibilityFilter == FeedVisibilityFilter.familyCircle,
-                            onTap: () => setState(() =>
-                                _visibilityFilter =
-                                    FeedVisibilityFilter.familyCircle),
-                          ),
-                        ],
-                        const SizedBox(width: 8),
-                        _buildVisibilityChip(
-                          label: context.tr('filter_invited'),
-                          selected:
-                              _visibilityFilter == FeedVisibilityFilter.inviteOnly,
-                          onTap: () => setState(
-                              () => _visibilityFilter = FeedVisibilityFilter.inviteOnly),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                if (_showAgeFilters)
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                    child: Row(
-                      children: AgeGroup.values
-                          .map(
-                            (ageGroup) => Padding(
-                              padding: const EdgeInsets.only(right: 8),
-                              child: FilterChip(
-                                label: Text(_getAgeGroupLabel(ageGroup)),
-                                selected: _selectedAgeGroups.contains(ageGroup),
-                                onSelected: (_) => _filterByAgeGroup(ageGroup),
-                                selectedColor: const Color(0xFFDBEAFE),
-                                checkmarkColor: const Color(0xFF1D4ED8),
-                                labelStyle: TextStyle(
-                                  color: _selectedAgeGroups.contains(ageGroup)
-                                      ? const Color(0xFF1D4ED8)
-                                      : null,
-                                  fontWeight:
-                                      _selectedAgeGroups.contains(ageGroup)
-                                          ? FontWeight.w700
-                                          : FontWeight.w500,
+                          Text(
+                            context.tr('meetup_nearby'),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w800,
                                 ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            context.tr('meetup_filter_description'),
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                    ),
+                          ),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            alignment: WrapAlignment.spaceBetween,
+                            runSpacing: 4,
+                            children: [
+                              Text(
+                                context.tr('meetup_activity_count',
+                                    values: {'count': _filteredEvents.length}),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(fontWeight: FontWeight.w700),
                               ),
-                            ),
-                          )
-                          .toList(),
-                    ),
-                  ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        context.tr('events_view'),
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
-                            ),
+                              TextButton.icon(
+                                onPressed: () => setState(
+                                    () => _showAgeFilters = !_showAgeFilters),
+                                icon: Icon(_showAgeFilters
+                                    ? Icons.tune_rounded
+                                    : Icons.tune_outlined),
+                                label: Text(context.tr(_showAgeFilters
+                                    ? 'meetup_less_filters'
+                                    : 'meetup_more_filters')),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
                         child: Row(
                           children: [
-                            _buildViewToggleButton(
-                              icon: Icons.view_comfy,
-                              selected: _isGridView,
-                              onTap: () => setState(() => _isGridView = true),
+                            _buildVisibilityChip(
+                              label: context.tr('filter_all'),
+                              selected:
+                                  _visibilityFilter == FeedVisibilityFilter.all,
+                              onTap: () => setState(() =>
+                                  _visibilityFilter = FeedVisibilityFilter.all),
                             ),
-                            _buildViewToggleButton(
-                              icon: Icons.list,
-                              selected: !_isGridView,
-                              onTap: () => setState(() => _isGridView = false),
+                            const SizedBox(width: 8),
+                            _buildVisibilityChip(
+                              label: context.tr('filter_public'),
+                              selected: _visibilityFilter ==
+                                  FeedVisibilityFilter.publicOnly,
+                              onTap: () => setState(() => _visibilityFilter =
+                                  FeedVisibilityFilter.publicOnly),
+                            ),
+                            if (FeatureFlags.enableFamilyCircle) ...[
+                              const SizedBox(width: 8),
+                              _buildVisibilityChip(
+                                label: context.tr('filter_family_circle'),
+                                selected: _visibilityFilter ==
+                                    FeedVisibilityFilter.familyCircle,
+                                onTap: () => setState(() => _visibilityFilter =
+                                    FeedVisibilityFilter.familyCircle),
+                              ),
+                            ],
+                            const SizedBox(width: 8),
+                            _buildVisibilityChip(
+                              label: context.tr('filter_invited'),
+                              selected: _visibilityFilter ==
+                                  FeedVisibilityFilter.inviteOnly,
+                              onTap: () => setState(() => _visibilityFilter =
+                                  FeedVisibilityFilter.inviteOnly),
                             ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: _filteredEvents.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.event_note, size: 64, color: Colors.grey[300]),
-                              const SizedBox(height: 16),
-                              Text(
-                                context.tr('events_empty_title'),
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                      color: Colors.grey[600],
+                    ),
+                    if (_showAgeFilters)
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                        child: Row(
+                          children: AgeGroup.values
+                              .map(
+                                (ageGroup) => Padding(
+                                  padding: const EdgeInsets.only(right: 8),
+                                  child: FilterChip(
+                                    label: Text(_getAgeGroupLabel(ageGroup)),
+                                    selected:
+                                        _selectedAgeGroups.contains(ageGroup),
+                                    onSelected: (_) =>
+                                        _filterByAgeGroup(ageGroup),
+                                    selectedColor: const Color(0xFFDBEAFE),
+                                    checkmarkColor: const Color(0xFF1D4ED8),
+                                    labelStyle: TextStyle(
+                                      color:
+                                          _selectedAgeGroups.contains(ageGroup)
+                                              ? const Color(0xFF1D4ED8)
+                                              : null,
+                                      fontWeight:
+                                          _selectedAgeGroups.contains(ageGroup)
+                                              ? FontWeight.w700
+                                              : FontWeight.w500,
                                     ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                context.tr('events_empty_subtitle'),
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(context.tr('events_view'),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                    )),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                _buildViewToggleButton(
+                                  icon: Icons.view_comfy,
+                                  selected: _isGridView,
+                                  onTap: () =>
+                                      setState(() => _isGridView = true),
+                                ),
+                                _buildViewToggleButton(
+                                  icon: Icons.list,
+                                  selected: !_isGridView,
+                                  onTap: () =>
+                                      setState(() => _isGridView = false),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                )),
+                if (_filteredEvents.isEmpty)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
+                        child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.event_note,
+                              size: 64, color: Colors.grey[300]),
+                          const SizedBox(height: 16),
+                          Text(
+                            context.tr('events_empty_title'),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  color: Colors.grey[600],
+                                ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            context.tr('events_empty_subtitle'),
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
                                       color: Colors.grey[500],
                                     ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
+                            textAlign: TextAlign.center,
                           ),
-                        )
-                      : _isGridView
-                          ? GridView.builder(
-                              gridDelegate:
-                                  SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: MediaQuery.sizeOf(context).width < 500 ? 1 : 2,
-                                mainAxisSpacing: 12,
-                                crossAxisSpacing: 12,
-                                mainAxisExtent: 360 + (MediaQuery.textScalerOf(context).scale(16) - 16) * 6,
-                              ),
-                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                              itemCount: _filteredEvents.length,
-                              itemBuilder: (context, index) =>
-                                  _buildEventCard(_filteredEvents[index]),
-                            )
-                          : ListView.builder(
-                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                              itemCount: _filteredEvents.length,
-                              itemBuilder: (context, index) =>
-                                  _buildEventListItem(_filteredEvents[index]),
-                            ),
-                ),
+                        ],
+                      ),
+                    )),
+                  )
+                else if (_isGridView)
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    sliver: SliverGrid(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount:
+                            MediaQuery.sizeOf(context).width < 500 ? 1 : 2,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        mainAxisExtent: 360 +
+                            (MediaQuery.textScalerOf(context).scale(16) - 16) *
+                                6,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) =>
+                            _buildEventCard(_filteredEvents[index]),
+                        childCount: _filteredEvents.length,
+                      ),
+                    ),
+                  )
+                else
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    sliver: SliverList.builder(
+                      itemCount: _filteredEvents.length,
+                      itemBuilder: (context, index) =>
+                          _buildEventListItem(_filteredEvents[index]),
+                    ),
+                  ),
               ],
             ),
     );
@@ -368,7 +402,8 @@ class _MeetupScreenState extends State<MeetupScreen> {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(20)),
                   gradient: event.photoUrl.isEmpty
                       ? const LinearGradient(
                           colors: [Color(0xFFDBEAFE), Color(0xFFE0F2FE)],
@@ -381,7 +416,8 @@ class _MeetupScreenState extends State<MeetupScreen> {
                   children: [
                     Positioned.fill(
                       child: ClipRRect(
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                        borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(20)),
                         child: EventPhoto(photoUrl: event.photoUrl),
                       ),
                     ),
@@ -389,14 +425,16 @@ class _MeetupScreenState extends State<MeetupScreen> {
                       top: 8,
                       right: 8,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           _getCategoryLabel(event.category),
-                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+                          style: const TextStyle(
+                              fontSize: 10, fontWeight: FontWeight.w600),
                         ),
                       ),
                     ),
@@ -405,7 +443,8 @@ class _MeetupScreenState extends State<MeetupScreen> {
                         bottom: 8,
                         right: 8,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: Colors.red[400],
                             borderRadius: BorderRadius.circular(8),
@@ -461,14 +500,16 @@ class _MeetupScreenState extends State<MeetupScreen> {
                   const SizedBox(height: 4),
                   EventHostIdentity(
                     userId: event.hosterId,
-                    relation: event.participationMode == ParticipationMode.interest
-                        ? EventHostRelation.sharedOffer
-                        : EventHostRelation.host,
+                    relation:
+                        event.participationMode == ParticipationMode.interest
+                            ? EventHostRelation.sharedOffer
+                            : EventHostRelation.host,
                   ),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.calendar_today, size: 12, color: Colors.grey[600]),
+                      Icon(Icons.calendar_today,
+                          size: 12, color: Colors.grey[600]),
                       const SizedBox(width: 4),
                       Text(
                         '${event.eventDate.day}.${event.eventDate.month}. ${event.eventDate.hour.toString().padLeft(2, '0')}:${event.eventDate.minute.toString().padLeft(2, '0')}',
@@ -600,7 +641,8 @@ class _MeetupScreenState extends State<MeetupScreen> {
           ),
           trailing: event.isFull
               ? Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.red[100],
                     borderRadius: BorderRadius.circular(8),

@@ -22,6 +22,7 @@ class ContextHomeCard extends StatefulWidget {
   final void Function(String mood, String? moment)? onMoodSelected;
   final VoidCallback? onOpenWeeklyReview;
   final VoidCallback? onShuffleActivity;
+  final DateTime Function()? now;
 
   const ContextHomeCard({
     super.key,
@@ -32,6 +33,7 @@ class ContextHomeCard extends StatefulWidget {
     this.onMoodSelected,
     this.onOpenWeeklyReview,
     this.onShuffleActivity,
+    this.now,
   });
 
   @override
@@ -59,6 +61,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
 
   String _t(String key) =>
       AppStringsManager.getString(languageService.currentLanguage, key);
+  DateTime get _now => widget.now?.call() ?? DateTime.now();
 
   @override
   void dispose() {
@@ -87,7 +90,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
   }
 
   void _determineContext() {
-    final hour = DateTime.now().hour;
+    final hour = _now.hour;
     final lang = languageService.currentLanguage;
     if (hour >= 6 && hour < 11) {
       _context = _TimeContext.morning;
@@ -128,7 +131,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
             .map((e) => e as Map<String, dynamic>)
             .where((e) {
           final date = DateTime.tryParse(e['date']?.toString() ?? '');
-          return date != null && date.isAfter(DateTime.now());
+          return date != null && date.isAfter(_now);
         }).toList()
           ..sort(
               (a, b) => (a['date'] as String).compareTo(b['date'] as String));
@@ -147,7 +150,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
     if (moodDateStr != null) {
       final moodDate = DateTime.tryParse(moodDateStr);
       if (moodDate != null) {
-        final now = DateTime.now();
+        final now = _now;
         alreadyDone = moodDate.year == now.year &&
             moodDate.month == now.month &&
             moodDate.day == now.day;
@@ -180,7 +183,7 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
   /// Monatlicher Basis-Index: wechselt jeden Monat automatisch,
   /// sodass Eltern bei App-Oeffnung jedesmal eine andere Idee sehen.
   int _monthlyBase() {
-    final now = DateTime.now();
+    final now = _now;
     return now.year * 12 + now.month;
   }
 
@@ -571,14 +574,15 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
         Row(children: [
           const Text('\u{2600}\u{FE0F}', style: TextStyle(fontSize: 24)),
           const SizedBox(width: 10),
-          Text(
-              _userName.isEmpty
-                  ? _greeting
-                  : _t('home_greeting_name')
-                      .replaceAll('{greeting}', _greeting)
-                      .replaceAll('{name}', _userName),
-              style: theme.textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w800)),
+          Expanded(
+              child: Text(
+                  _userName.isEmpty
+                      ? _greeting
+                      : _t('home_greeting_name')
+                          .replaceAll('{greeting}', _greeting)
+                          .replaceAll('{name}', _userName),
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w800))),
         ]),
         const SizedBox(height: 14),
         if (_nextEvent != null) ...[
@@ -772,9 +776,11 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
         Row(children: [
           const Text('\u{1F319}', style: TextStyle(fontSize: 24)),
           const SizedBox(width: 10),
-          Text(_userName.isNotEmpty ? '$_greeting, $_userName' : _greeting,
-              style: theme.textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w800)),
+          Expanded(
+              child: Text(
+                  _userName.isNotEmpty ? '$_greeting, $_userName' : _greeting,
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w800))),
         ]),
         const SizedBox(height: 14),
         if (!_moodDone) ...[
@@ -833,11 +839,14 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                        AppStringsManager.getString(
-                            languageService.currentLanguage, 'view_your_week'),
-                        style: theme.textTheme.labelMedium?.copyWith(
-                            color: Colors.white, fontWeight: FontWeight.w700)),
+                    Expanded(
+                        child: Text(
+                            AppStringsManager.getString(
+                                languageService.currentLanguage,
+                                'view_your_week'),
+                            style: theme.textTheme.labelMedium?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700))),
                     const Icon(Icons.arrow_forward_ios_rounded,
                         color: Colors.white, size: 14),
                   ],
@@ -906,9 +915,11 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
         Row(children: [
           const Text('\u{1F31F}', style: TextStyle(fontSize: 24)),
           const SizedBox(width: 10),
-          Text(_userName.isNotEmpty ? '$_greeting, $_userName' : _greeting,
-              style: theme.textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w800, color: Colors.white)),
+          Expanded(
+              child: Text(
+                  _userName.isNotEmpty ? '$_greeting, $_userName' : _greeting,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800, color: Colors.white))),
         ]),
         const SizedBox(height: 10),
         Text(
@@ -1089,7 +1100,9 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
   }
 
   Widget _moodEmoji(String emoji, String label, Color color) {
-    return GestureDetector(
+    return Expanded(
+        child: GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () {
         setState(() {
           _moodDone = true;
@@ -1109,9 +1122,10 @@ class _ContextHomeCardState extends State<ContextHomeCard> {
         ),
         const SizedBox(height: 4),
         Text(label,
+            textAlign: TextAlign.center,
             style: TextStyle(
                 fontSize: 9, fontWeight: FontWeight.w600, color: color)),
       ]),
-    );
+    ));
   }
 }

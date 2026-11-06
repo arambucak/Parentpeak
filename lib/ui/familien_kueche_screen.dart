@@ -31,7 +31,8 @@ class _ScopedFamilienKuecheScreen extends StatefulWidget {
   const _ScopedFamilienKuecheScreen();
 
   @override
-  State<_ScopedFamilienKuecheScreen> createState() => _FamilienKuecheScreenState();
+  State<_ScopedFamilienKuecheScreen> createState() =>
+      _FamilienKuecheScreenState();
 }
 
 class _FamilienKuecheScreenState extends State<_ScopedFamilienKuecheScreen> {
@@ -101,13 +102,14 @@ class _FamilienKuecheScreenState extends State<_ScopedFamilienKuecheScreen> {
       if (!mounted) return;
       final saved = reopenToday ? await _service.loadTodayRecipe() : null;
       if (!mounted) return;
-      final recipe = saved ?? (accepted
-          ? await _service.generateRecipe(
-              languageCode: languageService.currentLanguage,
-            )
-          : await _service.localRecipe(
-              languageCode: languageService.currentLanguage,
-            ));
+      final recipe = saved ??
+          (accepted
+              ? await _service.generateRecipe(
+                  languageCode: languageService.currentLanguage,
+                )
+              : await _service.localRecipe(
+                  languageCode: languageService.currentLanguage,
+                ));
       if (!mounted) return;
       setState(() {
         _currentRecipe = recipe;
@@ -542,13 +544,13 @@ class _FamilienKuecheScreenState extends State<_ScopedFamilienKuecheScreen> {
             onTap: () =>
                 setState(() => _dayRecipeExpanded = !_dayRecipeExpanded),
             child: Row(children: [
-              Text(
-                  _dayRecipeExpanded
-                      ? context.tr('kitchen_ingredients_preparation')
-                      : context.tr('kitchen_view_ingredients_preparation'),
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(fontWeight: FontWeight.w700)),
-              const Spacer(),
+              Expanded(
+                  child: Text(
+                      _dayRecipeExpanded
+                          ? context.tr('kitchen_ingredients_preparation')
+                          : context.tr('kitchen_view_ingredients_preparation'),
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(fontWeight: FontWeight.w700))),
               Icon(
                   _dayRecipeExpanded
                       ? Icons.expand_less_rounded
@@ -700,55 +702,58 @@ class _FamilienKuecheScreenState extends State<_ScopedFamilienKuecheScreen> {
                 color: const Color(0xFFFFF7ED),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Row(children: [
-                const Text('\u{1F36D}', style: TextStyle(fontSize: 16)),
-                const SizedBox(width: 8),
-                Expanded(
-                    child: Text(
+              child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    const Text('\u{1F36D}', style: TextStyle(fontSize: 16)),
+                    Text(
                         AppStringsManager.getString(
                             languageService.currentLanguage, 'did_it_taste'),
                         style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF9A3412)))),
-                GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => _rateRecipe(true),
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                        color: const Color(0xFF16A34A).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8)),
-                    child: Text(
-                        AppStringsManager.getString(
-                            languageService.currentLanguage, 'yes_tasty'),
-                        style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF16A34A))),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => _rateRecipe(false),
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                        color: const Color(0xFFDC2626).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8)),
-                    child: Text(
-                        AppStringsManager.getString(
-                            languageService.currentLanguage, 'no_tasty'),
-                        style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFFDC2626))),
-                  ),
-                ),
-              ]),
+                            color: Color(0xFF9A3412))),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => _rateRecipe(true),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                            color:
+                                const Color(0xFF16A34A).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8)),
+                        child: Text(
+                            AppStringsManager.getString(
+                                languageService.currentLanguage, 'yes_tasty'),
+                            style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF16A34A))),
+                      ),
+                    ),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => _rateRecipe(false),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                            color:
+                                const Color(0xFFDC2626).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8)),
+                        child: Text(
+                            AppStringsManager.getString(
+                                languageService.currentLanguage, 'no_tasty'),
+                            style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFFDC2626))),
+                      ),
+                    ),
+                  ]),
             ),
           ]),
         ),
@@ -985,11 +990,10 @@ class _FamilienKuecheScreenState extends State<_ScopedFamilienKuecheScreen> {
         initialChildSize: 0.7,
         minChildSize: 0.4,
         maxChildSize: 0.9,
-        builder: (_, scrollCtrl) => Container(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
+        builder: (_, scrollCtrl) => Material(
+          color: theme.colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          clipBehavior: Clip.antiAlias,
           child: Column(children: [
             Padding(
               padding: const EdgeInsets.only(top: 10, bottom: 8),
@@ -1003,13 +1007,13 @@ class _FamilienKuecheScreenState extends State<_ScopedFamilienKuecheScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: Row(children: [
-                Text(
-                    context.tr('kitchen_saved_recipes_count', values: {
-                      'count': _service.savedRecipes.length,
-                    }),
-                    style: theme.textTheme.titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w800)),
-                const Spacer(),
+                Expanded(
+                    child: Text(
+                        context.tr('kitchen_saved_recipes_count', values: {
+                          'count': _service.savedRecipes.length,
+                        }),
+                        style: theme.textTheme.titleSmall
+                            ?.copyWith(fontWeight: FontWeight.w800))),
                 IconButton(
                     icon: const Icon(Icons.close_rounded, size: 20),
                     onPressed: () => Navigator.pop(ctx)),
@@ -1119,30 +1123,31 @@ class _FamilienKuecheScreenState extends State<_ScopedFamilienKuecheScreen> {
       builder: (ctx) => FamilyHubAccountModal(
         expectedScope: _scope,
         builder: (ctx) => _IngredientPickerSheet(
-        selections: selections,
-        theme: theme,
-        onConfirm: (selected) async {
-          try {
-            FamilyHubStore.instance.requireScope(_scope);
-            await shopping.load();
-            FamilyHubStore.instance.requireScope(_scope);
-            await shopping.addItemsFromRecipe(selected);
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text(context.tr('kitchen_ingredients_added', values: {
-                  'count': selected.length,
-                })),
-              ));
+          selections: selections,
+          theme: theme,
+          onConfirm: (selected) async {
+            try {
+              FamilyHubStore.instance.requireScope(_scope);
+              await shopping.load();
+              FamilyHubStore.instance.requireScope(_scope);
+              await shopping.addItemsFromRecipe(selected);
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content:
+                      Text(context.tr('kitchen_ingredients_added', values: {
+                    'count': selected.length,
+                  })),
+                ));
+              }
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content:
+                      Text(context.tr('kitchen_error', values: {'error': e})),
+                ));
+              }
             }
-          } catch (e) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content:
-                    Text(context.tr('kitchen_error', values: {'error': e})),
-              ));
-            }
-          }
-        },
+          },
         ),
       ),
     );

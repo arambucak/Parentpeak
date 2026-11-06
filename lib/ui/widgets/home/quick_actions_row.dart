@@ -80,7 +80,9 @@ class _QuickActionItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return Expanded(
+        child: GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () {
         HapticFeedback.lightImpact();
         onTap();
@@ -98,15 +100,15 @@ class _QuickActionItem extends StatelessWidget {
             child: Icon(icon, color: color, size: 24),
           ),
           if (badge != null && badge! > 0)
-            Positioned(
+            PositionedDirectional(
               top: -4,
-              right: -4,
+              end: -4,
               child: Container(
-                width: 18,
-                height: 18,
-                decoration: const BoxDecoration(
+                constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                padding: const EdgeInsets.symmetric(horizontal: 3),
+                decoration: BoxDecoration(
                   color: Color(0xFFEF4444),
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(9),
                 ),
                 child: Center(
                     child: Text(
@@ -121,9 +123,10 @@ class _QuickActionItem extends StatelessWidget {
         ]),
         const SizedBox(height: 6),
         Text(label,
+            textAlign: TextAlign.center,
             style: TextStyle(
                 fontSize: 10, fontWeight: FontWeight.w600, color: color)),
       ]),
-    );
+    ));
   }
 }
