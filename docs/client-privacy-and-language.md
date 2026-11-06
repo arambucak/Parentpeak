@@ -78,6 +78,36 @@ Firebase-/Store-Konfiguration und reale Kontotests bleiben separate QA.
 Gezielte Tests:
 `flutter test --no-pub test/change_password_test.dart test/auth_provider_selection_test.dart test/auth_session_restore_test.dart test/auth_service_logout_test.dart test/profile_account_store_test.dart test/profile_claim_widget_test.dart test/profile_onboarding_lifecycle_widget_test.dart test/profile_account_http_guard_test.dart test/supported_languages_test.dart test/visible_text_spelling_test.dart`.
 
+## Konto loeschen: Sprache und Bestaetigung
+
+Der Loeschdialog unter Profil & Schutz verwendet fuer Warntext, Eingabehinweis
+und Pruefung dieselbe aktive MaterialApp-Sprache. Das einzugebende Wort ist
+`LÖSCHEN` fuer de, `DELETE` fuer en, `SİL` fuer tr,
+`JÊBIBE` fuer ku, `SUPPRIMER` fuer fr, `ELIMINAR` fuer es, `ELIMINA` fuer it
+und `حذف` fuer ar. Gross-/Kleinschreibung und aeussere Leerzeichen werden
+ignoriert; tuerkisches `sil` wird ebenfalls akzeptiert. Ein anderes
+Sprachwort oder ein unvollstaendiges Wort gibt den Button nicht frei.
+
+Die drei wiederverwendbaren Widgets in
+`lib/ui/widgets/account_deletion_dialogs.dart` enthalten Bestaetigung,
+Passwort-Nachfrage und Google-/Apple-Hinweis. Das Bottom Sheet ist scrollbar;
+der Passwort-Dialog verwendet bei langen Texten ebenfalls Scrollen.
+Beide Profil-Einstiege verwenden die gemeinsame Passwort-Nachfrage.
+Auch die Loesch-Warnung/Datenliste im Familienprofil ist in allen acht
+Launch-Sprachen verfuegbar. Preis-/Premiumbereiche bleiben unberuehrt.
+
+`AuthService.deleteAccount` und die Reauth-Methoden liefern fuer Fehler
+Uebersetzungsschluessel, die beide Aufrufer lokalisieren. Die bestehenden
+Kontrollwerte `requires-recent-login` und `reauth-cancelled` bleiben erhalten.
+Rohe Firebase-Fehlermeldungen werden nicht als sichtbarer Text ausgegeben.
+Server-/Firebase-Loeschreihenfolge und Providerwahl werden nicht veraendert.
+
+Pruefung ohne echte Kontoloeschung:
+`flutter test --no-pub test/account_deletion_localization_test.dart test/change_password_test.dart test/supported_languages_test.dart test/visible_text_spelling_test.dart`.
+Die echten Dialog-Widgets werden in de/en/tr/ku/fr/es/it/ar bei 360x640,
+Schriftfaktor 1.0/1.5 und Arabisch/RTL geprueft. Passwort- und Anbieter-Dialoge
+werden ebenfalls in allen acht Sprachen bei grosser Schrift getestet.
+
 ## Ungefaehrer Standort im Onboarding
 
 `LocationService` verwendet den bestehenden `roundCoordinate`-Helper mit zwei
