@@ -1,0 +1,44 @@
+name: Moderation Pending Digest
+# Sicherheitsnetz: ruft alle 3 Stunden den Digest-Endpunkt auf, der offene
+# Meldungen (kritische immer, normale ab Melder-Schwelle) per E-Mail an die
+# Moderation zusammenfasst. Fängt den seltenen Fall ab, dass eine Sofort-
+# Benachrichtigung beim Melden scheiterte. Der Endpunkt ist rein lesend + Mail
+# und verändert keinen Meldungs-Status.
+#
+# Voraussetzung: Repo-Secret MODERATION_DIGEST_SECRET muss gesetzt sein und mit
+# der gleichnamigen Env-Variable auf dem Render-Backend übereinstimmen. Ist das
+# Secret serverseitig nicht gesetzt, antwortet der Endpunkt mit 404 (deaktiviert).
+on:
+  schedule:
+    - cron: '0 */3 * * *' # alle 3 Stunden
+  workflow_dispatch: # manueller Test
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Trigger moderation digest
+        env:
+          DIGEST_SECRET: ${{ secrets.MODERATION_DIGEST_SECRET }}
+        run: |
+          if [ -z "$DIGEST_SECRET" ]; then
+            echo "⚠ MODERATION_DIGEST_SECRET nicht gesetzt — übersprungen."
+            exit 0
+          fi
+          echo "Rufe Digest-Endpunkt auf $(date -u)"
+          RESPONSE=$(curl -s -o /tmp/digest_body -w "%{http_code}" \
+            --max-time 60 \
+            -X POST \
+            -H "Authorization: Bearer $DIGEST_SECRET" \
+            https://parentpeak.onrender.com/internal/moderation/digest)
+          echo "HTTP $RESPONSE"
+          cat /tmp/digest_body || true
+          echo ""
+          if [ "$RESPONSE" = "200" ]; then
+            echo "✅ Digest verarbeitet"
+          elif [ "$RESPONSE" = "404" ]; then
+            echo "ℹ Endpunkt deaktiviert (kein Server-Secret gesetzt)"
+          else
+            echo "⚠ Unerwartete Antwort: HTTP $RESPONSE"
+            exit 1
+          fi
