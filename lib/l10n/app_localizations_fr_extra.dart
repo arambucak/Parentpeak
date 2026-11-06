@@ -2,6 +2,29 @@
 // bei RTL das Layout vor breiter Vermarktung von Muttersprachlern prüfen.
 // Platzhalter wie {count}, {name} bleiben exakt erhalten.
 const appLocalizationsFrExtra = <String, String>{
+  'delete_confirmation_word': 'SUPPRIMER',
+  'delete_confirmation_prompt': 'Saisissez « {word} » pour confirmer :',
+  'delete_account_permanent_warning':
+      'Toutes vos données seront définitivement supprimées.\nCette action est irréversible.',
+  'delete_reauth_password_body':
+      'Veuillez saisir votre mot de passe pour supprimer définitivement votre compte.',
+  'delete_error_server':
+      'Vos données n’ont pas pu être supprimées du serveur. Veuillez réessayer.',
+  'delete_error_password': 'Le mot de passe est incorrect. Veuillez réessayer.',
+  'delete_error_network':
+      'La connexion est momentanément indisponible. Vérifiez votre accès à Internet et réessayez.',
+  'delete_error_throttled':
+      'Trop de tentatives. Veuillez patienter un instant et réessayer.',
+  'delete_error_session':
+      'Veuillez vous reconnecter avant de supprimer votre compte.',
+  'delete_error_failed':
+      'Votre compte n’a pas pu être supprimé. Veuillez réessayer.',
+  'delete_account_data_list': 'Les éléments suivants seront supprimés :',
+  'delete_account_family_data':
+      'Tous les membres de la famille et leurs profils',
+  'delete_account_emergency_data': 'Les contacts d’urgence et les appareils',
+  'delete_account_settings_data': 'Les sauvegardes et les paramètres',
+  'delete_account_area_data': 'Tout votre espace ParentPeak',
   "report_reason_child_safety": "Enfant en danger",
   "report_reason_sexual_content": "Contenu sexuel / abus",
   "report_reason_violence_threat": "Violence / menace",

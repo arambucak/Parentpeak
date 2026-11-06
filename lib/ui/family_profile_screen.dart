@@ -16,6 +16,7 @@ import 'package:parentpeak/models/trusted_device.dart';
 import 'package:parentpeak/ui/legal_info_screen.dart';
 import 'package:parentpeak/ui/privacy_settings_screen.dart';
 import 'package:parentpeak/widgets/ala_rengin_flag_painter.dart';
+import 'package:parentpeak/ui/widgets/account_deletion_dialogs.dart';
 
 class FamilyProfileScreen extends StatefulWidget {
   final List<TrustedDevice> devices;
@@ -1545,28 +1546,27 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        scrollable: true,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-        title: const Text(
-          'Konto wirklich löschen?',
+        title: Text(
+          _t('delete_account'),
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
         ),
-        content: const Column(
+        content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text(_t('delete_account_permanent_warning')),
+            const SizedBox(height: 10),
             Text(
-              'Diese Aktion ist endgültig und kann nicht rückgängig gemacht werden.',
-            ),
-            SizedBox(height: 10),
-            Text(
-              'Folgendes wird gelöscht:',
+              _t('delete_account_data_list'),
               style: TextStyle(fontWeight: FontWeight.w600),
             ),
-            SizedBox(height: 4),
-            Text('• Alle Familienmitglieder & Profile'),
-            Text('• Notfallkontakte & Geräte'),
-            Text('• Backups & Einstellungen'),
-            Text('• Euer gesamter Parentpeak-Bereich'),
+            const SizedBox(height: 4),
+            Text('• ${_t('delete_account_family_data')}'),
+            Text('• ${_t('delete_account_emergency_data')}'),
+            Text('• ${_t('delete_account_settings_data')}'),
+            Text('• ${_t('delete_account_area_data')}'),
           ],
         ),
         actions: [
@@ -1579,7 +1579,8 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             onPressed: () async {
               Navigator.pop(ctx);
@@ -1601,7 +1602,7 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                   final password = await showDialog<String>(
                     context: context,
                     barrierDismissible: false,
-                    builder: (dctx) => _ReauthPasswordDialog(theme: theme),
+                    builder: (dctx) => DeleteAccountPasswordDialog(theme: theme),
                   );
                   if (password == null || !mounted) return;
                   error = await AuthService.instance
@@ -1613,8 +1614,12 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
               if (error != null) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                      content: Text(_t('family_delete_account_error')
-                          .replaceAll('{error}', error))),
+                    content: Text(
+                      _t(
+                        'family_delete_account_error',
+                      ).replaceAll('{error}', _t(error)),
+                    ),
+                  ),
                 );
                 return;
               }
@@ -1624,8 +1629,12 @@ class _FamilyProfileScreenState extends State<FamilyProfileScreen> {
                 (route) => false,
               );
             },
-            child: Text(AppStringsManager.getString(
-                languageService.currentLanguage, 'delete_final')),
+            child: Text(
+              AppStringsManager.getString(
+                languageService.currentLanguage,
+                'delete_final',
+              ),
+            ),
           ),
         ],
       ),
@@ -2868,69 +2877,6 @@ class _FamilyMember {
       avatar: (map['avatar'] as String?)?.trim().isNotEmpty == true
           ? map['avatar'] as String
           : '🧑',
-    );
-  }
-}
-
-/// Passwort-Bestätigung für die Konto-Löschung bei E-Mail/Passwort-Konten
-/// (Google/Apple-Konten laufen über die Anbieter-Reauth, nicht über dieses
-/// Feld). Eigenständig, damit es in family_profile_screen wiederverwendbar ist.
-class _ReauthPasswordDialog extends StatefulWidget {
-  final ThemeData theme;
-  const _ReauthPasswordDialog({required this.theme});
-
-  @override
-  State<_ReauthPasswordDialog> createState() => _ReauthPasswordDialogState();
-}
-
-class _ReauthPasswordDialogState extends State<_ReauthPasswordDialog> {
-  final _ctrl = TextEditingController();
-  bool _obscure = true;
-
-  String _tr(String key) =>
-      AppStringsManager.getString(languageService.currentLanguage, key);
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = widget.theme;
-    return AlertDialog(
-      title: Text(_tr('profile_confirm_login')),
-      content: TextField(
-        controller: _ctrl,
-        obscureText: _obscure,
-        autofocus: true,
-        decoration: InputDecoration(
-          labelText: _tr('auth_password_label'),
-          border: const OutlineInputBorder(),
-          suffixIcon: IconButton(
-            icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
-            onPressed: () => setState(() => _obscure = !_obscure),
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, null),
-          child: Text(_tr('cancel')),
-        ),
-        FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: theme.colorScheme.error,
-          ),
-          onPressed: () {
-            final pw = _ctrl.text;
-            if (pw.isNotEmpty) Navigator.pop(context, pw);
-          },
-          child: Text(_tr('profile_confirm'),
-              style: const TextStyle(color: Colors.white)),
-        ),
-      ],
     );
   }
 }

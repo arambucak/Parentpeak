@@ -72,6 +72,20 @@ void main() {
     expect(AuthService.passwordValidationKey(' Space123 '), null);
   });
 
+  for (final code in [
+    'wrong-password', 'invalid-credential', 'network-request-failed',
+    'too-many-requests', 'user-disabled', 'unknown',
+  ]) {
+    test('deletion reauthentication returns localized error key for $code',
+        () async {
+      when(() => user.reauthenticateWithCredential(any()))
+          .thenThrow(FirebaseAuthException(code: code, message: 'Provider text'));
+      expect(await service.reauthenticateAndDeleteAccount(current),
+          AuthService.deletionErrorKey(code));
+      verifyNever(() => user.delete());
+    });
+  }
+
   test(
       'reauthentication must succeed before update; success waits for Firebase',
       () async {

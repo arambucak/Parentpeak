@@ -903,7 +903,7 @@ class AuthService with ChangeNotifier {
     }
   }
 
-  /// Deletes the account permanently. Returns an error message on failure, null on success.
+  /// Deletes the account permanently. Returns a localized error key or null.
   Future<String?> deleteAccount() async {
     final currentUserId = _currentUser?.uid;
 
@@ -913,7 +913,9 @@ class AuthService with ChangeNotifier {
         final apiClient = backendApiClientFactory();
         if (apiClient != null) {
           await fcmUnregisterHandler(
-              apiClient: apiClient, userId: currentUserId);
+            apiClient: apiClient,
+            userId: currentUserId,
+          );
         }
       } catch (_) {}
     }
@@ -932,7 +934,7 @@ class AuthService with ChangeNotifier {
         }
       } catch (e) {
         debugPrint('deleteAccount: Backend-Löschung fehlgeschlagen: $e');
-        return 'Server-Daten konnten nicht gelöscht werden. Bitte versuche es erneut.';
+        return 'delete_error_server';
       }
     }
 
@@ -945,7 +947,8 @@ class AuthService with ChangeNotifier {
           if (e.code == 'requires-recent-login') {
             return 'requires-recent-login';
           }
-          return 'Fehler beim Löschen: ${e.message}';
+          debugPrint('Account deletion failed: ${e.code}');
+          return deletionErrorKey(e.code);
         }
       }
     }
@@ -1022,23 +1025,36 @@ class AuthService with ChangeNotifier {
     }
   }
 
+  static String deletionErrorKey(String code) => switch (code) {
+        'wrong-password' || 'invalid-credential' => 'delete_error_password',
+        'network-request-failed' => 'delete_error_network',
+        'too-many-requests' => 'delete_error_throttled',
+        'requires-recent-login' ||
+        'user-token-expired' ||
+        'invalid-user-token' ||
+        'user-disabled' ||
+        'user-not-found' =>
+          'delete_error_session',
+        _ => 'delete_error_failed',
+      };
+
   /// Re-authenticates with [password] and then permanently deletes the account.
   Future<String?> reauthenticateAndDeleteAccount(String password) async {
-    if (!_firebaseReady) return 'Firebase nicht verfügbar.';
+    if (!_firebaseReady) return 'delete_error_session';
     final auth = _firebaseAuth;
     final user = auth?.currentUser;
-    if (user == null) return 'Kein Benutzer eingeloggt.';
+    if (user == null) return 'delete_error_session';
     final email = user.email;
-    if (email == null || email.isEmpty) return 'Keine E-Mail-Adresse gefunden.';
+    if (email == null || email.isEmpty) return 'delete_error_session';
     try {
-      final credential =
-          EmailAuthProvider.credential(email: email, password: password);
+      final credential = EmailAuthProvider.credential(
+        email: email,
+        password: password,
+      );
       await user.reauthenticateWithCredential(credential);
     } on FirebaseAuthException catch (e) {
-      if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
-        return 'Falsches Passwort. Bitte versuche es erneut.';
-      }
-      return 'Fehler bei der Anmeldung: ${e.message}';
+      debugPrint('Account deletion reauthentication failed: ${e.code}');
+      return deletionErrorKey(e.code);
     }
     return deleteAccount();
   }
@@ -1072,10 +1088,10 @@ class AuthService with ChangeNotifier {
   /// Nutzt `reauthenticateWithPopup` (Web, wo die App primär läuft) mit
   /// Fallback auf `reauthenticateWithProvider` (native Plattformen).
   Future<String?> reauthenticateWithProviderAndDeleteAccount() async {
-    if (!_firebaseReady) return 'Firebase nicht verfügbar.';
+    if (!_firebaseReady) return 'delete_error_session';
     final auth = _firebaseAuth;
     final user = auth?.currentUser;
-    if (user == null) return 'Kein Benutzer eingeloggt.';
+    if (user == null) return 'delete_error_session';
 
     final providerId = primaryProviderId();
     AuthProvider? provider;
@@ -1085,7 +1101,7 @@ class AuthService with ChangeNotifier {
       provider = AppleAuthProvider()..addScope('email');
     } else {
       // Kein föderierter Anbieter → Aufrufer soll den Passwort-Weg nutzen.
-      return 'reauth-provider-unsupported';
+      return 'delete_error_session';
     }
 
     try {
@@ -1102,9 +1118,15 @@ class AuthService with ChangeNotifier {
           e.code == 'canceled') {
         return 'reauth-cancelled';
       }
-      return 'Anmeldung zur Bestätigung fehlgeschlagen: ${e.message}';
+      debugPrint(
+        'Account deletion provider reauthentication failed: ${e.code}',
+      );
+      return deletionErrorKey(e.code);
     } catch (e) {
-      return 'Anmeldung zur Bestätigung fehlgeschlagen.';
+      debugPrint(
+        'Account deletion provider reauthentication failed: ${e.runtimeType}',
+      );
+      return 'delete_error_failed';
     }
     return deleteAccount();
   }
