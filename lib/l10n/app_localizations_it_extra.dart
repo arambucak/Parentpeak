@@ -415,6 +415,7 @@ const appLocalizationsItExtra = <String, String>{
   'chat_understood': 'Ho capito',
   'chat_welcome_message':
       'Raccontami cosa ti preoccupa in questo momento. Ti ascolto, senza giudicare.',
+  'chat_ai_disclaimer': 'Questa IA ti offre spunti educativi e orientamento – non una consulenza medica o terapeutica. In caso di emergenza, rivolgiti direttamente a un aiuto professionale.',
   'child_name_example': 'es. Emma',
   'child_role': 'Bambino',
   'choose_country_region': 'Scegli il tuo paese e la tua regione',
@@ -489,6 +490,7 @@ const appLocalizationsItExtra = <String, String>{
   'development_practice_today': 'Pratica per oggi',
   'development_questions_remaining':
       'Ancora {count} domande aperte. Rispondi a tutte le domande per ricevere il tuo rapporto IA personale.',
+  'development_orientation_disclaimer': 'Questo check ti offre un orientamento sullo sviluppo di tuo figlio – non sostituisce una visita medica. Per domande o dubbi, il tuo pediatra è il riferimento giusto.',
   'development_report_error':
       'Non è stato possibile creare il rapporto: {error}',
   'development_report_language_instruction':

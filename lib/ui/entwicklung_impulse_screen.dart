@@ -1435,6 +1435,38 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
     _saveDevAnswers();
   }
 
+  /// Dezenter Hinweis: Der Entwicklungs-Check ist eine Orientierung für Eltern,
+  /// keine ärztliche Diagnose. Bei Sorgen an Kinderarzt/Früherkennung verweisen.
+  Widget _buildOrientationHint(ThemeData theme) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+            color: theme.colorScheme.primary.withValues(alpha: 0.12)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.info_outline_rounded,
+              size: 18, color: theme.colorScheme.primary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              _t('development_orientation_disclaimer'),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildDevelopmentTab(ThemeData theme) {
     if (_childProfile == null) return _buildProfileSetup(theme);
     final tQ = _devDomains.fold(0, (int s, d) => s + d.questions.length);
@@ -1443,6 +1475,8 @@ class _EntwicklungImpulseScreenState extends State<EntwicklungImpulseScreen>
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           _buildChildHeader(theme),
+          const SizedBox(height: 12),
+          _buildOrientationHint(theme),
           const SizedBox(height: 14),
           Row(children: [
             Expanded(
