@@ -269,8 +269,8 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return DraggableScrollableSheet(
-      initialChildSize: 0.85,
-      minChildSize: 0.5,
+      initialChildSize: 0.92,
+      minChildSize: 0.6,
       maxChildSize: 0.95,
       builder: (ctx, scrollCtrl) => Container(
         decoration: BoxDecoration(
@@ -307,7 +307,8 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
             child: Text(
               AppStringsManager.getString(
-                languageService.currentLanguage, 'location_osm_notice',
+                languageService.currentLanguage,
+                'location_osm_notice',
               ),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
@@ -486,9 +487,11 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
               ),
             ),
           ),
-          // Confirm button
+          // Confirm button — unteres System-Inset (Gesten-/Navigationsleiste)
+          // einrechnen, damit der Button nicht hinter der Leiste verschwindet.
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+            padding: EdgeInsets.fromLTRB(
+                20, 12, 20, 20 + MediaQuery.of(context).viewPadding.bottom),
             child: SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
@@ -620,7 +623,8 @@ class _LocationPickerSheetState extends State<_LocationPickerSheet> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(AppStringsManager.getString(
-        languageService.currentLanguage, 'location_search_failed',
+        languageService.currentLanguage,
+        'location_search_failed',
       )),
     ));
   }

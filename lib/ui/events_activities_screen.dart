@@ -494,6 +494,9 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
       _aiLoading = _activeSources.contains(_FeedSource.ai) &&
           city.trim().isNotEmpty &&
           !invitationsOnly;
+      // Alten KI-Fehlerhinweis zuruecksetzen, sobald eine neue KI-Suche
+      // startet — sonst stuenden Fehlermeldung und Lade-Spinner gleichzeitig da.
+      if (_aiLoading) _aiFeedFailed = false;
       _errorMessage = null;
     });
     final ageLabels = ages.map(_ageGroupLabel).toList();
@@ -1123,6 +1126,7 @@ class _EventsActivitiesScreenState extends State<EventsActivitiesScreen> {
                   // gültige Sitzung) — statt stummer Leere. Nur wenn die
                   // KI-Quelle aktiv ist und gerade nicht geladen wird.
                   if (!_isLoading &&
+                      !_aiLoading &&
                       _errorMessage == null &&
                       _aiFeedFailed &&
                       _activeSources.contains(_FeedSource.ai)) ...[
