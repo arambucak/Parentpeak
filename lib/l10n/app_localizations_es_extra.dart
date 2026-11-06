@@ -433,7 +433,8 @@ const appLocalizationsEsExtra = <String, String>{
   'chat_understood': 'Entendido',
   'chat_welcome_message':
       'Cuéntame qué te preocupa ahora mismo. Te escucho, sin juzgar.',
-  'chat_ai_disclaimer': 'Esta IA te ofrece impulsos educativos y orientación, no asesoramiento médico ni terapéutico. En una emergencia, acude directamente a ayuda profesional.',
+  'chat_ai_disclaimer':
+      'Esta IA te ofrece impulsos educativos y orientación, no asesoramiento médico ni terapéutico. En una emergencia, acude directamente a ayuda profesional.',
   'child_name_example': 'p. ej. Emma',
   'child_role': 'Niño',
   'choose_country_region': 'Elige tu país y tu región',
@@ -506,7 +507,8 @@ const appLocalizationsEsExtra = <String, String>{
   'development_practice_today': 'Práctica para hoy',
   'development_questions_remaining':
       'Quedan {count} preguntas. Responde todas las preguntas para recibir tu informe personal con IA.',
-  'development_orientation_disclaimer': 'Esta evaluación te ofrece una orientación sobre el desarrollo de tu hijo/a, pero no sustituye un examen médico. Si tienes dudas o preocupaciones, tu pediatra es el lugar adecuado.',
+  'development_orientation_disclaimer':
+      'Esta evaluación te ofrece una orientación sobre el desarrollo de tu hijo/a, pero no sustituye un examen médico. Si tienes dudas o preocupaciones, tu pediatra es el lugar adecuado.',
   'development_report_error': 'No se pudo crear el informe: {error}',
   'development_report_language_instruction':
       'Escribe todo el informe en español.',

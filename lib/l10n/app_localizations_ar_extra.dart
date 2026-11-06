@@ -412,7 +412,8 @@ const appLocalizationsArExtra = <String, String>{
   'chat_understood': 'فهمت',
   'chat_welcome_message':
       'أخبرني بما يشغل بالك الآن. أنا أستمع إليك — دون أي حكم.',
-  'chat_ai_disclaimer': 'يقدم لك هذا الذكاء الاصطناعي أفكارًا تربوية وتوجيهًا، وليس استشارة طبية أو علاجية. في حالات الطوارئ، يرجى التواصل مباشرة مع مساعدة مهنية.',
+  'chat_ai_disclaimer':
+      'يقدم لك هذا الذكاء الاصطناعي أفكارًا تربوية وتوجيهًا، وليس استشارة طبية أو علاجية. في حالات الطوارئ، يرجى التواصل مباشرة مع مساعدة مهنية.',
   'child_name_example': 'مثلًا إيما',
   'child_role': 'طفل',
   'choose_country_region': 'اختر بلدك ومنطقتك',
@@ -486,7 +487,8 @@ const appLocalizationsArExtra = <String, String>{
   'development_practice_today': 'تطبيق لليوم',
   'development_questions_remaining':
       'ما زال {count} أسئلة مفتوحة. أجِب عن جميع الأسئلة للحصول على تقريرك الشخصي من الذكاء الاصطناعي.',
-  'development_orientation_disclaimer': 'يمنحك هذا الفحص توجيهًا حول نمو طفلك، لكنه لا يحل محل الفحص الطبي. إذا كانت لديك أسئلة أو مخاوف، فإن طبيب الأطفال هو المرجع المناسب.',
+  'development_orientation_disclaimer':
+      'يمنحك هذا الفحص توجيهًا حول نمو طفلك، لكنه لا يحل محل الفحص الطبي. إذا كانت لديك أسئلة أو مخاوف، فإن طبيب الأطفال هو المرجع المناسب.',
   'development_report_error': 'تعذّر إنشاء التقرير: {error}',
   'development_report_language_instruction':
       'اكتب التقرير بأكمله باللغة العربية.',

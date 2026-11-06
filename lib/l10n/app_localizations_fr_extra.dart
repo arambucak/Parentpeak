@@ -433,7 +433,8 @@ const appLocalizationsFrExtra = <String, String>{
   'chat_understood': 'Compris',
   'chat_welcome_message':
       'Dis-moi ce qui te préoccupe en ce moment. J\'écoute, sans juger.',
-  'chat_ai_disclaimer': 'Cette IA te propose des impulsions éducatives et une orientation – pas un conseil médical ou thérapeutique. En cas d’urgence, adresse-toi directement à une aide professionnelle.',
+  'chat_ai_disclaimer':
+      'Cette IA te propose des impulsions éducatives et une orientation – pas un conseil médical ou thérapeutique. En cas d’urgence, adresse-toi directement à une aide professionnelle.',
   'child_name_example': 'p. ex. Emma',
   'child_role': 'Enfant',
   'choose_country_region': 'Choisis ton pays et ta région',
@@ -506,7 +507,8 @@ const appLocalizationsFrExtra = <String, String>{
   'development_practice_today': 'Pratique pour aujourd\'hui',
   'development_questions_remaining':
       'Encore {count} questions à répondre. Réponds à toutes les questions pour obtenir ton rapport IA personnel.',
-  'development_orientation_disclaimer': 'Ce bilan te donne une orientation sur le développement de ton enfant – il ne remplace pas un examen médical. En cas de question ou d’inquiétude, ton pédiatre est le bon interlocuteur.',
+  'development_orientation_disclaimer':
+      'Ce bilan te donne une orientation sur le développement de ton enfant – il ne remplace pas un examen médical. En cas de question ou d’inquiétude, ton pédiatre est le bon interlocuteur.',
   'development_report_error': 'Le rapport n\'a pas pu être créé : {error}',
   'development_report_language_instruction':
       'Rédige l\'intégralité du rapport en français.',
