@@ -91,5 +91,7 @@
 		<false/>
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>ParentPeak nutzt deinen Standort um Events und Familien in deiner Nähe zu finden.</string>
+		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+		<string>ParentPeak nutzt deinen Standort um Events und Familien in deiner Nähe zu finden. Der Standort wird nur verwendet, während du die App nutzt.</string>
 	</dict>
 </plist>
