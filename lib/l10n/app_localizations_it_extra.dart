@@ -2089,15 +2089,19 @@ const appLocalizationsItExtra = <String, String>{
   'onboarding_phase': 'In che fase siete?',
   'onboarding_priorities': 'Cosa è importante per te?',
   'onboarding_ready': 'Si parte!',
-  'onboarding_ready_subtitle': 'Il tuo spazio per la vita familiare di tutti i giorni. Ecco come orientarti:',
+  'onboarding_ready_subtitle':
+      'Il tuo spazio per la vita familiare di tutti i giorni. Ecco come orientarti:',
   'onboarding_step_home_title': 'La tua schermata iniziale',
-  'onboarding_step_home_body': 'In alto trovi consigli e appuntamenti adatti alla giornata e all’età di tuo figlio.',
+  'onboarding_step_home_body':
+      'In alto trovi consigli e appuntamenti adatti alla giornata e all’età di tuo figlio.',
   'onboarding_step_grid_title': 'Tutte le funzioni in un colpo d’occhio',
-  'onboarding_step_grid_body': 'Tocca “Tutto” per aprire il calendario, la guida IA, la cucina di famiglia, gli eventi e altro.',
+  'onboarding_step_grid_body':
+      'Tocca “Tutto” per aprire il calendario, la guida IA, la cucina di famiglia, gli eventi e altro.',
   'onboarding_step_chat_title': 'Sempre a una domanda di distanza',
-  'onboarding_step_chat_body': 'La guida IA ti aiuta in qualsiasi momento: tocca e chiedi.',
+  'onboarding_step_chat_body':
+      'La guida IA ti aiuta in qualsiasi momento: tocca e chiedi.',
   'onboarding_subtitle':
-      'La vostra quotidianità familiare. Un\'app.\nScopriamo insieme cosa vi aiuta di più.',
+      'Tutto per la vostra vita familiare – in un unico posto.\nChe bello averti qui. ❤️',
   'onboarding_where': 'Dove vive la vostra famiglia?',
   'open_room': 'Apri stanza',
   'open_source_licenses': 'Licenze open source',

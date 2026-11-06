@@ -1132,7 +1132,7 @@ class AppStringsManager {
       'what_concerns_you': 'Was beschäftigt dich?',
       'welcome_title': 'Willkommen bei\nParentpeak',
       'onboarding_subtitle':
-          'Dein Familienalltag. Eine App.\nLass uns kurz herausfinden, was dir\nam meisten hilft.',
+          'Alles für euren Familienalltag – an einem Ort.\nSchön, dass du da bist. ❤️',
       'phase_multiselect': 'Mehrfachauswahl möglich — wir passen Inhalte an.',
       'where_family_lives': 'Wo lebt eure Familie?',
       'for_holidays_info':
@@ -6499,7 +6499,7 @@ class AppStringsManager {
       'what_concerns_you': 'What concerns you?',
       'welcome_title': 'Welcome to\nParentpeak',
       'onboarding_subtitle':
-          'Your family life. One app.\nLet us quickly find out what\nhelps you most.',
+          'Everything for your family life – in one place.\nSo glad you\'re here. ❤️',
       'phase_multiselect': 'Multiple selection possible — we adapt content.',
       'where_family_lives': 'Where does your family live?',
       'for_holidays_info': 'For holidays, school breaks and regional benefits.',
@@ -14335,7 +14335,7 @@ class AppStringsManager {
       'what_concerns_you': 'Çi te meşgûl dike?',
       'welcome_title': 'Bi xêr hatî\nParentpeak',
       'onboarding_subtitle':
-          'Jiyana malbata te. Yek app.\nEm bi lez bibînin ku\nçi ji te re herî zêde bibe alîkar.',
+          'Her tişt ji bo jiyana malbata we – li yek cihî.\nXweş e ku tu li vir î. ❤️',
       'phase_multiselect':
           'Hilbijartina pirjimar gengaz e — em naverokê li gorî saz dikin.',
       'where_family_lives': 'Malbata we li ku dijîn?',
@@ -21018,7 +21018,7 @@ class AppStringsManager {
       'what_concerns_you': 'Seni ne meşgul ediyor?',
       'welcome_title': 'Parentpeak\'e\nHoş geldiniz',
       'onboarding_subtitle':
-          'Aile hayatınız. Bir uygulama.\nSize en çok neyin yardımcı\nolacağını bulalım.',
+          'Aile hayatınız için her şey – tek bir yerde.\nBurada olmana sevindik. ❤️',
       'phase_multiselect':
           'Birden fazla seçim yapabilirsiniz — içerikleri uyarlarız.',
       'where_family_lives': 'Aileniz nerede yaşıyor?',
