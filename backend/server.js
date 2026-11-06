@@ -7757,6 +7757,10 @@ app.post('/account/delete-data', requireVerifiedUser, async (req, res) => {
 
   try {
     const prismaResult = await deleteAccountDataByUserIdPrisma(userId, { dryRun });
+    if (!dryRun) {
+      prismaResult.removed += await writeDeviceToken(() =>
+        prisma.$executeRawUnsafe(`DELETE FROM "DeviceToken" WHERE "userId" = $1`, userId));
+    }
     const removedMemoryEntries = dryRun
       ? countAccountDataByUserIdInMemory(userId)
       : deleteAccountDataByUserIdInMemory(userId);
@@ -10808,6 +10812,8 @@ app.delete('/api/account/:userId', async (req, res) => {
   try { accountContact = await lookupAccountContact(userId); } catch (_) {}
   try {
     await ensureSocialSchemaReady();
+    deleted.deviceTokens = await writeDeviceToken(() =>
+      prisma.$executeRawUnsafe(`DELETE FROM "DeviceToken" WHERE "userId" = $1`, userId));
     // Zugehoerige Freundes-Codes dieses Nutzers ermitteln (fuer code-basierte Tabellen).
     let codes = [];
     try {
@@ -13553,7 +13559,41 @@ app.post('/admin/migrate-db', requireAdmin, async (req, res) => {
 });
 
 // ── FCM Device Tokens ────────────────────────────────────────────────────────
-const deviceTokens = new Map(); // userId -> Set<token>
+let deviceTokenSchemaReady;
+
+async function ensureDeviceTokenSchemaReady() {
+  if (!deviceTokenSchemaReady) {
+    deviceTokenSchemaReady = (async () => {
+      await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "DeviceToken" (
+        "token" TEXT PRIMARY KEY, "userId" TEXT NOT NULL, "platform" TEXT NOT NULL,
+        "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )`);
+      await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "idx_device_token_user"
+        ON "DeviceToken" ("userId")`);
+    })().catch(error => { deviceTokenSchemaReady = null; throw error; });
+  }
+  return deviceTokenSchemaReady;
+}
+
+async function writeDeviceToken(operation) {
+  const transientCodes = new Set([
+    'P1001', 'P1002', 'P1008', 'P1017', 'P2024', 'P2034',
+    'ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT',
+    '08000', '08001', '08003', '08006', '57P01', '57P02', '57P03', '40001', '40P01',
+  ]);
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      await ensureDeviceTokenSchemaReady();
+      return await operation();
+    } catch (error) {
+      const code = error.meta?.code || error.code;
+      if (attempt === 1 || !transientCodes.has(code)) throw error;
+      console.warn('Device token DB operation temporarily unavailable; retrying:', code);
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+  }
+}
 
 app.post('/devices/register-token', async (req, res) => {
   const userId = (req.body.userId || '').toString().trim();
@@ -13564,27 +13604,27 @@ app.post('/devices/register-token', async (req, res) => {
     return res.status(400).json({ error: 'userId und token sind erforderlich' });
   }
   if (!(await authorizeProfileOwner(req, res, userId))) return;
-  for (const [owner, tokens] of deviceTokens) {
-    if (owner !== userId && tokens.has(token)) {
+  try {
+    const result = await writeDeviceToken(async () => {
+      const rows = await prisma.$queryRawUnsafe(`INSERT INTO "DeviceToken"
+        ("token", "userId", "platform") VALUES ($1, $2, $3)
+        ON CONFLICT ("token") DO UPDATE
+          SET "platform" = EXCLUDED."platform", "updatedAt" = NOW()
+        WHERE "DeviceToken"."userId" = EXCLUDED."userId"
+        RETURNING "token"`, token, userId, platform);
+      if (rows.length === 0) return { conflict: true };
+      const counts = await prisma.$queryRawUnsafe(`SELECT COUNT(*)::int AS n
+        FROM "DeviceToken" WHERE "userId" = $1`, userId);
+      return { tokenCount: counts[0].n };
+    });
+    if (result.conflict) {
       return res.status(409).json({ error: 'Device token already bound to another account' });
     }
-  }
-
-  const existing = deviceTokens.get(userId) || new Set();
-  existing.add(token);
-  deviceTokens.set(userId, existing);
-
-  // Persist in DB if Prisma is available.
-  try {
-    await ensureBackendUser(userId, userId);
-    // Upsert a marker in a custom field via raw SQL to avoid schema migration dependency.
-    // The token set lives in-memory and is restored on restart via DB if schema has a DeviceToken table.
-    // For now in-memory is the source of truth; schema migration is a separate step.
+    return res.json({ ok: true, userId, platform, tokenCount: result.tokenCount });
   } catch (error) {
-    console.warn('Device token user persistence failed; token remains in memory');
+    console.error('Device token registration persistence failed:', error.code || 'unknown');
+    return res.status(503).json({ ok: false, error: 'Push-Registrierung derzeit nicht verfügbar. Bitte erneut versuchen.' });
   }
-
-  return res.json({ ok: true, userId, platform, tokenCount: existing.size });
 });
 
 app.delete('/devices/register-token', async (req, res) => {
@@ -13596,46 +13636,59 @@ app.delete('/devices/register-token', async (req, res) => {
   }
   if (!(await authorizeProfileOwner(req, res, userId))) return;
 
-  const existing = deviceTokens.get(userId);
-  if (existing) {
-    existing.delete(token);
-    if (existing.size === 0) deviceTokens.delete(userId);
+  try {
+    await writeDeviceToken(() => prisma.$executeRawUnsafe(`DELETE FROM "DeviceToken"
+      WHERE "token" = $1 AND "userId" = $2`, token, userId));
+    return res.json({ ok: true });
+  } catch (error) {
+    console.error('Device token deletion persistence failed:', error.code || 'unknown');
+    return res.status(503).json({ ok: false, error: 'Push-Abmeldung derzeit nicht verfügbar. Bitte erneut versuchen.' });
   }
-
-  return res.json({ ok: true });
 });
 
 // Internal helper to send an FCM push to all tokens of a user.
 async function sendPushToUser(userId, { title, body, data = {} }) {
   if (!firebaseAdmin) return;
-  const tokens = [...(deviceTokens.get(userId) || [])];
-  if (tokens.length === 0) return;
-
   try {
-    const result = await firebaseAdmin.messaging().sendEachForMulticast({
-      tokens,
-      notification: { title, body },
-      data: Object.fromEntries(
-        Object.entries({ ...data, accountUserId: userId }).map(([k, v]) => [k, String(v)]),
-      ),
-    });
+    await ensureDeviceTokenSchemaReady();
+    const rows = await prisma.$queryRawUnsafe(`SELECT "token" FROM "DeviceToken"
+      WHERE "userId" = $1 ORDER BY "token"`, userId);
+    const tokens = rows.map(row => row.token);
+    if (tokens.length === 0) return;
+    let allSent = true;
+    // FCM accepts at most 500 tokens per multicast request.
+    for (let offset = 0; offset < tokens.length; offset += 500) {
+      const batch = tokens.slice(offset, offset + 500);
+      const result = await firebaseAdmin.messaging().sendEachForMulticast({
+        tokens: batch,
+        notification: { title, body },
+        data: Object.fromEntries(
+          Object.entries({ ...data, accountUserId: userId }).map(([k, v]) => [k, String(v)]),
+        ),
+      });
 
-    // Clean up invalid tokens.
-    result.responses.forEach((resp, idx) => {
-      if (!resp.success) {
-        const code = resp.error?.code;
-        if (
-          code === 'messaging/invalid-registration-token' ||
-          code === 'messaging/registration-token-not-registered'
-        ) {
-          const tokenSet = deviceTokens.get(userId);
-          if (tokenSet) tokenSet.delete(tokens[idx]);
+      for (const [index, response] of result.responses.entries()) {
+        if (!response.success) {
+          allSent = false;
+          const code = response.error?.code;
+          console.error('FCM token delivery failed:', code || 'unknown');
+          if (
+            code === 'messaging/invalid-registration-token' ||
+            code === 'messaging/registration-token-not-registered'
+          ) {
+            try {
+              await prisma.$executeRawUnsafe(`DELETE FROM "DeviceToken"
+                WHERE "token" = $1 AND "userId" = $2`, batch[index], userId);
+            } catch (error) {
+              console.error('FCM invalid token cleanup failed:', error.code || 'unknown');
+            }
+          }
         }
       }
-    });
-    return result.responses.every(response => response.success);
+    }
+    return allSent;
   } catch (err) {
-    console.error('FCM sendPushToUser failed:', err?.message || err);
+    console.error('FCM sendPushToUser failed:', err?.code || 'unknown');
     return false;
   }
 }
