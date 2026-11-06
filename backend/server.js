@@ -5,6 +5,10 @@ const path = require('path');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const { Resend } = require('resend');
+const {
+  normalizeReportReason, reasonSeverity, withReportSeverity, criticalFirst,
+  createModerationService, buildModerationOverview,
+} = require('./moderation');
 const Stripe = require('stripe');
 require('dotenv').config(); // Load environment variables
 const { Pool } = require('pg');
@@ -162,6 +166,15 @@ const adminUserIds = new Set(
     .map(id => id.trim())
     .filter(Boolean)
 );
+const {
+  notifyModeration, persistModerationReport, loadAdditionalReports, resolveAdditionalReport,
+} = createModerationService({
+  prisma: {
+    $executeRawUnsafe: (...args) => prisma.$executeRawUnsafe(...args),
+    $queryRawUnsafe: (...args) => prisma.$queryRawUnsafe(...args),
+  },
+  sendEmail, sendPushToUser, adminUserIds,
+});
 const requireAuthForWrites =
   (process.env.REQUIRE_AUTH_FOR_WRITES ||
     (process.env.NODE_ENV === 'production' ? '1' : '0')) === '1';
@@ -3773,7 +3786,8 @@ function buildWeeklyImpulseReportItems({ schema, impulseId }) {
         postTitle: post?.title || 'Unbekannter Beitrag',
         postAuthorName: post?.author_name || 'Unbekannt',
         postRole: post?.role || 'Community',
-        reason: report.reason,
+        reason: normalizeReportReason(report.reason),
+        severity: reasonSeverity(report.reason),
         reporterName: report.reporterName,
         reporterUserId: report.reporterUserId,
         createdAt: report.createdAt,
@@ -3789,7 +3803,7 @@ function buildWeeklyImpulseReportItems({ schema, impulseId }) {
     }
   }
 
-  items.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  items.sort(criticalFirst);
   return items;
 }
 
@@ -8091,7 +8105,7 @@ app.post('/api/weekly-impulse/community/posts/:postId/comments', requireVerified
   });
 });
 
-app.post('/api/weekly-impulse/community/posts/:postId/report', requireVerifiedUser, (req, res) => {
+app.post('/api/weekly-impulse/community/posts/:postId/report', requireVerifiedUser, async (req, res) => {
   const schema = getWeeklyImpulseSchema();
   if (!schema) {
     return res.status(500).json({ error: 'Weekly Impulse Schema fehlt' });
@@ -8102,9 +8116,10 @@ app.post('/api/weekly-impulse/community/posts/:postId/report', requireVerifiedUs
   const reporterUserId = req.firebaseUid;
   const reporterName =
     typeof req.body?.reporterName === 'string' ? req.body.reporterName.trim() : '';
-  const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : '';
+  const rawReason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : '';
+  const reason = normalizeReportReason(rawReason);
 
-  if (!impulseId || !postId || !reporterUserId || !reporterName || !reason) {
+  if (!impulseId || !postId || !reporterUserId || !reporterName || !rawReason) {
     return res.status(400).json({
       error: 'impulseId, postId, reporterUserId, reporterName und reason sind erforderlich',
     });
@@ -8122,12 +8137,21 @@ app.post('/api/weekly-impulse/community/posts/:postId/report', requireVerifiedUs
     reporterUserId,
     reporterName,
     reason,
+    severity: reasonSeverity(reason),
     createdAt: new Date().toISOString(),
   };
+  const moderationReport = { ...item, source: 'weekly', targetId: `${impulseId}:${postId}` };
+  try {
+    await persistModerationReport(moderationReport);
+  } catch (error) {
+    console.error('[moderation] Community-Meldung konnte nicht gespeichert werden:', error.message);
+    return res.status(503).json({ error: 'Meldung konnte nicht gespeichert werden' });
+  }
   reports.push(item);
   state.reportsByPostId[postId] = reports;
+  void notifyModeration(moderationReport).catch(error => console.error('[moderation] Notification failed:', error.message));
 
-  return res.status(201).json({ item, reportCount: reports.length });
+  return res.status(201).json({ ok: true, item, reportCount: reports.length });
 });
 
 app.get('/api/weekly-impulse/community/reports', requireVerifiedUser, requireInternalModerator, (req, res) => {
@@ -8148,7 +8172,7 @@ app.get('/api/weekly-impulse/community/reports', requireVerifiedUser, requireInt
   return res.json({ items });
 });
 
-app.post('/api/weekly-impulse/community/reports/:reportId/resolve', requireVerifiedUser, requireInternalModerator, (req, res) => {
+app.post('/api/weekly-impulse/community/reports/:reportId/resolve', requireVerifiedUser, requireInternalModerator, async (req, res) => {
   const schema = getWeeklyImpulseSchema();
   if (!schema) {
     return res.status(500).json({ error: 'Weekly Impulse Schema fehlt' });
@@ -8168,6 +8192,12 @@ app.post('/api/weekly-impulse/community/reports/:reportId/resolve', requireVerif
   for (const reports of Object.values(state.reportsByPostId || {})) {
     const match = (reports || []).find(item => item.id === reportId);
     if (match) {
+      try {
+        await resolveAdditionalReport({ reportId: `weekly:${reportId}` });
+      } catch (error) {
+        console.error('[moderation] Meldung konnte nicht abgeschlossen werden:', error.message);
+        return res.status(503).json({ error: 'Meldung konnte nicht abgeschlossen werden' });
+      }
       match.resolvedAt = new Date().toISOString();
       match.resolvedBy = moderatorName;
       match.moderatorNote = moderatorNote;
@@ -8180,7 +8210,7 @@ app.post('/api/weekly-impulse/community/reports/:reportId/resolve', requireVerif
   return res.status(404).json({ error: 'Report nicht gefunden' });
 });
 
-app.post('/api/weekly-impulse/community/posts/:postId/moderation-visibility', requireVerifiedUser, requireInternalModerator, (req, res) => {
+app.post('/api/weekly-impulse/community/posts/:postId/moderation-visibility', requireVerifiedUser, requireInternalModerator, async (req, res) => {
   const schema = getWeeklyImpulseSchema();
   if (!schema) {
     return res.status(500).json({ error: 'Weekly Impulse Schema fehlt' });
@@ -8203,6 +8233,14 @@ app.post('/api/weekly-impulse/community/posts/:postId/moderation-visibility', re
     return res.status(404).json({ error: 'Community-Post nicht gefunden' });
   }
 
+  if (reportId) {
+    try {
+      await resolveAdditionalReport({ reportId: `weekly:${reportId}` });
+    } catch (error) {
+      console.error('[moderation] Meldung konnte nicht abgeschlossen werden:', error.message);
+      return res.status(503).json({ error: 'Meldung konnte nicht abgeschlossen werden' });
+    }
+  }
   const state = getWeeklyImpulseCommunityEntry(impulseId);
   if (hidden) {
     state.hiddenPostIds[postId] = {
@@ -10833,6 +10871,8 @@ app.delete('/api/account/:userId', async (req, res) => {
     // Safety
     await run('safetyBlocksBy', `DELETE FROM "SafetyBlock" WHERE "blockerUserId" = ANY($1::text[]) OR "blockedUserId" = ANY($1::text[])`, idList);
     await run('safetyReports', `DELETE FROM "SafetyReport" WHERE "reporterUserId" = ANY($1::text[]) OR "reportedUserId" = ANY($1::text[])`, idList);
+    await run('moderationReports', `DELETE FROM "ModerationReport" WHERE "reporterUserId" = ANY($1::text[]) OR ("source" = 'safety' AND "targetId" = ANY($1::text[]))`, idList);
+    await run('moderationClaims', `DELETE FROM "ModerationNotificationClaim" WHERE ("key"::jsonb ->> 1) = 'safety' AND ("key"::jsonb ->> 2) = ANY($1::text[])`, idList);
     await run('safetySuspension', `DELETE FROM "SafetySuspension" WHERE "userId" = ANY($1::text[])`, idList);
 
     // In-Memory-Fallbacks ebenfalls saeubern (best-effort).
@@ -10953,7 +10993,7 @@ app.post('/api/safety/report', requireVerifiedUser, async (req, res) => {
   const reportedUserId = (req.body.reportedUserId || '').toString().trim();
   const contentType = (req.body.contentType || 'profile').toString().trim().slice(0, 30);
   const content = (req.body.content || '').toString().trim().slice(0, 1000);
-  const reason = (req.body.reason || 'other').toString().trim().slice(0, 50);
+  const reason = normalizeReportReason(req.body.reason, { event: contentType === 'event' });
   if (!reportedUserId) {
     return res.status(400).json({ error: 'reportedUserId erforderlich' });
   }
@@ -10965,18 +11005,13 @@ app.post('/api/safety/report', requireVerifiedUser, async (req, res) => {
        VALUES ($1, $2, $3, $4, $5, $6, 'pending', NOW())`,
       id, reporterUserId || 'anonymous', reportedUserId, contentType, content, reason
     );
+    void notifyModeration({ id, source: 'safety', targetId: reportedUserId, reporterUserId, reason, contentType })
+      .catch(error => console.error('[moderation] Notification failed:', error.message));
     const countRows = await prisma.$queryRawUnsafe(
       `SELECT COUNT(DISTINCT "reporterUserId")::int AS n FROM "SafetyReport" WHERE "reportedUserId" = $1`,
       reportedUserId
     );
     const reportCount = countRows?.[0]?.n ?? 1;
-    // m5: Admin-Hinweis, sobald die Ausblende-Schwelle erreicht ist. (Ein
-    // echter Push-Kanal zum Admin kann hier spaeter andocken; vorerst Log.)
-    const hideThreshold = Number.parseInt(
-      process.env.PARENT_MATCHING_REPORT_HIDE_THRESHOLD || '3', 10);
-    if (reportCount >= hideThreshold) {
-      console.warn(`[moderation] Profil ${reportedUserId} erreichte ${reportCount} verschiedene Melder — zur Admin-Pruefung ausgeblendet.`);
-    }
     return res.json({ ok: true, id, reportCount });
   } catch (error) {
     if (respondWithStrictPersistenceError(res, 'POST /api/safety/report', error)) return;
@@ -11014,6 +11049,9 @@ app.get('/admin/reports', requireAdmin, async (req, res) => {
               COUNT(DISTINCT r."reporterUserId")::int AS "distinctReporters",
               MAX(r."createdAt") AS "lastReportedAt",
               (ARRAY_AGG(r."reason" ORDER BY r."createdAt" DESC))[1] AS "lastReason",
+              (ARRAY_AGG(r."contentType" ORDER BY r."createdAt" DESC))[1] AS "lastContentType",
+              CASE WHEN BOOL_OR(LOWER(BTRIM(r."reason")) IN ('child_safety','sexual_content','violence_threat','self_harm'))
+                THEN 'critical' ELSE 'normal' END AS "severity",
               BOOL_OR(s."userId" IS NOT NULL) AS "suspended",
               MAX(reg."name") AS "displayName",
               MAX(pm."name") AS "profileName",
@@ -11026,7 +11064,8 @@ app.get('/admin/reports', requireAdmin, async (req, res) => {
        LEFT JOIN "ParentMatchingProfile" pm ON pm."ownerUserId" = r."reportedUserId"
        ${where}
        GROUP BY r."reportedUserId"
-       ORDER BY "lastReportedAt" DESC
+       ORDER BY BOOL_OR(LOWER(BTRIM(r."reason")) IN ('child_safety','sexual_content','violence_threat','self_harm')) DESC,
+                "lastReportedAt" DESC
        LIMIT 200`
     );
     // Detail-Meldungen mitliefern (kompakt), damit das Dashboard sie zeigen kann.
@@ -11034,22 +11073,24 @@ app.get('/admin/reports', requireAdmin, async (req, res) => {
       `SELECT "id", "reportedUserId", "reporterUserId", "contentType", "content", "reason", "status", "createdAt"
        FROM "SafetyReport"
        ${status === 'all' ? '' : `WHERE "status" = '${status.replace(/'/g, '')}'`}
-       ORDER BY "createdAt" DESC
+       ORDER BY (LOWER(BTRIM("reason")) IN ('child_safety','sexual_content','violence_threat','self_harm')) DESC, "createdAt" DESC
        LIMIT 500`
     );
-    return res.json({ groups: rows, reports: detailRows });
+    const additionalReports = await loadAdditionalReports(status);
+    return res.json(buildModerationOverview(rows, detailRows, additionalReports));
   } catch (error) {
     if (respondWithStrictPersistenceError(res, 'GET /admin/reports', error)) return;
     // In-memory Fallback
     const byUser = new Map();
     for (const r of safetyReports) {
       if (status !== 'all' && (r.status || 'pending') !== status) continue;
-      const g = byUser.get(r.reportedUserId) || { reportedUserId: r.reportedUserId, reportCount: 0, lastReportedAt: r.createdAt, lastReason: r.reason, suspended: safetySuspensions.has(r.reportedUserId) };
+      const g = byUser.get(r.reportedUserId) || { reportedUserId: r.reportedUserId, reportCount: 0, lastReportedAt: r.createdAt, lastReason: r.reason, lastContentType: r.contentType, suspended: safetySuspensions.has(r.reportedUserId) };
       g.reportCount += 1;
-      if (r.createdAt > g.lastReportedAt) { g.lastReportedAt = r.createdAt; g.lastReason = r.reason; }
+      if (r.createdAt > g.lastReportedAt) { g.lastReportedAt = r.createdAt; g.lastReason = r.reason; g.lastContentType = r.contentType; }
       byUser.set(r.reportedUserId, g);
     }
-    return res.json({ groups: [...byUser.values()], reports: safetyReports.slice(-500).reverse() });
+    return res.json(buildModerationOverview([...byUser.values()],
+      safetyReports.filter(r => status === 'all' || (r.status || 'pending') === status), []));
   }
 });
 
@@ -11062,6 +11103,7 @@ app.post('/admin/reports/resolve', requireAdmin, async (req, res) => {
   }
   try {
     await ensureSocialSchemaReady();
+    await resolveAdditionalReport({ reportId, reportedUserId });
     if (reportId) {
       await prisma.$executeRawUnsafe(
         `UPDATE "SafetyReport" SET "status" = 'resolved' WHERE "id" = $1`, reportId
@@ -13005,18 +13047,23 @@ app.post('/events/:id/chat/reports', requireVerifiedUser, async (req, res) => {
         chatId: chat.id,
         messageId,
         reportedById: reporterId,
-        reason: (req.body.reason || 'other').toString(),
+        reason: normalizeReportReason(req.body.reason),
         details: req.body.description || null,
       },
     });
 
+    void notifyModeration({ id: report.id, source: 'event_chat', targetId: messageId,
+      reporterUserId: req.firebaseUid, reason: report.reason })
+      .catch(error => console.error('[moderation] Notification failed:', error.message));
     return res.status(201).json({
+      ok: true,
       item: {
         id: report.id,
         eventId: req.params.id,
         reportedMessageId: report.messageId,
         reporterId: report.reportedById,
         reason: report.reason,
+        severity: reasonSeverity(report.reason),
         description: report.details,
         reportedAt: report.createdAt,
       },
@@ -13044,10 +13091,11 @@ app.get('/events/:id/chat/reports', requireVerifiedUser, async (req, res) => {
       eventId: req.params.id,
       reportedMessageId: report.messageId,
       reporterId: report.reportedById,
-      reason: report.reason,
+      reason: normalizeReportReason(report.reason),
+      severity: reasonSeverity(report.reason),
       description: report.details,
       reportedAt: report.createdAt,
-    }));
+    })).sort(criticalFirst);
     return res.json({ items });
   } catch (error) {
     return respondChatPersistenceError(res, 'GET /events/:id/chat/reports', error);
@@ -13541,8 +13589,10 @@ async function sendPushToUser(userId, { title, body, data = {} }) {
         }
       }
     });
+    return result.responses.every(response => response.success);
   } catch (err) {
     console.error('FCM sendPushToUser failed:', err?.message || err);
+    return false;
   }
 }
 
@@ -15103,14 +15153,15 @@ app.post('/api/food-feed/recipes/:id/report', requireVerifiedUser, async (req, r
     req.body?.reportedById, req.query?.reportedById,
   ])) return;
   const reportedById = req.firebaseUid;
-  const reason = String(req.body.reason || '').trim();
+  const rawReason = String(req.body.reason || '').trim();
+  const reason = normalizeReportReason(rawReason);
   const details = String(req.body.details || req.body.note || '').trim();
 
-  if (!reportedById || !reason) {
+  if (!reportedById || !rawReason) {
     return res.status(400).json({ error: 'reportedById und reason erforderlich' });
   }
 
-  if (reason.length < 3 || reason.length > 120) {
+  if (rawReason.length < 3 || rawReason.length > 120) {
     return res.status(400).json({ error: 'reason muss 3-120 Zeichen lang sein' });
   }
 
@@ -15141,6 +15192,9 @@ app.post('/api/food-feed/recipes/:id/report', requireVerifiedUser, async (req, r
         status: 'pending',
       },
     });
+    void notifyModeration({ id: report.id, source: 'food_feed', targetId: id,
+      reporterUserId: reportedById, reason })
+      .catch(error => console.error('[moderation] Notification failed:', error.message));
 
     const recentReportCount = await prisma.recipeReport.count({
       where: {
@@ -15151,7 +15205,7 @@ app.post('/api/food-feed/recipes/:id/report', requireVerifiedUser, async (req, r
       },
     });
 
-    const severe = isRecipeReportSevere({ reason, details });
+    const severe = reasonSeverity(reason) === 'critical' || isRecipeReportSevere({ reason: rawReason, details });
     let autoAction = 'none';
 
     if (shouldAutoUnpublishRecipe({ severe, recentReportCount })) {
@@ -15189,7 +15243,8 @@ app.post('/api/food-feed/recipes/:id/report', requireVerifiedUser, async (req, r
     }
 
     return res.status(201).json({
-      report,
+      ok: true,
+      report: withReportSeverity(report),
       autoModeration: {
         action: autoAction,
         recentReportCount,
@@ -15214,8 +15269,6 @@ app.get('/api/food-feed/reports', requireAdmin, async (req, res) => {
         ...(status ? { status: String(status) } : {}),
       },
       orderBy: { createdAt: 'desc' },
-      take: Math.min(parseInt(maxResults, 10) || 50, 100),
-      skip: parseInt(offset, 10) || 0,
       include: {
         recipe: {
           select: {
@@ -15229,7 +15282,10 @@ app.get('/api/food-feed/reports', requireAdmin, async (req, res) => {
       },
     });
 
-    res.json({ reports, total: reports.length });
+    const sorted = reports.map(withReportSeverity).sort(criticalFirst);
+    const start = Math.max(0, parseInt(offset, 10) || 0);
+    res.json({ reports: sorted.slice(start, start + Math.min(Math.max(1, parseInt(maxResults, 10) || 50), 100)),
+      total: reports.length });
   } catch (err) {
     console.error('❌ Food-offer report list error:', err.message);
     res.status(500).json({ error: `Failed to list food-offer reports: ${err.message}` });
@@ -15981,25 +16037,24 @@ app.delete('/api/community-events/:id', requireVerifiedUser, async (req, res) =>
 app.post('/api/community-events/:id/flag', requireVerifiedUser, async (req, res) => {
   const { id } = req.params;
   const userId = req.firebaseUid;
-  const { reason } = req.body;
+  const rawReason = req.body.reason;
+  const reason = normalizeReportReason(rawReason, { event: true });
 
-  if (!reason) {
+  if (!rawReason) {
     return res.status(400).json({ error: 'reason erforderlich' });
   }
-  const validReasons = ['spam', 'fake', 'unsafe', 'inappropriate', 'expired'];
-  if (!validReasons.includes(String(reason))) {
-    return res.status(400).json({ error: `reason muss einer sein von: ${validReasons.join(', ')}` });
-  }
-
   try {
     const event = await prisma.communityEvent.findUnique({ where: { id } });
     if (!event) return res.status(404).json({ error: 'Event nicht gefunden' });
 
-    await prisma.communityEventFlag.upsert({
+    const flag = await prisma.communityEventFlag.upsert({
       where: { eventId_userId: { eventId: id, userId: String(userId) } },
       create: { eventId: id, userId: String(userId), reason: String(reason) },
       update: { reason: String(reason) },
     });
+    void notifyModeration({ id: flag.id, source: 'community_event', targetId: id,
+      reporterUserId: userId, reason })
+      .catch(error => console.error('[moderation] Notification failed:', error.message));
 
     const flagCount = await prisma.communityEventFlag.count({ where: { eventId: id } });
     await prisma.communityEvent.update({
@@ -16007,7 +16062,7 @@ app.post('/api/community-events/:id/flag', requireVerifiedUser, async (req, res)
       data: { flagCount, isHidden: flagCount >= 3 },
     });
 
-    res.json({ success: true, flagCount, autoHidden: flagCount >= 3 });
+    res.json({ ok: true, success: true, flagCount, autoHidden: flagCount >= 3 });
   } catch (err) {
     console.error('❌ POST /api/community-events/:id/flag error:', err.message);
     res.status(500).json({ error: `Failed to flag event: ${err.message}` });
@@ -16472,8 +16527,9 @@ app.post('/api/treasures/:id/report', requireVerifiedUser, async (req, res) => {
     return res.status(400).json({ error: 'reason erforderlich' });
   }
 
-  const normalizedReason = String(reason).trim();
-  if (normalizedReason.length < 3 || normalizedReason.length > 120) {
+  const rawReason = String(reason).trim();
+  const normalizedReason = normalizeReportReason(rawReason);
+  if (rawReason.length < 3 || rawReason.length > 120) {
     return res.status(400).json({ error: 'reason muss 3-120 Zeichen lang sein' });
   }
 
@@ -16505,6 +16561,9 @@ app.post('/api/treasures/:id/report', requireVerifiedUser, async (req, res) => {
         status: 'pending',
       },
     });
+    void notifyModeration({ id: report.id, source: 'treasure', targetId: id,
+      reporterUserId, reason: normalizedReason })
+      .catch(error => console.error('[moderation] Notification failed:', error.message));
 
     const recentReportCount = await prisma.treasureReport.count({
       where: {
@@ -16515,7 +16574,8 @@ app.post('/api/treasures/:id/report', requireVerifiedUser, async (req, res) => {
       },
     });
 
-    const severe = isTreasureReportSevere({ reason: normalizedReason, note });
+    const severe = reasonSeverity(normalizedReason) === 'critical'
+      || isTreasureReportSevere({ reason: rawReason, note });
     let autoAction = 'none';
 
     if (shouldAutoArchiveTreasure({ severe, recentReportCount })) {
@@ -16547,7 +16607,8 @@ app.post('/api/treasures/:id/report', requireVerifiedUser, async (req, res) => {
     }
 
     res.status(201).json({
-      report,
+      ok: true,
+      report: withReportSeverity(report),
       autoModeration: {
         action: autoAction,
         recentReportCount,
@@ -16941,8 +17002,6 @@ app.get('/api/treasures/reports', requireAdmin, async (req, res) => {
         ...(status ? { status: String(status) } : {}),
       },
       orderBy: { createdAt: 'desc' },
-      take: Math.min(parseInt(maxResults, 10) || 50, 100),
-      skip: parseInt(offset, 10) || 0,
       include: {
         treasure: {
           select: {
@@ -16956,7 +17015,10 @@ app.get('/api/treasures/reports', requireAdmin, async (req, res) => {
       },
     });
 
-    res.json({ reports, total: reports.length });
+    const sorted = reports.map(withReportSeverity).sort(criticalFirst);
+    const start = Math.max(0, parseInt(offset, 10) || 0);
+    res.json({ reports: sorted.slice(start, start + Math.min(Math.max(1, parseInt(maxResults, 10) || 50), 100)),
+      total: reports.length });
   } catch (err) {
     console.error('❌ Treasure report list error:', err.message);
     res.status(500).json({ error: `Failed to list treasure reports: ${err.message}` });

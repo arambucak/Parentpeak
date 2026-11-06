@@ -110,6 +110,8 @@ function fixture({ configured = true, failure } = {}) {
     },
   };
   const context = vm.createContext({
+    ...require('../../moderation'),
+    notifyModeration: async () => {},
     prisma, console: { error() {} }, generateId: scope => `${scope}-id`,
     firebaseAdmin: configured ? { auth: () => ({
       verifyIdToken: async token => {

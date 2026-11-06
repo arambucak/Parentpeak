@@ -41,6 +41,7 @@ function createAdminRoutes({ admins = ['admin'] } = {}) {
     (route, ...handlers) => routes.set(`${method.toUpperCase()} ${route}`, handlers),
   ]));
   const context = vm.createContext({
+    ...require('../../moderation'),
     app,
     adminUserIds: new Set(admins),
     firebaseAdmin: createFirebaseAdmin(),
